@@ -569,12 +569,41 @@ function exportLongImage(btn){
       {title:"开工库存表需", D:p2, weekly:true}
     ].filter(function(s){ return s.D && s.D.layout; });
 
+    // 0) 先计算整体尺寸与缩放比例，避免后续底部图表被画到画布外
+    var PAGE_TITLE_H=52, SECTION_H=44, ROW_H=36;
+    var maxCols=1;
+    sheets.forEach(function(s){
+      s.D.layout.forEach(function(sec){
+        sec.rows.forEach(function(row){
+          var cols=expColsFor(s.weekly, row.charts.length);
+          if(cols>maxCols) maxCols=cols;
+        });
+      });
+    });
+    var contentW=maxCols*TILE_W+(maxCols-1)*GAP;
+    var Wcss=contentW+2*MARGIN;
+    var Hcss=MARGIN+BANNER+22;
+    sheets.forEach(function(s){
+      Hcss+=PAGE_TITLE_H;
+      s.D.layout.forEach(function(sec){
+        Hcss+=SECTION_H;
+        sec.rows.forEach(function(row){
+          if(row.label) Hcss+=ROW_H;
+          Hcss+=TILE_H+GAP;
+        });
+      });
+    });
+    Hcss=Hcss-GAP+MARGIN; // 去掉最后一行多余的 GAP，加底部边距
+    var scale=SCALE;
+    if(Math.max(Wcss,Hcss)*scale>16384) scale=16384/Math.max(Wcss,Hcss);
+    scale=Math.max(1, Math.floor(scale*100)/100);
+
     var host=document.getElementById("expHost");
     if(!host){ host=document.createElement("div"); host.id="expHost";
       host.style.cssText="position:fixed;left:-100000px;top:0;width:0;height:0;overflow:hidden;";
       document.body.appendChild(host); }
 
-    // 1) 逐图导出 PNG（每张图独立实例，导出即 dispose，内存可控）
+    // 1) 逐图导出 PNG（按实际 scale，防止清晰度浪费或超出上限）
     var tiles=[];
     sheets.forEach(function(s){
       var D=s.D;
@@ -586,38 +615,28 @@ function exportLongImage(btn){
             host.appendChild(div);
             var c=echarts.init(div, null, {width:TILE_W, height:TILE_H});
             c.setOption(exportOption(D, ch, row, !!ch.ts));
-            tiles.push(c.getDataURL({pixelRatio:SCALE, backgroundColor:"#ffffff"}));
+            tiles.push(c.getDataURL({pixelRatio:scale, backgroundColor:"#ffffff"}));
             c.dispose(); div.remove();
           });
         });
       });
     });
 
-    // 2) 计算布局（与 tiles 顺序严格一致）
-    var maxCols=1;
-    sheets.forEach(function(s){
-      s.D.layout.forEach(function(sec){
-        sec.rows.forEach(function(row){
-          var cols=expColsFor(s.weekly, row.charts.length);
-          if(cols>maxCols) maxCols=cols;
-        });
-      });
-    });
-    var contentW=maxCols*TILE_W+(maxCols-1)*GAP;
+    // 2) 计算布局（与 tiles 顺序严格一致，全部基于实际 scale）
     var textOps=[], positions=[], curY=MARGIN+BANNER+22, tileIdx=0;
     sheets.forEach(function(s){
       var D=s.D;
-      textOps.push({x:MARGIN, y:curY+18, text:s.title+"　数据截至："+D.latestDataDate, size:28, color:EXP_ACCENT, bold:true});
-      curY+=50;
+      textOps.push({x:MARGIN, y:curY+PAGE_TITLE_H/2, text:s.title+"　数据截至："+D.latestDataDate, size:28, color:EXP_ACCENT, bold:true});
+      curY+=PAGE_TITLE_H;
       D.layout.forEach(function(sec){
-        textOps.push({x:MARGIN, y:curY+18, text:"▍"+sec.section, size:24, color:EXP_ACCENT, bold:true});
-        curY+=42;
+        textOps.push({x:MARGIN, y:curY+SECTION_H/2, text:"▍"+sec.section, size:24, color:EXP_ACCENT, bold:true});
+        curY+=SECTION_H;
         sec.rows.forEach(function(row){
-          if(row.label){ textOps.push({x:MARGIN, y:curY+14, text:row.label, size:17, color:"#6b7686", bold:false}); curY+=30; }
+          if(row.label){ textOps.push({x:MARGIN, y:curY+ROW_H/2, text:row.label, size:17, color:"#6b7686", bold:false}); curY+=ROW_H; }
           var cols=expColsFor(s.weekly, row.charts.length);
           var x=MARGIN;
           for(var k=0;k<row.charts.length;k++){
-            positions.push({url:tiles[tileIdx], x:x*SCALE, y:curY*SCALE, w:TILE_W*SCALE, h:TILE_H*SCALE});
+            positions.push({url:tiles[tileIdx], x:Math.round(x*scale), y:Math.round(curY*scale), w:Math.round(TILE_W*scale), h:Math.round(TILE_H*scale)});
             tileIdx++; x+=TILE_W+GAP;
           }
           curY+=TILE_H+GAP;
@@ -625,10 +644,7 @@ function exportLongImage(btn){
       });
     });
 
-    // 3) 创建主画布并绘制（自动按 16384px 上限降级清晰度）
-    var Wcss=contentW+2*MARGIN, Hcss=curY+MARGIN;
-    var scale=SCALE;
-    if(Math.max(Wcss,Hcss)*scale>16384) scale=16384/Math.max(Wcss,Hcss);
+    // 3) 创建主画布并绘制
     var W=Math.round(Wcss*scale), H=Math.round(Hcss*scale);
     var canvas=document.createElement("canvas"); canvas.width=W; canvas.height=H;
     var ctx=canvas.getContext("2d");
@@ -636,10 +652,10 @@ function exportLongImage(btn){
     ctx.fillStyle=EXP_ACCENT; ctx.fillRect(0,0,W,Math.round(BANNER*scale));
     ctx.fillStyle="#ffffff"; ctx.font="bold "+(26*scale)+"px 'Microsoft YaHei',sans-serif";
     ctx.textBaseline="middle"; ctx.fillText("合成胶数据看板 · 高清长图", 24*scale, BANNER*scale/2);
-    ctx.textBaseline="alphabetic";
     textOps.forEach(function(t){
       ctx.fillStyle=t.color;
       ctx.font=(t.bold?"bold ":"")+(t.size*scale)+"px 'Microsoft YaHei','PingFang SC',sans-serif";
+      ctx.textBaseline="middle";
       ctx.fillText(t.text, t.x*scale, t.y*scale);
     });
     var pending=positions.map(function(p){
