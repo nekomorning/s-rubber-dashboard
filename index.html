@@ -471,7 +471,7 @@ function makeTsCard(ch,grid,row){
 /* ===== 合成胶高清长图导出：合并页面一(日度价格)+页面二(开工库存表需)全部图表
    方案：逐图用 ECharts getDataURL() 导出 PNG，再在原生 canvas 上拼合（含分区/行标签）。
    不使用 html2canvas —— 避免对含数十张图的超大离屏 DOM 做序列化而导致卡死。 ===== */
-var TILE_W=440, TILE_H=300, SCALE=2, GAP=12, MARGIN=24, BANNER=56;
+var TILE_W=440, TILE_H=340, SCALE=2, GAP=12, MARGIN=24, BANNER=56;
 var EXP_ACCENT="#0f4c81";
 
 function expMonthTicks(D){
@@ -488,9 +488,9 @@ function exportOption(D, ch, row, isTs){
       animation:false, backgroundColor:"#ffffff",
       title:{ text:cfg.title+"（"+ch.unit+"）", left:12, top:10,
         textStyle:{fontSize:20, fontWeight:700, color:"#1f2733"} },
-      grid:{left:14, right:18, top:56, bottom:26, containLabel:true},
-      legend:{show:true, top:12, right:12, itemWidth:18, itemHeight:3, icon:"rect",
-        textStyle:{fontSize:14, color:"#6b7686"}},
+      grid:{left:14, right:18, top:56, bottom:36, containLabel:true},
+      legend:{show:true, bottom:8, left:"center", itemWidth:18, itemHeight:3, icon:"rect",
+        textStyle:{fontSize:13, color:"#6b7686"}},
       tooltip:{trigger:"axis", confine:true},
       xAxis:{type:"time",
         axisLabel:{fontSize:13,color:"#8a93a3", formatter:{year:"{yyyy}",month:"{yyyy}-{MM}",day:"{MM}-{dd}"}},
@@ -526,11 +526,11 @@ function exportOption(D, ch, row, isTs){
   return {
     animation:false, backgroundColor:"#ffffff",
     title:{ text:ind.title, subtext:valTxt+(chgTxt?"   "+chgTxt:""),
-      left:12, top:8, textStyle:{fontSize:20, fontWeight:700, color:"#1f2733"},
+      left:12, top:10, textStyle:{fontSize:20, fontWeight:700, color:"#1f2733"},
       subtextStyle:{fontSize:15, color:subColor} },
-    grid:{left:14, right:18, top:66, bottom:10, containLabel:true},
-    legend:{show:true, top:10, right:12, itemWidth:18, itemHeight:3, icon:"rect",
-      textStyle:{fontSize:14, color:"#6b7686"}, data:legend},
+    grid:{left:14, right:18, top:70, bottom:34, containLabel:true},
+    legend:{show:true, bottom:8, left:"center", itemWidth:18, itemHeight:3, icon:"rect",
+      textStyle:{fontSize:13, color:"#6b7686"}, data:legend},
     tooltip:{trigger:"axis", confine:true,
       formatter:function(ps){
         if(!ps.length) return "";
