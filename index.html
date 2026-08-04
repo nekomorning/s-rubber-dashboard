@@ -490,16 +490,19 @@ function expRenderCharts(stage, dataset, pageTitle){
   yearVisible={}; dataset.years.forEach(function(y){ yearVisible[y]=true; }); // 导出图默认显示全部年份
   SHORT_ROWS={};                                                          // 统一高度，长图更整齐
   var ticks=monthTicks();
+  var prevCols=0;                                                         // 上一行使用的列数，用于 2 图行与上一行对齐
   dataset.layout.forEach(function(sec){
     var st=document.createElement('div'); st.className='exp-section'; st.textContent=sec.section; stage.appendChild(st);
     sec.rows.forEach(function(row){
       var lbl=document.createElement('div'); lbl.className='exp-row'; lbl.textContent=row.label; stage.appendChild(lbl);
       var n=row.charts.length;
       var cols=n<=1?1:(n===2?2:(n===3?3:(n===4?4:3)));
+      if(n===2 && prevCols>cols) cols=prevCols;                           // 2 图行紧跟更多列的行时，沿用其列数，避免铺满页面宽度
       var grid=document.createElement('div'); grid.className='exp-grid g'+cols; stage.appendChild(grid);
       row.charts.forEach(function(ch){
         if(ch.ts) makeTsCard(ch,grid,row); else makeCard(ch,ticks,grid,row);
       });
+      prevCols=cols;
     });
   });
   D=sD; charts=sCharts; allCharts=sAll; yearVisible=sYV; SHORT_ROWS=sShort; // 还原
@@ -508,14 +511,14 @@ function expRenderCharts(stage, dataset, pageTitle){
 function buildExpFigure(){
   var stage=document.getElementById('expStage');
   stage.innerHTML='';
-  var head=document.createElement('div'); head.className='exp-head'; head.textContent='合成胶数据看板 · 高清长图（日度价格 + 开工库存表需）';
+  var head=document.createElement('div'); head.className='exp-head'; head.textContent='合成胶数据看板';
   stage.appendChild(head);
   // 顺序固定：页面一(含 ts) → 页面二(isWeekly)，与用户当前所在页面无关
   var arr=[window.__DATA__, window.__DATA2__].filter(Boolean);
   var p1 = arr.filter(function(d){ return d.ts; })[0] || arr[0];
   var p2 = arr.filter(function(d){ return d.isWeekly; })[0] || (arr.length>1?arr[1]:null);
-  if(p1) expRenderCharts(stage, p1, '页面一 · 日度价格');
-  if(p2 && p2!==p1) expRenderCharts(stage, p2, '页面二 · 开工库存表需');
+  if(p1) expRenderCharts(stage, p1, '日度价格');
+  if(p2 && p2!==p1) expRenderCharts(stage, p2, '开工库存表需');
   return stage;
 }
 
