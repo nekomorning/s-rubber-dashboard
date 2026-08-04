@@ -42,7 +42,7 @@ body{background:var(--bg); color:var(--text);
 .ybtn:disabled{opacity:.7; cursor:default;}
 
 /* ===== 高清长图导出（合并页面一+页面二图表，仅图表，左对齐多列网格） ===== */
-.exp-stage{position:fixed; left:-100000px; top:0; width:1400px; background:#fff; padding:26px 24px; box-sizing:border-box;}
+.exp-stage{position:absolute; left:-10000px; top:0; width:1400px; background:#fff; padding:26px 24px; box-sizing:border-box; visibility:visible;}
 .exp-head{font-size:20px; font-weight:700; color:var(--accent); margin-bottom:16px;}
 .exp-page{font-size:16px; font-weight:700; color:#1a1a1a; margin:20px 0 10px; padding-left:10px; border-left:4px solid var(--accent);}
 .exp-section{font-size:15px; font-weight:700; color:var(--accent); margin:16px 0 4px;}
@@ -486,7 +486,8 @@ function expRenderCharts(stage, dataset, pageTitle){
   if(!dataset || !dataset.layout) return;
   var pt=document.createElement('div'); pt.className='exp-page'; pt.textContent=pageTitle; stage.appendChild(pt);
   var sD=D, sCharts=charts, sAll=allCharts, sYV=yearVisible, sShort=SHORT_ROWS;
-  D=dataset; charts=[]; allCharts=[];
+  var newCharts=[];
+  D=dataset; charts=[]; allCharts=newCharts;
   yearVisible={}; dataset.years.forEach(function(y){ yearVisible[y]=true; }); // 导出图默认显示全部年份
   SHORT_ROWS={};                                                          // 统一高度，长图更整齐
   var ticks=monthTicks();
@@ -505,6 +506,7 @@ function expRenderCharts(stage, dataset, pageTitle){
       prevCols=cols;
     });
   });
+  stage._charts=newCharts;                                                // 保存导出用 ECharts 实例，便于关闭动画与释放
   D=sD; charts=sCharts; allCharts=sAll; yearVisible=sYV; SHORT_ROWS=sShort; // 还原
 }
 
@@ -541,19 +543,41 @@ function generateLongImage(btn){
 
 function reallyGenerate(btn, oldHtml){
   btn.innerHTML='生成中…'; btn.disabled=true;
-  var stage=buildExpFigure();   // #expStage（常驻、离屏，图表已绘入 canvas）
+  var stage=buildExpFigure();   // #expStage（屏幕外，图表已绘入 canvas）
+  var stageCharts=stage._charts||[];
+  // 关闭导出图表动画，避免 html2canvas 克隆 canvas 时撞上动画帧
+  stageCharts.forEach(function(c){ if(c&&c.setOption) c.setOption({animation:false}, true); });
+
   setTimeout(function(){
     var MAX=16384;
     var expW=Math.max(stage.scrollWidth, stage.clientWidth);
     var expH=Math.max(stage.scrollHeight, stage.clientHeight);
     var scale=Math.min(2, MAX/expW, MAX/expH);   // 自动降级，保证单画布不超上限
     if(scale<0.5) scale=0.5;
-    var modal=document.getElementById('expModal');
-    var body=document.getElementById('expModalBody');
-    // 把离屏舞台移入弹窗并设为可见，确保 html2canvas 捕获的是可见元素
-    stage.style.position='static'; stage.style.left='auto'; stage.style.top='auto'; stage.style.zIndex='auto';
-    body.innerHTML=''; body.appendChild(stage);
-    modal.classList.add('show');
+
+    var timer=null, done=false;
+    function finish(err, canvas){
+      if(done) return; done=true;
+      clearTimeout(timer);
+      // 释放临时 ECharts 实例与舞台 DOM
+      stageCharts.forEach(function(c){ if(c&&c.dispose) try{c.dispose();}catch(_){} });
+      stage.innerHTML='';
+      stage._charts=[];
+      if(err){
+        console.error(err);
+        btn.innerHTML=oldHtml; btn.disabled=false;
+        alert('导出失败：'+(err&&err.message||err));
+        return;
+      }
+      showExpModal(canvas);
+      btn.innerHTML=oldHtml; btn.disabled=false;
+    }
+
+    // 30 秒超时保护，避免永久卡在「生成中…」
+    timer=setTimeout(function(){
+      finish(new Error('导出超时，请刷新页面后重试（图表过多可能导致处理较慢）'));
+    }, 30000);
+
     html2canvas(stage,{
       scale:scale,
       backgroundColor:'#ffffff',
@@ -561,20 +585,8 @@ function reallyGenerate(btn, oldHtml){
       logging:false,
       windowWidth:1400,                          // 固定舞台宽度，与 .exp-stage 一致
       ignoreElements:function(el){ return el.id==='btnExport'; }
-    }).then(function(canvas){
-      canvas.style.maxWidth='100%'; canvas.style.height='auto';
-      document.body.appendChild(stage);           // 舞台移回离屏常驻，便于下次导出
-      body.innerHTML=''; body.appendChild(canvas);
-      modal._canvas=canvas;
-      btn.innerHTML=oldHtml; btn.disabled=false;
-    }).catch(function(e){
-      console.error(e);
-      document.body.appendChild(stage);
-      modal.classList.remove('show');
-      btn.innerHTML=oldHtml; btn.disabled=false;
-      alert('导出失败：'+(e&&e.message||e));
-    });
-  }, 500);
+    }).then(function(canvas){ finish(null, canvas); }).catch(function(e){ finish(e); });
+  }, 300);   // 等 ECharts 渲染一帧即可
 }
 
 function showExpModal(canvas){
