@@ -475,14 +475,19 @@ function generateLongImage(btn){
 
 function reallyGenerate(btn, oldHtml){
   btn.innerHTML='生成中…'; btn.disabled=true;
-  var stage=buildExpFigure();
-  // 等待 ECharts 把图画进 canvas（animation:false 仍需一帧）
+  var stage=buildExpFigure();   // #expStage（常驻、离屏，图表已绘入 canvas）
   setTimeout(function(){
     var MAX=16384;
     var expW=Math.max(stage.scrollWidth, stage.clientWidth);
     var expH=Math.max(stage.scrollHeight, stage.clientHeight);
     var scale=Math.min(2, MAX/expW, MAX/expH);   // 自动降级，保证单画布不超上限
     if(scale<0.5) scale=0.5;
+    var modal=document.getElementById('expModal');
+    var body=document.getElementById('expModalBody');
+    // 把离屏舞台移入弹窗并设为可见，确保 html2canvas 捕获的是可见元素
+    stage.style.position='static'; stage.style.left='auto'; stage.style.top='auto'; stage.style.zIndex='auto';
+    body.innerHTML=''; body.appendChild(stage);
+    modal.classList.add('show');
     html2canvas(stage,{
       scale:scale,
       backgroundColor:'#ffffff',
@@ -491,10 +496,15 @@ function reallyGenerate(btn, oldHtml){
       windowWidth:1200,                          // 固定舞台宽度，图表左对齐单列
       ignoreElements:function(el){ return el.id==='btnExport'; }
     }).then(function(canvas){
-      showExpModal(canvas);
+      canvas.style.maxWidth='100%'; canvas.style.height='auto';
+      document.body.appendChild(stage);           // 舞台移回离屏常驻，便于下次导出
+      body.innerHTML=''; body.appendChild(canvas);
+      modal._canvas=canvas;
       btn.innerHTML=oldHtml; btn.disabled=false;
     }).catch(function(e){
       console.error(e);
+      document.body.appendChild(stage);
+      modal.classList.remove('show');
       btn.innerHTML=oldHtml; btn.disabled=false;
       alert('导出失败：'+(e&&e.message||e));
     });
@@ -542,6 +552,7 @@ function closeExpModal(){
   var modal=document.getElementById('expModal');
   modal.classList.remove('show');
   modal._canvas=null;
+  var body=document.getElementById('expModalBody'); if(body) body.innerHTML='';
   var stage=document.getElementById('expStage'); if(stage) stage.innerHTML='';
 }
 
