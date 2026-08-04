@@ -41,17 +41,27 @@ body{background:var(--bg); color:var(--text);
 .ybtn.exp:hover{filter:brightness(1.08);}
 .ybtn:disabled{opacity:.7; cursor:default;}
 
-/* ===== 高清长图导出（合并页面一+页面二图表，仅图表，左对齐单列） ===== */
-.exp-stage{position:fixed; left:-100000px; top:0; width:1200px; background:#fff; padding:26px 24px; box-sizing:border-box;}
+/* ===== 高清长图导出（合并页面一+页面二图表，仅图表，左对齐多列网格） ===== */
+.exp-stage{position:fixed; left:-100000px; top:0; width:1400px; background:#fff; padding:26px 24px; box-sizing:border-box;}
 .exp-head{font-size:20px; font-weight:700; color:var(--accent); margin-bottom:16px;}
 .exp-page{font-size:16px; font-weight:700; color:#1a1a1a; margin:20px 0 10px; padding-left:10px; border-left:4px solid var(--accent);}
 .exp-section{font-size:15px; font-weight:700; color:var(--accent); margin:16px 0 4px;}
 .exp-row{font-size:13px; color:var(--sub); margin:12px 0 6px; font-weight:600;}
-.exp-grid{margin:0 0 12px;}
-.exp-stage .card{border:1px solid #eef1f6; border-radius:8px; padding:10px 12px 6px;}
-.exp-stage .ttl{font-size:14px; font-weight:700; color:#2a3345; margin-bottom:4px;}
-.exp-stage .meta{display:none;}
-.exp-stage .chart{height:120px;}
+.exp-grid{display:grid; gap:12px; margin:0 0 14px;}
+.exp-grid.g1{grid-template-columns:1fr;}
+.exp-grid.g2{grid-template-columns:repeat(2,1fr);}
+.exp-grid.g3{grid-template-columns:repeat(3,1fr);}
+.exp-grid.g4{grid-template-columns:repeat(4,1fr);}
+.exp-grid.g5{grid-template-columns:repeat(3,1fr);}
+.exp-grid.g6{grid-template-columns:repeat(3,1fr);}
+.exp-stage .card{border:1px solid #eef1f6; border-radius:8px; padding:10px 12px 6px; background:#fff;}
+.exp-stage .ttl{font-size:13px; font-weight:700; color:#2a3345; margin-bottom:2px;}
+.exp-stage .meta{display:flex; align-items:baseline; gap:8px; flex-wrap:wrap; margin:2px 0 4px; font-size:11px; color:var(--sub);}
+.exp-stage .meta .val{font-size:15px; font-weight:700; color:var(--text);}
+.exp-stage .meta .unit{font-size:10px;}
+.exp-stage .meta .chg{font-size:11px; font-weight:600;}
+.exp-stage .meta .dt{font-size:10px; color:var(--sub);}
+.exp-stage .chart{height:150px;}
 .exp-modal{position:fixed; inset:0; background:rgba(20,24,33,.55); display:none; align-items:center; justify-content:center; z-index:9999;}
 .exp-modal.show{display:flex;}
 .exp-box{background:#fff; border-radius:12px; max-width:94vw; max-height:90vh; display:flex; flex-direction:column; overflow:hidden;}
@@ -484,8 +494,10 @@ function expRenderCharts(stage, dataset, pageTitle){
     var st=document.createElement('div'); st.className='exp-section'; st.textContent=sec.section; stage.appendChild(st);
     sec.rows.forEach(function(row){
       var lbl=document.createElement('div'); lbl.className='exp-row'; lbl.textContent=row.label; stage.appendChild(lbl);
+      var n=row.charts.length;
+      var cols=n<=1?1:(n===2?2:(n===3?3:(n===4?4:3)));
+      var grid=document.createElement('div'); grid.className='exp-grid g'+cols; stage.appendChild(grid);
       row.charts.forEach(function(ch){
-        var grid=document.createElement('div'); grid.className='exp-grid'; stage.appendChild(grid);
         if(ch.ts) makeTsCard(ch,grid,row); else makeCard(ch,ticks,grid,row);
       });
     });
@@ -544,7 +556,7 @@ function reallyGenerate(btn, oldHtml){
       backgroundColor:'#ffffff',
       useCORS:true,
       logging:false,
-      windowWidth:1200,                          // 固定舞台宽度，图表左对齐单列
+      windowWidth:1400,                          // 固定舞台宽度，与 .exp-stage 一致
       ignoreElements:function(el){ return el.id==='btnExport'; }
     }).then(function(canvas){
       canvas.style.maxWidth='100%'; canvas.style.height='auto';
