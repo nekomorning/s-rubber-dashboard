@@ -122,7 +122,7 @@ tr.abn td{background:#fff7f0;}
     <h1>合成胶数据看板</h1>
     <div class="actions">
       <div class="date">数据截至：<b id="latestDate"></b>　|　数据源：合成胶数据看板.xlsx（开工库存表需）</div>
-      <button id="btnExport" class="ybtn exp" type="button" onclick="generateLongImage(this)">导出高清长图</button>
+      <button id="btnExport" class="ybtn exp" type="button" onclick="exportLongImage(this)">导出高清长图</button>
     </div>
   </div>
   <div class="tabs">
@@ -151,7 +151,7 @@ tr.abn td{background:#fff7f0;}
 </div>
 
 <!-- 高清长图导出：离屏舞台 + 预览弹窗 -->
-<div id="expStage" class="exp-stage"></div>
+<div id="expHost" style="position:fixed;left:-100000px;top:0;width:0;height:0;overflow:hidden;"></div>
 <div id="expModal" class="exp-modal">
   <div class="exp-box">
     <div class="exp-box-head"><span>合成胶数据看板 · 高清长图</span><button class="exp-close" type="button" onclick="closeExpModal()">✕</button></div>
@@ -417,125 +417,202 @@ function makeTsCard(ch,grid,row){
 </script>
 
 <script>
-/* ===== 合成胶高清长图导出：合并页面一(日度价格)+页面二(开工库存表需)的全部图表（仅图表，不含一览表/速览），左对齐单列，自动按 16384px 上限降级清晰度 ===== */
-function loadScriptSeq(urls, cb){
-  var i=0;
-  (function next(){
-    if(i>=urls.length){ cb(new Error('all cdn failed')); return; }
-    var s=document.createElement('script');
-    s.src=urls[i++];
-    s.onload=function(){ cb(null); };
-    s.onerror=next;
-    document.head.appendChild(s);
-  })();
+/* ===== 合成胶高清长图导出：合并页面一(日度价格)+页面二(开工库存表需)全部图表
+   方案：逐图用 ECharts getDataURL() 导出 PNG，再在原生 canvas 上拼合（含分区/行标签）。
+   不使用 html2canvas —— 避免对含数十张图的超大离屏 DOM 做序列化而导致卡死。 ===== */
+var TILE_W=440, TILE_H=300, SCALE=2, GAP=12, MARGIN=24, BANNER=56;
+var EXP_ACCENT="#0f4c81";
+
+function expMonthTicks(D){
+  var idx={};
+  (D.xlabels||[]).forEach(function(l,i){ if(l.slice(3)==="01") idx[i]=parseInt(l.slice(0,2),10)+"月"; });
+  return idx;
 }
 
-/* 把某个数据集的全部「图表板块」渲染进舞台（不含速览/一览表），并暂存/还原全局变量避免污染主页面 */
-function expRenderCharts(stage, dataset, pageTitle){
-  if(!dataset || !dataset.layout) return;
-  var pt=document.createElement('div'); pt.className='exp-page'; pt.textContent=pageTitle; stage.appendChild(pt);
-  var sD=D, sCharts=charts, sAll=allCharts, sYV=yearVisible, sShort=SHORT_ROWS;
-  var newCharts=[];
-  D=dataset; charts=[]; allCharts=newCharts;
-  yearVisible={}; dataset.years.forEach(function(y){ yearVisible[y]=true; }); // 导出图默认显示全部年份
-  SHORT_ROWS={};                                                          // 统一高度，长图更整齐
-  var ticks=monthTicks();
-  var prevCols=0;                                                         // 上一行使用的列数，用于 2 图行与上一行对齐
-  dataset.layout.forEach(function(sec){
-    var st=document.createElement('div'); st.className='exp-section'; st.textContent=sec.section; stage.appendChild(st);
-    sec.rows.forEach(function(row){
-      var lbl=document.createElement('div'); lbl.className='exp-row'; lbl.textContent=row.label; stage.appendChild(lbl);
-      var n=row.charts.length;
-      var cols=n<=1?1:(n===2?2:(n===3?3:(n===4?4:3)));
-      if(n===2 && prevCols>cols) cols=prevCols;                           // 2 图行紧跟更多列的行时，沿用其列数，避免铺满页面宽度
-      var grid=document.createElement('div'); grid.className='exp-grid g'+cols; stage.appendChild(grid);
-      row.charts.forEach(function(ch){
-        if(ch.ts) makeTsCard(ch,grid,row); else makeCard(ch,ticks,grid,row);
-      });
-      prevCols=cols;
-    });
-  });
-  stage._charts=newCharts;                                                // 保存导出用 ECharts 实例，便于关闭动画与释放
-  D=sD; charts=sCharts; allCharts=sAll; yearVisible=sYV; SHORT_ROWS=sShort; // 还原
-}
-
-function buildExpFigure(){
-  var stage=document.getElementById('expStage');
-  stage.innerHTML='';
-  var head=document.createElement('div'); head.className='exp-head'; head.textContent='合成胶数据看板';
-  stage.appendChild(head);
-  // 顺序固定：页面一(含 ts) → 页面二(isWeekly)，与用户当前所在页面无关
-  var arr=[window.__DATA__, window.__DATA2__].filter(Boolean);
-  var p1 = arr.filter(function(d){ return d.ts; })[0] || arr[0];
-  var p2 = arr.filter(function(d){ return d.isWeekly; })[0] || (arr.length>1?arr[1]:null);
-  if(p1) expRenderCharts(stage, p1, '日度价格');
-  if(p2 && p2!==p1) expRenderCharts(stage, p2, '开工库存表需');
-  return stage;
-}
-
-function generateLongImage(btn){
-  if(!window.html2canvas){
-    var old=btn.innerHTML; btn.innerHTML='加载中…'; btn.disabled=true;
-    loadScriptSeq([
-      'https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js',
-      'https://cdn.bootcdn.net/ajax/libs/html2canvas/1.4.1/html2canvas.min.js',
-      'https://unpkg.com/html2canvas@1.4.1/dist/html2canvas.min.js'
-    ], function(err){
-      btn.disabled=false; btn.innerHTML=old;
-      if(err){ alert('导出组件加载失败，请检查网络后重试'); return; }
-      reallyGenerate(btn, old);
-    });
-  } else {
-    reallyGenerate(btn, btn.innerHTML);
+/* 构建单张图表的 echarts option（含标题：名称 + 最新值 + 环比），用于导出 */
+function exportOption(D, ch, row, isTs){
+  if(isTs){
+    var cfg=D.ts[ch.key];
+    return {
+      animation:false, backgroundColor:"#ffffff",
+      title:{ text:cfg.title+"（"+ch.unit+"）", left:12, top:10,
+        textStyle:{fontSize:20, fontWeight:700, color:"#1f2733"} },
+      grid:{left:14, right:18, top:56, bottom:26, containLabel:true},
+      legend:{show:true, top:12, right:12, itemWidth:18, itemHeight:3, icon:"rect",
+        textStyle:{fontSize:14, color:"#6b7686"}},
+      tooltip:{trigger:"axis", confine:true},
+      xAxis:{type:"time",
+        axisLabel:{fontSize:13,color:"#8a93a3", formatter:{year:"{yyyy}",month:"{yyyy}-{MM}",day:"{MM}-{dd}"}},
+        axisTick:{show:false}, axisLine:{lineStyle:{color:"#dde3ec"}}, splitLine:{show:false}},
+      yAxis:{type:"value", scale:true,
+        axisLabel:{fontSize:13,color:"#8a93a3", formatter:function(v){ return Math.abs(v)>=10000?(v/10000)+"万":v; }},
+        splitLine:{lineStyle:{color:"#eef1f6"}}},
+      series:cfg.lines.map(function(L){
+        return {name:L.name, type:"line", showSymbol:false, connectNulls:true, data:L.data,
+          lineStyle:{width:1.5,color:L.color}, itemStyle:{color:L.color}, emphasis:{focus:"series"}};
+      })
+    };
   }
+  var ind=D.indicators[ch.key], st=ind.stat;
+  var series=[], legend=[];
+  D.years.forEach(function(y){
+    var pts=ind.series[String(y)];
+    if(!pts||!pts.length) return;
+    legend.push(String(y));
+    var isLatest=(y===D.years[D.years.length-1]);
+    series.push({name:String(y), type:"line", showSymbol:false, connectNulls:true, data:pts,
+      lineStyle:{width:isLatest?2.4:1.4, color:yearColor(y)}, itemStyle:{color:yearColor(y)},
+      emphasis:{focus:"series"}, z:isLatest?10:5});
+  });
+  var valTxt=fmt(st.latest,ind.dec)+" "+ind.unit;
+  var chgTxt="";
+  if(st.chg!==null && st.chg!==undefined){
+    chgTxt=arrow(st.chg)+" "+(st.chg>0?"+":"")+fmt(st.chg,ind.dec)
+      +"（"+(st.pct===null?"—":(st.pct>0?"+":"")+st.pct.toFixed(2)+"%")+" 日环比）";
+  }
+  var subColor = st.chg>0?"#d92626":(st.chg<0?"#0a9a5c":"#6b7686");
+  var ticks=expMonthTicks(D);
+  return {
+    animation:false, backgroundColor:"#ffffff",
+    title:{ text:ind.title, subtext:valTxt+(chgTxt?"   "+chgTxt:""),
+      left:12, top:8, textStyle:{fontSize:20, fontWeight:700, color:"#1f2733"},
+      subtextStyle:{fontSize:15, color:subColor} },
+    grid:{left:14, right:18, top:66, bottom:10, containLabel:true},
+    legend:{show:true, top:10, right:12, itemWidth:18, itemHeight:3, icon:"rect",
+      textStyle:{fontSize:14, color:"#6b7686"}, data:legend},
+    tooltip:{trigger:"axis", confine:true,
+      formatter:function(ps){
+        if(!ps.length) return "";
+        var lab=D.xlabels[ps[0].value[0]];
+        var s=parseInt(lab.slice(0,2),10)+"月"+parseInt(lab.slice(3),10)+"日";
+        ps.sort(function(a,b){return Number(b.seriesName)-Number(a.seriesName);});
+        ps.forEach(function(p){ s+="<br>"+p.marker+p.seriesName+"年： <b>"+fmt(p.value[1],ind.dec)+"</b>"; });
+        return s;
+      }},
+    xAxis:{type:"value", min:0, max:365, interval:1,
+      axisLabel:{fontSize:13,color:"#8a93a3", formatter:function(v){ return ticks[v]||""; }},
+      axisTick:{show:false}, axisLine:{lineStyle:{color:"#dde3ec"}}, splitLine:{show:false}},
+    yAxis:{type:"value", scale:true,
+      axisLabel:{fontSize:13,color:"#8a93a3",
+        formatter:function(v){ return Math.abs(v)>=10000?(v/10000)+"万":(Math.abs(v)>=1000?(v/1000)+"k":v); }},
+      splitLine:{lineStyle:{color:"#eef1f6"}}},
+    series:series
+  };
 }
 
-function reallyGenerate(btn, oldHtml){
-  btn.innerHTML='生成中…'; btn.disabled=true;
-  var stage=buildExpFigure();   // #expStage（屏幕外，图表已绘入 canvas）
-  var stageCharts=stage._charts||[];
-  // 关闭导出图表动画，避免 html2canvas 克隆 canvas 时撞上动画帧
-  stageCharts.forEach(function(c){ if(c&&c.setOption) c.setOption({animation:false}); });
+function expColsFor(isWeekly, n){
+  if(!isWeekly) return Math.min(n,4);
+  return n>=5?5:n;
+}
 
-  setTimeout(function(){
-    var MAX=16384;
-    var expW=Math.max(stage.scrollWidth, stage.clientWidth);
-    var expH=Math.max(stage.scrollHeight, stage.clientHeight);
-    var scale=Math.min(2, MAX/expW, MAX/expH);   // 自动降级，保证单画布不超上限
-    if(scale<0.5) scale=0.5;
+function exportLongImage(btn){
+  if(!btn){ btn=document.getElementById("btnExport"); }
+  var oldHtml=btn.innerHTML;
+  btn.innerHTML="生成中…"; btn.disabled=true;
+  try{
+    var arr=[window.__DATA__, window.__DATA2__].filter(Boolean);
+    var p1=arr.filter(function(d){ return d.ts; })[0] || arr[0];
+    var p2=arr.filter(function(d){ return d.isWeekly; })[0] || (arr.length>1?arr[1]:null);
+    var sheets=[
+      {title:"日度价格", D:p1, weekly:false},
+      {title:"开工库存表需", D:p2, weekly:true}
+    ].filter(function(s){ return s.D && s.D.layout; });
 
-    var timer=null, done=false;
-    function finish(err, canvas){
-      if(done) return; done=true;
-      clearTimeout(timer);
-      // 释放临时 ECharts 实例与舞台 DOM
-      stageCharts.forEach(function(c){ if(c&&c.dispose) try{c.dispose();}catch(_){} });
-      stage.innerHTML='';
-      stage._charts=[];
-      if(err){
-        console.error(err);
-        btn.innerHTML=oldHtml; btn.disabled=false;
-        alert('导出失败：'+(err&&err.message||err));
-        return;
-      }
+    var host=document.getElementById("expHost");
+    if(!host){ host=document.createElement("div"); host.id="expHost";
+      host.style.cssText="position:fixed;left:-100000px;top:0;width:0;height:0;overflow:hidden;";
+      document.body.appendChild(host); }
+
+    // 1) 逐图导出 PNG（每张图独立实例，导出即 dispose，内存可控）
+    var tiles=[];
+    sheets.forEach(function(s){
+      var D=s.D;
+      D.layout.forEach(function(sec){
+        sec.rows.forEach(function(row){
+          row.charts.forEach(function(ch){
+            var div=document.createElement("div");
+            div.style.width=TILE_W+"px"; div.style.height=TILE_H+"px";
+            host.appendChild(div);
+            var c=echarts.init(div, null, {width:TILE_W, height:TILE_H});
+            c.setOption(exportOption(D, ch, row, !!ch.ts));
+            tiles.push(c.getDataURL({pixelRatio:SCALE, backgroundColor:"#ffffff"}));
+            c.dispose(); div.remove();
+          });
+        });
+      });
+    });
+
+    // 2) 计算布局（与 tiles 顺序严格一致）
+    var maxCols=1;
+    sheets.forEach(function(s){
+      s.D.layout.forEach(function(sec){
+        sec.rows.forEach(function(row){
+          var cols=expColsFor(s.weekly, row.charts.length);
+          if(cols>maxCols) maxCols=cols;
+        });
+      });
+    });
+    var contentW=maxCols*TILE_W+(maxCols-1)*GAP;
+    var textOps=[], positions=[], curY=MARGIN+BANNER+22, tileIdx=0;
+    sheets.forEach(function(s){
+      var D=s.D;
+      textOps.push({x:MARGIN, y:curY+18, text:s.title+"　数据截至："+D.latestDataDate, size:28, color:EXP_ACCENT, bold:true});
+      curY+=50;
+      D.layout.forEach(function(sec){
+        textOps.push({x:MARGIN, y:curY+18, text:"▍"+sec.section, size:24, color:EXP_ACCENT, bold:true});
+        curY+=42;
+        sec.rows.forEach(function(row){
+          if(row.label){ textOps.push({x:MARGIN, y:curY+14, text:row.label, size:17, color:"#6b7686", bold:false}); curY+=30; }
+          var cols=expColsFor(s.weekly, row.charts.length);
+          var x=MARGIN;
+          for(var k=0;k<row.charts.length;k++){
+            positions.push({url:tiles[tileIdx], x:x*SCALE, y:curY*SCALE, w:TILE_W*SCALE, h:TILE_H*SCALE});
+            tileIdx++; x+=TILE_W+GAP;
+          }
+          curY+=TILE_H+GAP;
+        });
+      });
+    });
+
+    // 3) 创建主画布并绘制（自动按 16384px 上限降级清晰度）
+    var Wcss=contentW+2*MARGIN, Hcss=curY+MARGIN;
+    var scale=SCALE;
+    if(Math.max(Wcss,Hcss)*scale>16384) scale=16384/Math.max(Wcss,Hcss);
+    var W=Math.round(Wcss*scale), H=Math.round(Hcss*scale);
+    var canvas=document.createElement("canvas"); canvas.width=W; canvas.height=H;
+    var ctx=canvas.getContext("2d");
+    ctx.fillStyle="#f4f6fa"; ctx.fillRect(0,0,W,H);
+    ctx.fillStyle=EXP_ACCENT; ctx.fillRect(0,0,W,Math.round(BANNER*scale));
+    ctx.fillStyle="#ffffff"; ctx.font="bold "+(26*scale)+"px 'Microsoft YaHei',sans-serif";
+    ctx.textBaseline="middle"; ctx.fillText("合成胶数据看板 · 高清长图", 24*scale, BANNER*scale/2);
+    ctx.textBaseline="alphabetic";
+    textOps.forEach(function(t){
+      ctx.fillStyle=t.color;
+      ctx.font=(t.bold?"bold ":"")+(t.size*scale)+"px 'Microsoft YaHei','PingFang SC',sans-serif";
+      ctx.fillText(t.text, t.x*scale, t.y*scale);
+    });
+    var pending=positions.map(function(p){
+      return new Promise(function(res){
+        var im=new Image();
+        im.onload=function(){ p._img=im; res(); };
+        im.onerror=function(){ res(); };
+        im.src=p.url;
+      });
+    });
+    Promise.all(pending).then(function(){
+      positions.forEach(function(p){
+        if(p._img) ctx.drawImage(p._img, p.x, p.y, p.w, p.h);
+        ctx.strokeStyle="#e5e9f0"; ctx.lineWidth=Math.max(1,Math.round(scale));
+        ctx.strokeRect(p.x, p.y, p.w, p.h);
+      });
       showExpModal(canvas);
       btn.innerHTML=oldHtml; btn.disabled=false;
-    }
-
-    // 30 秒超时保护，避免永久卡在「生成中…」
-    timer=setTimeout(function(){
-      finish(new Error('导出超时，请刷新页面后重试（图表过多可能导致处理较慢）'));
-    }, 30000);
-
-    html2canvas(stage,{
-      scale:scale,
-      backgroundColor:'#ffffff',
-      useCORS:true,
-      logging:false,
-      windowWidth:1400,                          // 固定舞台宽度，与 .exp-stage 一致
-      ignoreElements:function(el){ return el.id==='btnExport'; }
-    }).then(function(canvas){ finish(null, canvas); }).catch(function(e){ finish(e); });
-  }, 300);   // 等 ECharts 渲染一帧即可
+    });
+  }catch(e){
+    console.error(e);
+    alert("导出失败："+(e&&e.message||e));
+    btn.innerHTML=oldHtml; btn.disabled=false;
+  }
 }
 
 function showExpModal(canvas){
@@ -580,13 +657,13 @@ function closeExpModal(){
   modal.classList.remove('show');
   modal._canvas=null;
   var body=document.getElementById('expModalBody'); if(body) body.innerHTML='';
-  var stage=document.getElementById('expStage'); if(stage) stage.innerHTML='';
 }
 
-window.generateLongImage=generateLongImage;
+window.exportLongImage=exportLongImage;
 window.copyExpImage=copyExpImage;
 window.downloadExpImage=downloadExpImage;
 window.closeExpModal=closeExpModal;
+
 </script>
 </body>
 </html>
