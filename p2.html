@@ -36,6 +36,10 @@ body{background:var(--bg); color:var(--text);
   border:1px solid var(--border); background:#fff; cursor:pointer; font-size:13px; user-select:none; transition:all .15s;}
 .ybtn .dot{width:10px; height:10px; border-radius:50%;}
 .ybtn.off{opacity:.35; filter:grayscale(.6);}
+.actions{display:flex; align-items:center; gap:14px; flex-wrap:wrap; justify-content:flex-end;}
+.ybtn.exp{background:var(--accent); color:#fff; border-color:var(--accent);}
+.ybtn.exp:hover{filter:brightness(1.08);}
+.ybtn:disabled{opacity:.7; cursor:default;}
 
 .tablecard{background:var(--card); border:1px solid var(--border); border-radius:10px; padding:14px 16px; margin-bottom:22px; overflow-x:auto;}
 .tablecard h2{font-size:16px; color:var(--accent); margin-bottom:10px;}
@@ -82,7 +86,10 @@ tr.abn td{background:#fff7f0;}
 <div class="wrap">
   <div class="header">
     <h1>合成胶数据看板</h1>
-    <div class="date">数据截至：<b id="latestDate"></b>　|　数据源：合成胶数据看板.xlsx（开工库存表需）</div>
+    <div class="actions">
+      <div class="date">数据截至：<b id="latestDate"></b>　|　数据源：合成胶数据看板.xlsx（开工库存表需）</div>
+      <button id="btnExport" class="ybtn exp" type="button" onclick="exportLongImage()">⬇ 导出长图</button>
+    </div>
   </div>
   <div class="tabs">
     <a class="tab" href="https://nekomorning.github.io/s-rubber-dashboard/index.html">日度价格</a>
@@ -359,6 +366,73 @@ function makeTsCard(ch,grid,row){
   c.setOption({});
   allCharts.push(c);
 }
+</script>
+
+<script>
+/* ===== 高清长图导出（参考碳酸锂数据看板按钮风格，自研实现） ===== */
+function loadScriptSeq(urls, cb){
+  var i=0;
+  (function next(){
+    if(i>=urls.length){ cb(new Error('all cdn failed')); return; }
+    var s=document.createElement('script');
+    s.src=urls[i++];
+    s.onload=function(){ cb(null); };
+    s.onerror=next;
+    document.head.appendChild(s);
+  })();
+}
+
+function exportLongImage(){
+  var btn=document.getElementById('btnExport');
+  if(!btn) return;
+  if(!window.html2canvas){
+    var old=btn.innerHTML; btn.innerHTML='加载中…'; btn.disabled=true;
+    loadScriptSeq([
+      'https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js',
+      'https://cdn.bootcdn.net/ajax/libs/html2canvas/1.4.1/html2canvas.min.js',
+      'https://unpkg.com/html2canvas@1.4.1/dist/html2canvas.min.js'
+    ], function(err){
+      btn.disabled=false; btn.innerHTML=old;
+      if(err){ alert('导出组件加载失败，请检查网络后重试'); return; }
+      doExport(btn, old);
+    });
+  } else {
+    doExport(btn, btn.innerHTML);
+  }
+}
+
+function doExport(btn, oldHtml){
+  btn.innerHTML='生成中…'; btn.disabled=true;
+  var node=document.querySelector('.wrap');
+  var totalW=Math.max(node.scrollWidth, node.clientWidth);
+  var totalH=Math.max(node.scrollHeight, node.clientHeight);
+  var MAX=16384;                       // 浏览器单画布尺寸上限，超出会导出失败
+  var scale=2;                          // 目标 2 倍高清
+  if(totalH*scale>MAX) scale=MAX/totalH;
+  if(totalW*scale>MAX) scale=Math.min(scale, MAX/totalW);
+  if(scale<1) scale=1;
+  html2canvas(node,{
+    scale:scale,
+    backgroundColor:'#f4f6fa',
+    useCORS:true,
+    logging:false,
+    windowWidth:1560,                   // 固定桌面宽度，保证多列布局不被窄屏折叠
+    ignoreElements:function(el){ return el.id==='btnExport'; }
+  }).then(function(c){
+    var link=document.createElement('a');
+    var d=new Date(); var p=function(n){return ('0'+n).slice(-2);};
+    var sub=(document.title.split('·')[1]||'').trim()||'数据看板';
+    link.download='合成胶数据看板_'+sub+'_'+d.getFullYear()+p(d.getMonth()+1)+p(d.getDate())+'.png';
+    link.href=c.toDataURL('image/png');
+    link.click();
+    btn.innerHTML=oldHtml; btn.disabled=false;
+  }).catch(function(e){
+    console.error(e);
+    btn.innerHTML=oldHtml; btn.disabled=false;
+    alert('导出失败：'+(e&&e.message||e));
+  });
+}
+window.exportLongImage=exportLongImage;
 </script>
 </body>
 </html>
