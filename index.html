@@ -546,7 +546,7 @@ function reallyGenerate(btn, oldHtml){
   var stage=buildExpFigure();   // #expStage（屏幕外，图表已绘入 canvas）
   var stageCharts=stage._charts||[];
   // 关闭导出图表动画，避免 html2canvas 克隆 canvas 时撞上动画帧
-  stageCharts.forEach(function(c){ if(c&&c.setOption) c.setOption({animation:false}, true); });
+  stageCharts.forEach(function(c){ if(c&&c.setOption) c.setOption({animation:false}); });
 
   setTimeout(function(){
     var MAX=16384;
