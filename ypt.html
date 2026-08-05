@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>合成胶数据看板 · 一页通</title>
+<style>
+:root{
+  --bg:#f4f6fa; --card:#ffffff; --border:#e5e9f0; --text:#1f2733; --sub:#6b7686;
+  --up:#d92626; --down:#0a9a5c; --flat:#8a93a3; --accent:#0f4c81;
+}
+*{box-sizing:border-box; margin:0; padding:0;}
+body{background:var(--bg); color:var(--text);
+  font-family:"Microsoft YaHei","PingFang SC","Helvetica Neue",Arial,sans-serif; font-size:14px;}
+.wrap{max-width:1080px; margin:0 auto; padding:18px 22px 60px;}
+
+.header{display:flex; align-items:flex-end; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:14px;}
+.header h1{font-size:24px; color:var(--accent); letter-spacing:1px;}
+.header .date{color:var(--sub); font-size:13px;}
+.tabs{display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap;}
+.tab{padding:7px 20px; border-radius:8px 8px 0 0; border:1px solid var(--border); border-bottom:none;
+  background:#e9edf3; color:var(--sub); cursor:default; font-size:14px; text-decoration:none;}
+.tab.active{background:var(--accent); color:#fff; font-weight:600;}
+.tab.disabled{opacity:.55;}
+
+.ypt-note{color:var(--sub); font-size:12px; margin:0 0 14px; line-height:1.7;}
+
+/* 文档正文：严格保留钉钉原格式（蓝色小标题 / 黄绿红高亮均在正文内联 span 中） */
+.ypt-doc{background:var(--card); border:1px solid var(--border); border-radius:10px;
+  padding:24px 30px 30px; margin-bottom:18px; line-height:1.95; font-size:15px; color:var(--text);}
+.ypt-doc ul{list-style:disc; padding-left:24px; margin:8px 0;}
+.ypt-doc li{margin:5px 0;}
+.ypt-doc ul ul{list-style:circle; margin:4px 0;}
+.ypt-doc ul ul ul{list-style:square; margin:2px 0;}
+.ypt-doc > ul > li{margin:14px 0 6px;}
+.ypt-doc strong{font-weight:700;}
+
+.footer{margin-top:30px; color:var(--sub); font-size:12px; text-align:center;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="header">
+    <h1>合成胶数据看板</h1>
+    <div class="date">研究框架 · 一页通</div>
+  </div>
+  <div class="tabs">
+    <a class="tab active" href="https://nekomorning.github.io/s-rubber-dashboard/ypt.html">一页通</a>
+    <a class="tab" href="https://nekomorning.github.io/s-rubber-dashboard/index.html">日度价格</a>
+    <a class="tab" href="https://nekomorning.github.io/s-rubber-dashboard/p2.html">开工库存表需</a>
+  </div>
+
+  <div class="ypt-note">内容同步自钉钉知识库《赵芸曦学习笔记 / 学习笔记 / 日度总结 / 合成胶一页通》，文字与段落格式与原文档保持一致；钉钉更新后会同步到此页。</div>
+
+  <div class="ypt-doc">
+<ul>
+<li><span style="color: #4472C6;"><strong>一、国产（趋势项）分析框架</strong></span>
+<ul>
+<li><strong>产能结构：</strong>
+<ul>
+<li><strong>丁二烯：</strong>中石油 18%中石化 30%民营一体化 23%民营外销 25%  →  <span style="background-color: #FFF3CE;"><strong>流通货源占比提升</strong></span>
+</li>
+<li><strong>顺丁：</strong>中石油 22%中石化 22%民营一体化 34%民营外采 22%  → <span style="background-color: #FFF3CE;"><strong>外采丁二烯占比提升</strong></span>
+</li>
+</ul>
+</li>
+<li><span style="color: rgb(44, 44, 43);"><strong>开工率：</strong></span>
+<ul>
+<li><span style="color: rgb(44, 44, 43);"><strong>丁二烯：</strong></span><span style="color: rgb(44, 44, 43);">副产品，取决于</span><span style="color: rgb(44, 44, 43); background-color: rgb(255, 245, 184);"><strong>乙烯开工</strong></span>
+</li>
+<li><strong>顺丁：</strong>民营外采开工波动大；作为丁二烯几大下游中的<span style="background-color: #FFF3CE;"><strong>调节项，消化过剩丁二烯</strong></span>
+</li>
+<li><span style="color: rgb(44, 44, 43);"><strong>跟踪路标：</strong></span><span style="color: rgb(44, 44, 43);">PE-原油、PE-石脑油、丁二烯-石脑油、</span><span style="color: rgb(44, 44, 43); background-color: rgb(255, 245, 184);"><strong>BR-丁二烯</strong></span><span style="color: rgb(44, 44, 43);">价差；原油、</span><span style="color: rgb(44, 44, 43); background-color: #FFF3CE;"><strong>石脑油基差裂差（石脑油是核心）</strong></span><span style="color: rgb(44, 44, 43);">；装置检修</span>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><span style="color: #4472C6;"><strong>二、海外贸易（波动项）分析框架</strong></span>
+<ul>
+<li><strong>年度变化主线：</strong><span style="background-color: #FFF3CE;"><strong>能源危机+轮胎产业转移</strong></span>  <strong>→</strong>  <span style="background-color: #FFF3CE;"><strong>韩、欧退，中国替代韩国，东南亚轮胎高增</strong></span>
+<ul>
+<li><strong>中：</strong>产能投放 → 国产替代+出口导向+汽车轮胎产业链优势，趋势性替代韩国角色，贸易量级变大，中间品转净出口
+</li>
+<li><strong>东南亚：</strong>轮胎产业转移 → 轮胎出口高增，合成胶进口总量增（从中国增，从韩国减），丁二烯产能投放出口中国
+</li>
+<li><strong>韩：</strong>供应链绑定没有优势，主动退出 → 轮胎-合成-丁二烯贸易流有萎缩
+</li>
+<li><strong>欧：</strong>22年俄乌冲突能源危机 → 产能退出，中间品贸易萎缩，直接进口成品
+</li>
+</ul>
+</li>
+<li><strong>跟踪路标：</strong><span style="color: rgb(44, 44, 43); background-color: rgb(255, 245, 184);"><strong>丁二烯海外价格价差</strong></span><span style="color: rgb(44, 44, 43);">；全球乙烯检修；</span>顺丁出口利润；<span style="color: rgb(44, 44, 43);">石脑油、丁二烯、合成胶、轮胎进出口贸易流</span>
+</li>
+</ul>
+</li>
+<li><span style="color: #4472C6;"><strong>三、 26 年至今变化</strong></span>
+<ul>
+<li><strong>3 月海峡封锁 → 全球缺原料减产 → 优先满足海外需求，中国补海外缺口：① 丁二烯</strong><span style="background-color: #FFF3CE;"><strong>净出口给韩国消化库存</strong></span><strong>；② 下游负反馈减需求（</strong><span style="color: ;"><strong>供需双减</strong></span><strong>）</strong>
+</li>
+<li><strong>期间冲突缓和 → 丁二烯产量稳定，下游顺丁等利润修复提开工，中国</strong><span style="background-color: #FFF3CE;"><strong>继续消化丁二烯库存</strong></span><strong>（供</strong><span style="color: ;"><strong>平需增</strong></span><strong>）</strong>
+</li>
+<li><strong>7 月再次封锁 → 偏低库存下中国丁二烯领涨，检修装置重启增产；终端半钢淡季+库存压力降开工，</strong><span style="background-color: #FFF3CE;"><strong>需求难以承接</strong></span><strong>（供增需弱）</strong>
+</li>
+<li><strong>26.1-7 月累计数据</strong>（数字单位：万吨）
+<ul>
+<li><strong>丁二烯：</strong>中国产量<span style="color: #FE0300;">+15</span>， 进口<span style="color: #00B14D;">-12</span>（各国都减），出口<span style="color: #FE0300;">+12</span>（主要给韩国） →   预期未来进口逐步增，出口减（<span style="color: #00B14D;">需要看到海峡解封，海外提负</span>）
+</li>
+<li><strong>顺丁：</strong>中国顺丁产量<span style="color: #FE0300;">+1</span><span style="color: ;">，出口</span><span style="color: #FE0300;">+9</span>（给东南亚，出口利润好），东南亚从中国进口增，从韩国减 <span style="color: ;">→</span>   <strong>长期趋势</strong>，轮胎生产向东南亚产业转移
+</li>
+<li><strong>半钢胎：</strong>中国产量累计-0.2%，7 月环比<span style="color: #00B14D;">-13%</span><span style="color: ;">（库存压力大）</span>，出口<span style="color: #C10002;">+3.1%</span> ，东南亚出口<span style="color: #C10002;">+19%</span>  <span style="color: ;">→</span>   <strong>长期趋势</strong>，欧美贸易壁垒
+</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><span style="color: #4472C6;"><strong>四、后市展望（偏空）</strong></span>
+<ul>
+<li><strong>路径：① 海外丁二烯增产→中国增进口+增产</strong><span style="color: #FE0300;"><strong>（但石脑油强→增产有限）</strong></span>；②BR-丁二烯利润不大幅走扩（√）； ③ 全球轮胎增速不高（√）
+</li>
+<li><strong>风险：</strong>海外丁二烯缺+合成胶需求好 → 中国出口高增弱化了供需矛盾（即外需消化了过剩） → BR 被海外轮胎定价（路标：顺丁提开工，√）
+</li>
+</ul>
+</li>
+<li><span style="color: #4472C6;"><strong>五、本周变化（8.3）</strong></span>
+<ul>
+<li><span style="color: ;"><strong>石脑油：</strong></span><span style="color: ;">冲高回落，</span><span style="color: #FE0300;">乙烯裂解出现负反馈</span><span style="color: ;">，供需双减 → 乙烯重启不及预期 → 全球丁二烯增产不及预期 → 中国丁二烯进口增量有限</span>
+</li>
+<li><span style="color: #252527;"><strong>丁二烯：</strong></span><span style="color: #252527;">① 全球增产不及预期；② 国内前期检修装置重启，</span><span style="color: #00B14D;">丁二烯提开工增产</span><span style="color: #252527;">；③ 港口库存高位，企业库存偏低； ④ 内外价差高位回落</span>
+</li>
+<li><span style="color: #252527;"><strong>顺丁：</strong></span><span style="color: #252527;">①装置能开尽开， 开工回升；② 货不缺，仓单快速注册，下游采买清淡；③ BR-丁二烯价差走弱</span>
+</li>
+<li><span style="color: #252527;"><strong>半钢：</strong></span><span style="color: #252527;">渠道及工厂库存压力大，</span><span style="color: #00B14D;">轮胎厂需要降开工去库存</span><span style="color: #252527;">，需求减量预计每月 0.8wt 丁二烯（占月消费 1.5%），0.4wt 顺丁（占月消费3.3%）</span>
+</li>
+</ul>
+</li>
+</ul>
+  </div>
+
+  <div class="footer">合成胶数据看板 · 一页通 · 涨=红 跌=绿</div>
+</div>
+</body>
+</html>
