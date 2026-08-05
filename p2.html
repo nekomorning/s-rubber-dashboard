@@ -208,6 +208,19 @@ function fmt(v,dec){
 function chgCls(c){ if(c===null||c===undefined||c===0) return "flat"; return c>0?"up":"down"; }
 function arrow(c){ if(c===null||c===undefined||c===0) return "→"; return c>0?"▲":"▼"; }
 
+function dayGap(a,b){
+  if(!a||!b) return 0;
+  var x=a.split('-'), y=b.split('-');
+  return Math.round((Date.UTC(+x[0],+x[1]-1,+x[2])-Date.UTC(+y[0],+y[1]-1,+y[2]))/86400000);
+}
+function chgLabel(st){
+  if(!st||!st.latestDate||!st.prevDate) return "日环比";
+  var g=dayGap(st.latestDate,st.prevDate);
+  if(g>=20) return "月环比";
+  if(g>=4) return "周环比";
+  return "日环比";
+}
+
 function init(){
   document.getElementById("latestDate").textContent=D.latestDataDate;
   // 默认展示最近 4 年，更早年份收起（可点击开启）
@@ -343,7 +356,7 @@ function makeCard(ch,ticks,grid,row){
     '<div class="meta">'+
       '<span class="val">'+fmt(st.latest,ind.dec)+'<span class="unit"> '+ind.unit+'</span></span>'+
       '<span class="chg '+cls+'">'+arrow(st.chg)+' '+(st.chg>0?"+":"")+fmt(st.chg,ind.dec)+
-        '（'+(st.pct===null?"—":(st.pct>0?"+":"")+st.pct.toFixed(2)+"%")+' '+(ind.stat.margin?"日环比":"周环比")+'）</span>'+
+        '（'+(st.pct===null?"—":(st.pct>0?"+":"")+st.pct.toFixed(2)+"%")+' '+chgLabel(st)+'）</span>'+
       '<span class="dt">'+(st.latestDate||"")+'</span>'+
     '</div>';
   var div=document.createElement("div"); div.className="chart"; card.appendChild(div);
@@ -431,6 +444,18 @@ function expMonthTicks(D){
 }
 
 /* 构建单张图表的 echarts option（含标题：名称 + 最新值 + 环比），用于导出 */
+function dayGap(a,b){
+  if(!a||!b) return 0;
+  var x=a.split('-'), y=b.split('-');
+  return Math.round((Date.UTC(+x[0],+x[1]-1,+x[2])-Date.UTC(+y[0],+y[1]-1,+y[2]))/86400000);
+}
+function chgLabel(st){
+  if(!st||!st.latestDate||!st.prevDate) return "日环比";
+  var g=dayGap(st.latestDate,st.prevDate);
+  if(g>=20) return "月环比";
+  if(g>=4) return "周环比";
+  return "日环比";
+}
 function exportOption(D, ch, row, isTs){
   if(isTs){
     var cfg=D.ts[ch.key];
@@ -469,7 +494,7 @@ function exportOption(D, ch, row, isTs){
   var chgTxt="";
   if(st.chg!==null && st.chg!==undefined){
     chgTxt=arrow(st.chg)+" "+(st.chg>0?"+":"")+fmt(st.chg,ind.dec)
-      +"（"+(st.pct===null?"—":(st.pct>0?"+":"")+st.pct.toFixed(2)+"%")+" 日环比）";
+      +"（"+(st.pct===null?"—":(st.pct>0?"+":"")+st.pct.toFixed(2)+"%")+' '+chgLabel(st)+'）';
   }
   var subColor = st.chg>0?"#d92626":(st.chg<0?"#0a9a5c":"#6b7686");
   var ticks=expMonthTicks(D);
