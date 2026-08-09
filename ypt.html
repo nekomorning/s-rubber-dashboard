@@ -38,10 +38,14 @@ body{background:var(--bg); color:var(--text);
 .hv{cursor:help; border-bottom:1px dashed var(--accent); padding:0 2px; border-radius:3px;
   transition:background .15s; white-space:nowrap;}
 .hv:hover{background:rgba(15,76,129,.09);}
-/* 悬停图表卡片 */
-.hv-card{position:fixed; z-index:9999; display:none; width:392px; background:#fff;
-  border:1px solid var(--border); border-radius:10px; box-shadow:0 6px 24px rgba(31,39,51,.18);
-  padding:10px 12px 8px; pointer-events:none;}
+/* 悬停图表卡片：始终保留 layout（visibility 而非 display:none），
+   避免 ECharts.init 在隐藏态读到 0 宽度导致 canvas 缩成一条窄缝 */
+.hv-card{position:fixed; z-index:9999; visibility:hidden; opacity:0;
+  width:392px; background:#fff; border:1px solid var(--border); border-radius:10px;
+  box-shadow:0 6px 24px rgba(31,39,51,.18);
+  padding:10px 12px 8px; pointer-events:none;
+  transition:opacity .15s;}
+.hv-card.show{visibility:visible; opacity:1;}
 .hv-head{display:flex; align-items:baseline; gap:8px; flex-wrap:wrap; margin-bottom:2px;}
 .hv-head .ttl{font-size:13px; font-weight:700; color:#2a3345;}
 .hv-head .val{font-size:16px; font-weight:700;}
@@ -176,7 +180,7 @@ window.__HOVER__ = /*HOVER*/{"meta": {"p1": {"xlabels": ["01-01", "01-02", "01-0
   ];
   var i=0;
   function tryNext(){
-    if(i>=urls.length){ document.getElementById("hvCard").style.display="none"; return; }
+    if(i>=urls.length){ document.getElementById("hvCard").classList.remove("show"); return; }
     var s=document.createElement("script");
     s.src=urls[i++];
     s.onload=function(){ initHover(); };
@@ -202,7 +206,7 @@ var hvChart=null;
 
 function renderHoverCard(key, ev){
   var ind=HV.indicators[key];
-  if(!ind){ hvCard.style.display="none"; return; }
+  if(!ind){ hvCard.classList.remove("show"); return; }
   var pg=(HV.meta&&HV.meta[ind.page])||{};
   var ticks={};
   (pg.xlabels||[]).forEach(function(l,i){ if(l.slice(3)==="01") ticks[i]=parseInt(l.slice(0,2),10)+"月"; });
@@ -253,8 +257,9 @@ function renderHoverCard(key, ev){
   };
   if(!hvChart) hvChart=echarts.init(hvChartEl);
   hvChart.setOption(opt, true);
+  hvChart.resize();
   positionHvCard(ev);
-  hvCard.style.display="block";
+  hvCard.classList.add("show");
 }
 function positionHvCard(ev){
   var pad=16;
@@ -272,14 +277,14 @@ function initHover(){
     if(key) renderHoverCard(key, e);
   });
   document.addEventListener("mousemove", function(e){
-    if(hvCard && hvCard.style.display==="block") positionHvCard(e);
+    if(hvCard && hvCard.classList.contains("show")) positionHvCard(e);
   });
   document.addEventListener("mouseout", function(e){
     var t=e.target.closest && e.target.closest(".hv");
     if(!t) return;
     var rel=e.relatedTarget;
     if(rel && rel.closest && rel.closest("#hvCard")) return;
-    hvCard.style.display="none";
+    hvCard.classList.remove("show");
   });
   var t; window.addEventListener("resize", function(){
     if(hvChart){ clearTimeout(t); t=setTimeout(function(){ hvChart.resize(); },120); }
