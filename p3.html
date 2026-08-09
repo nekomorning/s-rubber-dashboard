@@ -418,7 +418,9 @@ function buildSankey(){
   ];
   var YEAR='2025';
   function yrSum(s){ var t=0; for(var k in s){ if(k.indexOf(YEAR+'-')===0 && s[k]) t+=s[k]; } return Math.round(t); }
-  var links=[]; var nodeSet={};
+  // 出口方与进口方用不同节点前缀，保证图为有向无环（DAG），避免双向贸易形成环导致 ECharts 桑基图报错
+  var EX='EX|', IM='IM|';
+  var links=[]; var nodeNames={};
   exporters.forEach(function(ex){
     var rec=(reporters&&reporters[ex.key])||(regions&&regions[ex.key]);
     if(!rec||!rec.Export||!rec.Export.partners) return;
@@ -427,11 +429,11 @@ function buildSankey(){
       .filter(function(x){return x.v>0;}).sort(function(a,b){return b.v-a.v;}).slice(0,8);
     arr.forEach(function(x){
       var tgt=CN[x.p]||x.p;
-      links.push({source:ex.name, target:tgt, value:x.v});
-      nodeSet[ex.name]=1; nodeSet[tgt]=1;
+      links.push({source:EX+ex.name, target:IM+tgt, value:x.v});
+      nodeNames[EX+ex.name]=ex.name; nodeNames[IM+tgt]=tgt;
     });
   });
-  var nodes=Object.keys(nodeSet).map(function(n){return {name:n};});
+  var nodes=Object.keys(nodeNames).map(function(n){return {name:n, label:nodeNames[n]};});
   var el=document.getElementById('sankeyChart');
   if(!links.length){ el.innerHTML='<div style="padding:40px;color:var(--sub);text-align:center">暂无足够数据绘制桑基图</div>'; return; }
   try{
@@ -439,15 +441,15 @@ function buildSankey(){
     allCharts.push(chart);
     chart.setOption({
       tooltip:{trigger:'item', confine:true, formatter:function(p){
-        if(p.dataType==='edge') return p.data.source+' 出口至 '+p.data.target+'<br><b>'+(p.data.value||0).toLocaleString()+' 吨</b>';
-        return p.name;
+        if(p.dataType==='edge') return p.data.source.split('|')[1]+' 出口至 '+p.data.target.split('|')[1]+'<br><b>'+(p.data.value||0).toLocaleString()+' 吨</b>';
+        return p.name.split('|')[1];
       }},
       series:[{
-        type:'sankey', left:'2%', right:'18%', top:14, bottom:14,
+        type:'sankey', left:'2%', right:'16%', top:14, bottom:14,
         nodeWidth:16, nodeGap:10,
         emphasis:{focus:'adjacency'},
-        lineStyle:{color:'source', opacity:0.35, curveness:0.5},
-        label:{fontSize:11, color:'#2a3345'},
+        lineStyle:{color:'source', opacity:0.4},
+        label:{fontSize:11, color:'#2a3345', formatter:function(p){ return p.name.split('|')[1]; }},
         itemStyle:{color:'#0f4c81', borderColor:'#0f4c81'},
         data:nodes, links:links
       }]
