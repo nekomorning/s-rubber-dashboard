@@ -243,27 +243,42 @@ var viewMode='sector';
 var INDICATOR_LAYOUT=[
   {section:"产量", rows:[
     {label:"", charts:[
-      {key:"丁二烯周产量"},{key:"丁二烯四大下游产量折丁二烯需求"},{key:"顺丁周产量"},{key:"丁苯周产量"},{key:"ABS周产量"},{key:"SBS周产量"},{key:"半钢周产量"}
+      {key:"丁二烯周产量"},{key:"丁二烯四大下游产量折丁二烯需求"},{key:"顺丁周产量"},{key:"丁苯周产量"}
+    ]},
+    {label:"", charts:[
+      {key:"ABS周产量"},{key:"SBS周产量"},{key:"半钢周产量"}
     ]}
   ]},
   {section:"开工", rows:[
     {label:"", charts:[
-      {key:"石脑油裂解乙烯开工"},{key:"丁二烯开工"},{key:"顺丁开工"},{key:"丁苯开工"},{key:"ABS开工"},{key:"SBS开工"},{key:"半钢开工"}
+      {key:"石脑油裂解乙烯开工"},{key:"丁二烯开工"},{key:"顺丁开工"},{key:"丁苯开工"}
+    ]},
+    {label:"", charts:[
+      {key:"ABS开工"},{key:"SBS开工"},{key:"半钢开工"}
     ]}
   ]},
   {section:"利润", rows:[
     {label:"", charts:[
-      {key:"石脑油裂解乙烯利润"},{key:"丁二烯碳四抽提利润"},{key:"丁二烯氧化脱氢利润"},{key:"顺丁利润"},{key:"丁苯利润"},{key:"ABS利润"},{key:"SBS利润"},{key:"半钢利润"}
+      {key:"石脑油裂解乙烯利润"},{key:"丁二烯碳四抽提利润"},{key:"丁二烯氧化脱氢利润"},{key:"顺丁利润"}
+    ]},
+    {label:"", charts:[
+      {key:"丁苯利润"},{key:"ABS利润"},{key:"SBS利润"},{key:"半钢利润"}
     ]}
   ]},
   {section:"库存", rows:[
     {label:"", charts:[
-      {key:"丁二烯港口库存"},{key:"丁二烯及四大下游折丁二烯合计库存"},{key:"顺丁总库存"},{key:"丁苯总库存"},{key:"ABS总库存"},{key:"SBS总库存"},{key:"半钢库存天数"}
+      {key:"丁二烯港口库存"},{key:"丁二烯及四大下游折丁二烯合计库存"},{key:"顺丁总库存"},{key:"丁苯总库存"}
+    ]},
+    {label:"", charts:[
+      {key:"ABS总库存"},{key:"SBS总库存"},{key:"半钢库存天数"}
     ]}
   ]},
   {section:"表需", rows:[
     {label:"", charts:[
-      {key:"丁二烯四大下游产量折丁二烯需求"},{key:"顺丁表需"},{key:"丁苯表需"},{key:"ABS表需"},{key:"SBS表需"}
+      {key:"丁二烯四大下游产量折丁二烯需求"},{key:"顺丁表需"},{key:"丁苯表需"},{key:"ABS表需"}
+    ]},
+    {label:"", charts:[
+      {key:"SBS表需"}
     ]}
   ]}
 ];
@@ -410,7 +425,8 @@ function buildSections(){
       lbl.className="row-label"; lbl.textContent=row.label;
       root.appendChild(lbl);
       var grid=document.createElement("div");
-      grid.className="grid c"+Math.min(row.charts.length,5);
+      // 按指标排序视图：一行固定 4 个图表；按环节排序保持原样（最多 5 列）
+      grid.className="grid c"+(viewMode==="indicator"?4:Math.min(row.charts.length,5));
       root.appendChild(grid);
       row.charts.forEach(function(ch){
         if(ch.ts) makeTsCard(ch,grid,row); else makeCard(ch,ticks,grid,row);
