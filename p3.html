@@ -58,6 +58,20 @@ tr.grp.collapsible.collapsed .tri{transform:rotate(0deg);}
 tr.grp.collapsible:not(.collapsed) .tri{transform:rotate(90deg);}
 tr.subrow td:first-child{padding-left:30px; color:var(--text);}
 tr.subrow.hidden{display:none;}
+/* 一览表 下钻：国家行内嵌双边流向（参考天胶页面六 drill-total/drill-detail） */
+tr.drill-total{cursor:pointer;}
+tr.drill-total td{font-weight:600;}
+tr.drill-total:hover td{background:#f8fafc;}
+tr.drill-tri{display:inline-block; width:0; height:0; border-left:5px solid var(--sub);
+  border-top:4px solid transparent; border-bottom:4px solid transparent; margin-right:7px; vertical-align:middle;
+  transition:transform .15s ease;}
+tr.drill-total.expanded .drill-tri{transform:rotate(90deg);}
+tr.drill-detail td{font-weight:400;}
+tr.drill-detail.hidden{display:none;}
+tr.drill-detail td:first-child{padding-left:52px; color:var(--sub); font-size:12px;}
+tr.drill-detail td.up{color:var(--up); font-weight:600;}
+tr.drill-detail td.down{color:var(--down); font-weight:600;}
+tr.drill-detail td.flat{color:var(--flat);}
 
 .section-title{font-size:18px; color:var(--accent); font-weight:700; margin:26px 0 4px;
   padding-left:10px; border-left:4px solid var(--accent);}
@@ -107,7 +121,7 @@ tr.subrow.hidden{display:none;}
   <div class="filterbar" id="filterbar"><span class="lbl">年份筛选（点击显隐，作用于全部季节图）：</span></div>
 
   <div class="tablecard">
-    <h2>最新数据一览表 <span style="font-size:12px;color:var(--sub);font-weight:400">（点击分组名可折叠/展开明细；当月值 = 最新月；环比% = 相对上月；同比% = 相对上年同月；年初至今累计值 = 本年至最新月求和；累计同比% = 该累计值相对上年同期累计值的同比；|累计同比%| ≥ 10% 标记为大幅变化）</span></h2>
+    <h2>最新数据一览表 <span style="font-size:12px;color:var(--sub);font-weight:400">（点击分组名折叠/展开各国汇总行；点击各国行左侧三角可下钻展开其主要双边贸易流向；当月值 = 最新月；环比% = 相对上月；同比% = 相对上年同月；年初至今累计值 = 本年至最新月求和；累计同比% = 该累计值相对上年同期累计值的同比；|累计同比%| ≥ 10% 标记为大幅变化）</span></h2>
     <table id="dataTable">
       <thead><tr>
         <th>指标</th><th>单位</th><th>最新月份</th><th>当月值</th><th>环比%</th><th>同比%</th><th>年初至今累计值</th><th>累计同比%</th>
@@ -225,7 +239,7 @@ var HIDDEN_YEARS = {"2016":1,"2017":1,"2018":1,"2019":1,"2020":1};
 function legendSelected(years){ var sel={}; years.forEach(function(y){ sel[y]=!HIDDEN_YEARS[y]; }); return sel; }
 
 // 国家中文映射
-var CN = {"Australia":"澳大利亚","Belgium":"比利时","Brazil":"巴西","Cambodia":"柬埔寨","Canada":"加拿大","China":"中国","Chinese Taipei":"中国台湾省","Czech Republic":"捷克","France":"法国","Germany":"德国","India":"印度","Indonesia":"印度尼西亚","Israel":"以色列","Italy":"意大利","Japan":"日本","Korea, Republic of":"韩国","Malaysia":"马来西亚","Mexico":"墨西哥","Netherlands":"荷兰","Poland":"波兰","Saudi Arabia":"沙特阿拉伯","Singapore":"新加坡","South Africa":"南非","Spain":"西班牙","Sweden":"瑞典","Thailand":"泰国","United Kingdom":"英国","United States of America":"美国","Viet Nam":"越南"};
+var CN = {"Australia":"澳大利亚","Belgium":"比利时","Brazil":"巴西","Cambodia":"柬埔寨","Canada":"加拿大","China":"中国","Chinese Taipei":"中国台湾省","Czech Republic":"捷克","France":"法国","Germany":"德国","India":"印度","Indonesia":"印度尼西亚","Iran, Islamic Republic of":"伊朗","Israel":"以色列","Italy":"意大利","Japan":"日本","Korea, Republic of":"韩国","Malaysia":"马来西亚","Mexico":"墨西哥","Netherlands":"荷兰","Poland":"波兰","Saudi Arabia":"沙特阿拉伯","Singapore":"新加坡","South Africa":"南非","Spain":"西班牙","Sweden":"瑞典","Thailand":"泰国","United Kingdom":"英国","United States of America":"美国","Viet Nam":"越南"};
 // 主要国家配色（出口国/进口国着色，其余伙伴灰）
 var MAJOR_COLORS = {'韩国':'#0f4c81','中国':'#E60000','中国台湾省':'#8E44AD','日本':'#2980B9','美国':'#2E86DE','欧盟':'#D4AC0D','东南亚':'#27AE60','中东':'#16A085'};
 function nodeColor(name){ return MAJOR_COLORS[name] || '#9aa3b2'; }
@@ -381,8 +395,8 @@ function collectCardStats(){
     var rec = reporters[b.key];
     var side = b.flow;
     if(rec && rec[side] && rec[side].partners && rec[side].partners[b.partner]){
-      var r=renderCard(bilateralGrid, b.title, '吨', rec[side].partners[b.partner]);
-      tableRows.push({group:'重点流向', title:b.title, unit:'吨', stats:r.stats});
+      renderCard(bilateralGrid, b.title, '吨', rec[side].partners[b.partner]);
+      // 重点流向已合并到各国家行的内嵌下钻，tableRows 不再单独收录
     }
   });
 }
@@ -428,18 +442,47 @@ function spanYtd(st){
   return '（<span class="'+cls+'">累计同比 '+sign+st.ytd.pct.toFixed(1)+'%</span>）';
 }
 
-// ===== 一览表：总分结构（可折叠分组） =====
+// ===== 一览表：总分结构（可折叠分组 + 各国家行内嵌双边下钻） =====
+function buildBilateralChildren(countryRow){
+  var side = (countryRow.group==='出口总量') ? 'Export' : 'Import';
+  var rec = (countryRow.src||reporters)[countryRow.key];
+  if(!rec || !rec[side] || !rec[side].partners) return [];
+  var partners = rec[side].partners;
+  var parentName = countryRow.name.replace(/总(进出口)$/,'');
+  var children = [];
+  Object.keys(partners).forEach(function(pKey){
+    var displayName = CN[pKey] || pKey;
+    if(displayName === parentName) return; // 过滤自身贸易
+    var s = partners[pKey];
+    var st = calcStats(s);
+    if(!st) return;
+    var title;
+    if(side==='Export'){
+      title = parentName + '出口至' + displayName;
+    } else {
+      title = parentName + '自' + displayName + '进口';
+    }
+    children.push({title:title, unit:'吨', stats:st});
+  });
+  // 按年初至今累计降序，取前 10 个双边伙伴
+  children.sort(function(a,b){
+    var av=(a.stats.ytd&&a.stats.ytd.sum)||a.stats.latest||0;
+    var bv=(b.stats.ytd&&b.stats.ytd.sum)||b.stats.latest||0;
+    return bv-av;
+  });
+  return children.slice(0,10);
+}
+
 function buildTable(){
   var tb=document.querySelector('#dataTable tbody');
   tb.innerHTML='';
-  // 分组顺序与组内行
-  var groupOrder=['出口总量','进口总量','重点流向'];
+  // 分组顺序（重点流向已合并到各国家行的下钻子项中）
+  var groupOrder=['出口总量','进口总量'];
   var byGroup={};
   tableRows.forEach(function(r){ (byGroup[r.group]=byGroup[r.group]||[]).push(r); });
   groupOrder.forEach(function(g){
     var rows=byGroup[g]||[];
     if(!rows.length) return;
-    // 分组合计（最新月求和）
     var gsum=0; rows.forEach(function(r){ if(r.stats) gsum+= (r.stats.latest||0); });
     var trg=document.createElement('tr'); trg.className='grp collapsible';
     trg.innerHTML='<td colspan="8"><span class="tri"></span>'+g+
@@ -451,7 +494,12 @@ function buildTable(){
       var ytd=st.ytd;
       var abn = ytd && ytd.pct!==null && Math.abs(ytd.pct)>=10;
       var ytdCls = chgCls(ytd?ytd.pct:0);
-      var tr=document.createElement('tr'); tr.className='subrow'+(abn?' abn':'');
+      // 计算该国家/地区的双边子项
+      var children = buildBilateralChildren(r);
+      var isDrill = children.length>0;
+      // 渲染主行（国家/地区总进出口）
+      var tr=document.createElement('tr');
+      tr.className = (isDrill?'drill-total':'subrow')+(abn?' abn':'');
       tr.innerHTML=
         '<td>'+r.title+'</td><td style="color:var(--sub)">'+r.unit+'</td>'+
         '<td style="color:var(--sub)">'+(st.date||'—')+'</td>'+
@@ -461,14 +509,54 @@ function buildTable(){
         '<td><b>'+fmt(ytd?ytd.sum:0,0)+'</b></td>'+
         '<td class="'+ytdCls+'">'+(ytd&&ytd.pct!==null?(ytd.pct>0?'+':'')+ytd.pct.toFixed(1)+'%':'—')+
           (abn?' <span class="badge'+(ytd.pct<0?' dn':'')+'">大幅'+(ytd.pct>0?'增长':'下降')+'</span>':'')+'</td>';
+      if(isDrill){
+        tr.innerHTML = tr.innerHTML.replace(/(<td[^>]*>)/, "$1<span class='drill-tri'></span>");
+        tr.addEventListener('click', function(){ toggleDrill(tr); });
+      }
       tb.appendChild(tr);
+      // 渲染下钻子行（双边流向，默认隐藏）
+      children.forEach(function(child){
+        var cst=child.stats;
+        var cytd=cst.ytd;
+        var cabn=cytd&&cytd.pct!==null&&Math.abs(cytd.pct)>=10;
+        var cytdCls=chgCls(cytd?cytd.pct:0);
+        var ctr=document.createElement('tr');
+        ctr.className='drill-detail hidden'+(cabn?' abn':'');
+        ctr.innerHTML=
+          '<td>'+child.title+'</td><td style="color:var(--sub)">'+child.unit+'</td>'+
+          '<td style="color:var(--sub)">'+(cst.date||'—')+'</td>'+
+          '<td><b>'+fmt(cst.latest,0)+'</b></td>'+
+          '<td class="'+chgCls(cst.chg)+'">'+(cst.pct===null?'—':(cst.pct>0?'+':'')+cst.pct.toFixed(1)+'%')+'</td>'+
+          '<td class="'+chgCls(cst.yoyChg)+'">'+(cst.yoyPct===null?'—':(cst.yoyPct>0?'+':'')+cst.yoyPct.toFixed(1)+'%')+'</td>'+
+          '<td><b>'+fmt(cytd?cytd.sum:0,0)+'</b></td>'+
+          '<td class="'+cytdCls+'">'+(cytd&&cytd.pct!==null?(cytd.pct>0?'+':'')+cytd.pct.toFixed(1)+'%':'—')+
+            (cabn?' <span class="badge'+(cytd.pct<0?' dn':'')+'">大幅'+(cytd.pct>0?'增长':'下降')+'</span>':'')+'</td>';
+        tb.appendChild(ctr);
+      });
     });
   });
+}
+function toggleDrill(tr){
+  var expanded = tr.classList.toggle('expanded');
+  var n=tr.nextElementSibling;
+  while(n && n.classList.contains('drill-detail')){
+    n.classList.toggle('hidden', !expanded);
+    n=n.nextElementSibling;
+  }
 }
 function toggleGroup(headerTr){
   var collapsed = headerTr.classList.toggle('collapsed');
   var n=headerTr.nextElementSibling;
-  while(n && n.classList.contains('subrow')){ n.classList.toggle('hidden', collapsed); n=n.nextElementSibling; }
+  while(n && !n.classList.contains('grp')){
+    if(collapsed){
+      // 折叠分组：隐藏所有子行（含 drill-total 与 drill-detail）
+      n.classList.add('hidden');
+    } else {
+      // 展开分组：仅显示国家行，drill-detail 保持自身隐藏状态（由 drill-total 控制）
+      if(!n.classList.contains('drill-detail')) n.classList.remove('hidden');
+    }
+    n=n.nextElementSibling;
+  }
 }
 
 // ===== 主要国家合计（2025 年） =====
