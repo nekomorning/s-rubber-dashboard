@@ -38,7 +38,7 @@ body{background:var(--bg); color:var(--text);
 
 .tablecard{background:var(--card); border:1px solid var(--border); border-radius:10px; padding:14px 16px; margin-bottom:22px; overflow-x:auto;}
 .tablecard h2{font-size:16px; color:var(--accent); margin-bottom:10px;}
-table{width:100%; border-collapse:collapse; font-size:13px; min-width:900px;}
+table{width:100%; border-collapse:collapse; font-size:13px; min-width:760px;}
 th,td{padding:6px 10px; text-align:right; border-bottom:1px solid #eef1f6; white-space:nowrap;}
 th{background:#f0f4f9; color:#44506a; font-weight:600; position:sticky; top:0;}
 td:first-child, th:first-child{text-align:left;}
@@ -92,11 +92,10 @@ tr.abn td{background:#fff7f0;}
   <div class="filterbar" id="filterbar"><span class="lbl">年份筛选（点击显隐，作用于全部季节图）：</span></div>
 
   <div class="tablecard">
-    <h2>最新数据一览表 <span style="font-size:12px;color:var(--sub);font-weight:400">（月环比 = 最新月相对上一自然月；年同比 = 相对上年同月；|环比%| ≥ 10% 标记为大幅变化）</span></h2>
+    <h2>最新数据一览表 <span style="font-size:12px;color:var(--sub);font-weight:400">（当月值 = 最新月；环比% = 相对上月；同比% = 相对上年同月；年初至今累计值 = 本年至最新月求和；累计同比% = 该累计值相对上年同期累计值的同比；|累计同比%| ≥ 10% 标记为大幅变化）</span></h2>
     <table id="dataTable">
       <thead><tr>
-        <th>指标</th><th>单位</th><th>最新日期</th><th>最新值</th><th>上月值</th><th>月环比增减</th><th>月环比%</th><th>标记</th>
-        <th>上年同月</th><th>年同比增减</th><th>年同比%</th><th>标记</th>
+        <th>指标</th><th>单位</th><th>最新月份</th><th>当月值</th><th>环比%</th><th>同比%</th><th>年初至今累计值</th><th>累计同比%</th>
       </tr></thead>
       <tbody></tbody>
     </table>
@@ -224,6 +223,22 @@ function sameMonthLastYear(m){
   var p=m.match(/(\d{4})-M(\d{2})/); if(!p) return null;
   return (parseInt(p[1],10)-1)+"-M"+p[2];
 }
+function ytdInfo(seriesObj, latestDate){
+  if(!latestDate) return null;
+  var p=latestDate.match(/(\d{4})-M(\d{2})/); if(!p) return null;
+  var y=+p[1], mm=+p[2];
+  var sum=0, lsum=0;
+  for(var m=1;m<=mm;m++){
+    var k=y+'-M'+(m<10?'0':'')+m;
+    var v=seriesObj[k];
+    if(v!==null && v!==undefined) sum+=v;
+    var lk=(y-1)+'-M'+(m<10?'0':'')+m;
+    var lv=seriesObj[lk];
+    if(lv!==null && lv!==undefined) lsum+=lv;
+  }
+  var pct=(lsum>0)?((sum-lsum)/lsum*100):null;
+  return {sum:sum, lsum:lsum, pct:pct, year:y, month:mm};
+}
 function calcStats(seriesObj){
   var l=latestNonNull(seriesObj); if(!l) return null;
   var prev=seriesObj[prevMonth(l.date)];
@@ -232,7 +247,8 @@ function calcStats(seriesObj){
   var pct=(prev===null||prev===undefined||prev===0)?null:((l.value-prev)/prev*100);
   var yoyChg=(yoy===null||yoy===undefined)?null:(l.value-yoy);
   var yoyPct=(yoy===null||yoy===undefined||yoy===0)?null:((l.value-yoy)/yoy*100);
-  return {latest:l.value, date:l.date, prev:prev, chg:chg, pct:pct, yoy:yoy, yoyChg:yoyChg, yoyPct:yoyPct};
+  var ytd=ytdInfo(seriesObj, l.date);
+  return {latest:l.value, date:l.date, prev:prev, chg:chg, pct:pct, yoy:yoy, yoyChg:yoyChg, yoyPct:yoyPct, ytd:ytd};
 }
 function renderCard(container, title, unit, seriesObj){
   const wrap = document.createElement('div'); wrap.className='card';
@@ -341,29 +357,29 @@ function buildFilter(){
 }
 
 function buildSummary(){
-  var withData = tableRows.filter(function(r){ return r.stats; });
-  var ups = withData.filter(function(r){ return r.stats.chg>0; }).sort(function(a,b){ return b.stats.pct-a.stats.pct; }).slice(0,3);
-  var dns = withData.filter(function(r){ return r.stats.chg<0; }).sort(function(a,b){ return a.stats.pct-b.stats.pct; }).slice(0,3);
+  var withData = tableRows.filter(function(r){ return r.stats && r.stats.ytd; });
+  var ups = withData.filter(function(r){ return r.stats.ytd.pct>0; }).sort(function(a,b){ return b.stats.ytd.pct-a.stats.ytd.pct; }).slice(0,3);
+  var dns = withData.filter(function(r){ return r.stats.ytd.pct<0; }).sort(function(a,b){ return a.stats.ytd.pct-b.stats.ytd.pct; }).slice(0,3);
   function li(r){
-    return '<span class="'+(r.stats.chg>0?'up':'down')+'">'+r.title+'（'+(r.stats.chg>0?'+':'')+fmt(r.stats.chg,0)+'，'+r.stats.pct.toFixed(1)+'%）</span>';
+    return '<span class="'+(r.stats.ytd.pct>0?'up':'down')+'">'+r.title+'（'+(r.stats.ytd.pct>0?'+':'')+r.stats.ytd.pct.toFixed(1)+'%）</span>';
   }
   var kr=withData.find(function(r){return r.title==='韩国总出口';});
   var cn=withData.find(function(r){return r.title==='中国总进口';});
   var us=withData.find(function(r){return r.title==='美国总出口';});
   var html='<h2>核心变化速览</h2><div>';
-  html+='截至 <b>'+(kr?kr.stats.date:'—')+'</b>，';
-  html+=kr?'韩国总出口 <b>'+fmt(kr.stats.latest,0)+'</b> 吨'+spanChg(kr.stats)+'；':'';
-  html+=cn?'中国总进口 <b>'+fmt(cn.stats.latest,0)+'</b> 吨'+spanChg(cn.stats)+'；':'';
-  html+=us?'美国总出口 <b>'+fmt(us.stats.latest,0)+'</b> 吨'+spanChg(us.stats)+'。':'';
-  html+='<br>月环比涨幅居前：'+(ups.length?ups.map(li).join('、'):'无')+'；';
+  html+='截至 <b>'+(kr?kr.stats.date:'—')+'</b>（年初至今累计）：';
+  html+=kr?'韩国总出口累计 <b>'+fmt(kr.stats.ytd.sum,0)+'</b> 吨'+spanYtd(kr.stats)+'；':'';
+  html+=cn?'中国总进口累计 <b>'+fmt(cn.stats.ytd.sum,0)+'</b> 吨'+spanYtd(cn.stats)+'；':'';
+  html+=us?'美国总出口累计 <b>'+fmt(us.stats.ytd.sum,0)+'</b> 吨'+spanYtd(us.stats)+'。':'';
+  html+='<br>累计同比涨幅居前：'+(ups.length?ups.map(li).join('、'):'无')+'；';
   html+='跌幅居前：'+(dns.length?dns.map(li).join('、'):'无')+'。';
   html+='</div>';
   document.getElementById('summary').innerHTML=html;
 }
-function spanChg(st){
-  if(!st || st.chg===null || st.chg===undefined) return '（—）';
-  var cls=chgCls(st.chg), sign=st.chg>0?'+':'';
-  return '（<span class="'+cls+'">'+sign+fmt(st.chg,0)+'，'+sign+st.pct.toFixed(1)+'%</span>）';
+function spanYtd(st){
+  if(!st || !st.ytd || st.ytd.pct===null || st.ytd.pct===undefined) return '（—）';
+  var cls=chgCls(st.ytd.pct), sign=st.ytd.pct>0?'+':'';
+  return '（<span class="'+cls+'">累计同比 '+sign+st.ytd.pct.toFixed(1)+'%</span>）';
 }
 
 function buildTable(){
@@ -374,24 +390,21 @@ function buildTable(){
     if(!st) return;
     if(r.group!==lastGrp){
       var trg=document.createElement('tr'); trg.className='grp';
-      trg.innerHTML='<td colspan="12">'+r.group+'</td>'; tb.appendChild(trg); lastGrp=r.group;
+      trg.innerHTML='<td colspan="8">'+r.group+'</td>'; tb.appendChild(trg); lastGrp=r.group;
     }
-    var mAbn=st.pct!==null && Math.abs(st.pct)>=10;
-    var yAbn=st.yoyPct!==null && Math.abs(st.yoyPct)>=10;
-    var mCls=chgCls(st.chg), yCls=chgCls(st.yoyChg);
-    var tr=document.createElement('tr'); if(mAbn||yAbn) tr.className='abn';
+    var ytd=st.ytd;
+    var abn = ytd && ytd.pct!==null && Math.abs(ytd.pct)>=10;
+    var ytdCls = chgCls(ytd?ytd.pct:0);
+    var tr=document.createElement('tr'); if(abn) tr.className='abn';
     tr.innerHTML=
       '<td>'+r.title+'</td><td style="color:var(--sub)">'+r.unit+'</td>'+
       '<td style="color:var(--sub)">'+(st.date||'—')+'</td>'+
       '<td><b>'+fmt(st.latest,0)+'</b></td>'+
-      '<td>'+fmt(st.prev,0)+'</td>'+
-      '<td class="'+mCls+'">'+((st.chg>0?'+':'')+fmt(st.chg,0))+'</td>'+
-      '<td class="'+mCls+'">'+(st.pct===null?'—':(st.pct>0?'+':'')+st.pct.toFixed(1)+'%')+'</td>'+
-      '<td>'+(mAbn?'<span class="badge'+(st.chg<0?' dn':'')+'">大幅'+(st.chg>0?'上涨':'下跌')+'</span>':'')+'</td>'+
-      '<td>'+fmt(st.yoy,0)+'</td>'+
-      '<td class="'+yCls+'">'+((st.yoyChg>0?'+':'')+fmt(st.yoyChg,0))+'</td>'+
-      '<td class="'+yCls+'">'+(st.yoyPct===null?'—':(st.yoyPct>0?'+':'')+st.yoyPct.toFixed(1)+'%')+'</td>'+
-      '<td>'+(yAbn?'<span class="badge'+(st.yoyChg<0?' dn':'')+'">大幅'+(st.yoyChg>0?'上涨':'下跌')+'</span>':'')+'</td>';
+      '<td class="'+chgCls(st.chg)+'">'+(st.pct===null?'—':(st.pct>0?'+':'')+st.pct.toFixed(1)+'%')+'</td>'+
+      '<td class="'+chgCls(st.yoyChg)+'">'+(st.yoyPct===null?'—':(st.yoyPct>0?'+':'')+st.yoyPct.toFixed(1)+'%')+'</td>'+
+      '<td><b>'+fmt(ytd?ytd.sum:0,0)+'</b></td>'+
+      '<td class="'+ytdCls+'">'+(ytd&&ytd.pct!==null?(ytd.pct>0?'+':'')+ytd.pct.toFixed(1)+'%':'—')+
+        (abn?' <span class="badge'+(ytd.pct<0?' dn':'')+'">大幅'+(ytd.pct>0?'增长':'下降')+'</span>':'')+'</td>';
     tb.appendChild(tr);
   });
 }
