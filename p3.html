@@ -42,12 +42,22 @@ table{width:100%; border-collapse:collapse; font-size:13px; min-width:760px;}
 th,td{padding:6px 10px; text-align:right; border-bottom:1px solid #eef1f6; white-space:nowrap;}
 th{background:#f0f4f9; color:#44506a; font-weight:600; position:sticky; top:0;}
 td:first-child, th:first-child{text-align:left;}
-tr.grp td{background:#f7f9fc; color:var(--accent); font-weight:700; text-align:left; font-size:13px;}
 td.up{color:var(--up); font-weight:600;} td.down{color:var(--down); font-weight:600;} td.flat{color:var(--flat);}
 tr.abn td{background:#fff7f0;}
 .badge{display:inline-block; margin-left:6px; padding:1px 7px; border-radius:9px; font-size:11px;
   background:var(--up); color:#fff; vertical-align:1px;}
 .badge.dn{background:var(--down);}
+/* 一览表 总分结构：可折叠分组 */
+tr.grp td{background:#f7f9fc; color:var(--accent); font-weight:700; text-align:left; font-size:13px;}
+tr.grp.collapsible{cursor:pointer;}
+tr.grp.collapsible:hover td{background:#eef2f7;}
+tr.grp.collapsible .tri{display:inline-block; width:0; height:0; border-left:5px solid var(--sub);
+  border-top:4px solid transparent; border-bottom:4px solid transparent; margin-right:7px; vertical-align:middle;
+  transition:transform .15s ease;}
+tr.grp.collapsible.collapsed .tri{transform:rotate(0deg);}
+tr.grp.collapsible:not(.collapsed) .tri{transform:rotate(90deg);}
+tr.subrow td:first-child{padding-left:30px; color:var(--text);}
+tr.subrow.hidden{display:none;}
 
 .section-title{font-size:18px; color:var(--accent); font-weight:700; margin:26px 0 4px;
   padding-left:10px; border-left:4px solid var(--accent);}
@@ -68,8 +78,13 @@ tr.abn td{background:#fff7f0;}
 .card .chg.up{color:var(--up);} .card .chg.down{color:var(--down);} .card .chg.flat{color:var(--flat);}
 .card .dt{font-size:11px; color:var(--sub);}
 .card .chart{width:100%; height:170px;}
-.sankey-wrap{background:var(--card); border:1px solid var(--border); border-radius:10px; padding:10px 12px 6px; margin-bottom:14px;}
-#sankeyChart{width:100%; height:520px;}
+.chart.tall{height:360px;}
+.chart.sankey{height:480px;}
+@media (max-width:720px){ .chart.sankey{height:400px;} }
+
+.togglebar{display:inline-flex; gap:8px; margin-left:10px;}
+.tbtn{padding:5px 16px; border-radius:16px; border:1px solid var(--border); background:#fff; cursor:pointer; font-size:13px; color:var(--sub);}
+.tbtn.active{background:var(--accent); color:#fff; border-color:var(--accent); font-weight:600;}
 
 .footer{margin-top:30px; color:var(--sub); font-size:12px; text-align:center;}
 </style>
@@ -92,7 +107,7 @@ tr.abn td{background:#fff7f0;}
   <div class="filterbar" id="filterbar"><span class="lbl">年份筛选（点击显隐，作用于全部季节图）：</span></div>
 
   <div class="tablecard">
-    <h2>最新数据一览表 <span style="font-size:12px;color:var(--sub);font-weight:400">（当月值 = 最新月；环比% = 相对上月；同比% = 相对上年同月；年初至今累计值 = 本年至最新月求和；累计同比% = 该累计值相对上年同期累计值的同比；|累计同比%| ≥ 10% 标记为大幅变化）</span></h2>
+    <h2>最新数据一览表 <span style="font-size:12px;color:var(--sub);font-weight:400">（点击分组名可折叠/展开明细；当月值 = 最新月；环比% = 相对上月；同比% = 相对上年同月；年初至今累计值 = 本年至最新月求和；累计同比% = 该累计值相对上年同期累计值的同比；|累计同比%| ≥ 10% 标记为大幅变化）</span></h2>
     <table id="dataTable">
       <thead><tr>
         <th>指标</th><th>单位</th><th>最新月份</th><th>当月值</th><th>环比%</th><th>同比%</th><th>年初至今累计值</th><th>累计同比%</th>
@@ -113,13 +128,32 @@ tr.abn td{background:#fff7f0;}
   <div class="row-label">主要双边贸易流量</div>
   <div class="grid c4" id="bilateralGrid"></div>
 
-  <div class="section-title">丁二烯贸易流向（桑基图）</div>
-  <div class="row-label">2025 年 贸易流向：出口国 → 进口国（左为出口方、右为进口方；吨，取各出口国前八大贸易伙伴）</div>
-  <div class="sankey-wrap">
-    <div id="sankeyChart"></div>
+  <div class="section-title">主要国家合计（2025 年）</div>
+  <div class="row-label">各主要国家年度出口合计与进口合计（吨），及同比%</div>
+  <div class="grid c2">
+    <div class="tablecard" style="margin-bottom:0;">
+      <table id="majorTable">
+        <thead><tr><th>国家</th><th>出口合计(吨)</th><th>出口同比%</th><th>进口合计(吨)</th><th>进口同比%</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+    <div class="card"><div class="ttl">主要国家出口 vs 进口（2025 年，吨）</div><div id="majorBar" class="chart tall"></div></div>
   </div>
 
-  <div class="footer">注：数量按 Trademap 原始 kg 单位 ÷1000 换算为吨；区域为成员国出口量求和；部分国家/地区存在数据滞后。季节图默认隐藏 2016–2020 年，可在图例或顶部年份筛选中显隐。</div>
+  <div class="section-title">年度构成（堆积柱状图）</div>
+  <div class="row-label">各年份分国家堆积，2016–2025（2026 仅部分月份未纳入）
+    <span class="togglebar"><span class="tbtn active" data-mode="export">出口合计</span><span class="tbtn" data-mode="import">进口合计</span></span>
+  </div>
+  <div class="card"><div id="annualBar" class="chart tall"></div></div>
+
+  <div class="section-title">丁二烯贸易流向（桑基图）</div>
+  <div class="row-label">2025 年贸易流向（吨，取各视角前八大贸易伙伴）；左图为出口视角（出口国 → 目的地），右图为进口视角（来源国 → 进口国）</div>
+  <div class="grid c2">
+    <div class="card"><div class="ttl" id="sankeyExpTitle"></div><div id="sankeyExp" class="chart sankey"></div></div>
+    <div class="card"><div class="ttl" id="sankeyImpTitle"></div><div id="sankeyImp" class="chart sankey"></div></div>
+  </div>
+
+  <div class="footer">注：数量按 Trademap 原始 kg 单位 ÷1000 换算为吨；区域为成员国出口量求和；部分国家/地区存在数据滞后。季节图默认隐藏 2016–2020 年，可在图例或顶部年份筛选中显隐。桑基图采用有向无环（DAG）结构以避免双向贸易成环。</div>
 </div>
 
 <script>
@@ -160,6 +194,7 @@ function fmt(v,dec){
 }
 function chgCls(c){ if(c===null||c===undefined||c===0) return "flat"; return c>0?"up":"down"; }
 function arrow(c){ if(c===null||c===undefined||c===0) return "→"; return c>0?"▲":"▼"; }
+function yoyPct(cur, prev){ if(prev===null||prev===undefined||prev===0||cur===null) return null; return (cur-prev)/prev*100; }
 
 // 所有数值取整（吨，保留整数）
 function roundVal(v){ return (typeof v==='number') ? Math.round(v) : v; }
@@ -188,6 +223,15 @@ const monthLabels = ['1月','2月','3月','4月','5月','6月','7月','8月','9�
 // 2016–2020 默认隐藏
 var HIDDEN_YEARS = {"2016":1,"2017":1,"2018":1,"2019":1,"2020":1};
 function legendSelected(years){ var sel={}; years.forEach(function(y){ sel[y]=!HIDDEN_YEARS[y]; }); return sel; }
+
+// 国家中文映射
+var CN = {"Australia":"澳大利亚","Belgium":"比利时","Brazil":"巴西","Cambodia":"柬埔寨","Canada":"加拿大","China":"中国","Chinese Taipei":"中国台湾省","Czech Republic":"捷克","France":"法国","Germany":"德国","India":"印度","Indonesia":"印度尼西亚","Israel":"以色列","Italy":"意大利","Japan":"日本","Korea, Republic of":"韩国","Malaysia":"马来西亚","Mexico":"墨西哥","Netherlands":"荷兰","Poland":"波兰","Saudi Arabia":"沙特阿拉伯","Singapore":"新加坡","South Africa":"南非","Spain":"西班牙","Sweden":"瑞典","Thailand":"泰国","United Kingdom":"英国","United States of America":"美国","Viet Nam":"越南"};
+// 主要国家配色（出口国/进口国着色，其余伙伴灰）
+var MAJOR_COLORS = {'韩国':'#0f4c81','中国':'#E60000','中国台湾省':'#8E44AD','日本':'#2980B9','美国':'#2E86DE','欧盟':'#D4AC0D','东南亚':'#27AE60','中东':'#16A085'};
+function nodeColor(name){ return MAJOR_COLORS[name] || '#9aa3b2'; }
+// 出口国/进口国（用于桑基图着色判断）
+var EXPORTER_NAMES = {'韩国':1,'中国':1,'中国台湾省':1,'日本':1,'美国':1,'欧盟':1,'东南亚':1,'中东':1};
+var IMPORTER_NAMES = {'韩国':1,'中国':1,'中国台湾省':1,'日本':1,'美国':1};
 
 function parseMonth(m){ return m.match(/(\d{4})-M(\d{2})/).slice(1); }
 function buildSeasonSeries(seriesObj){
@@ -239,6 +283,9 @@ function ytdInfo(seriesObj, latestDate){
   var pct=(lsum>0)?((sum-lsum)/lsum*100):null;
   return {sum:sum, lsum:lsum, pct:pct, year:y, month:mm};
 }
+function yearSum(seriesObj, y){
+  var t=0; for(var k in seriesObj){ if(k.indexOf(y+'-')===0 && seriesObj[k]) t+=seriesObj[k]; } return Math.round(t);
+}
 function calcStats(seriesObj){
   var l=latestNonNull(seriesObj); if(!l) return null;
   var prev=seriesObj[prevMonth(l.date)];
@@ -265,7 +312,6 @@ function renderCard(container, title, unit, seriesObj){
   allCharts.push(chart);
   const series = buildSeasonSeries(seriesObj);
   const years = series.map(function(s){return s.name;});
-  // z-order: latest year on top
   const sortedSeries = series.slice().sort(function(a,b){return parseInt(a.name)-parseInt(b.name);});
   const option = {
     tooltip:{trigger:'axis'},
@@ -382,97 +428,249 @@ function spanYtd(st){
   return '（<span class="'+cls+'">累计同比 '+sign+st.ytd.pct.toFixed(1)+'%</span>）';
 }
 
+// ===== 一览表：总分结构（可折叠分组） =====
 function buildTable(){
   var tb=document.querySelector('#dataTable tbody');
-  var lastGrp=null;
-  tableRows.forEach(function(r){
-    var st=r.stats;
-    if(!st) return;
-    if(r.group!==lastGrp){
-      var trg=document.createElement('tr'); trg.className='grp';
-      trg.innerHTML='<td colspan="8">'+r.group+'</td>'; tb.appendChild(trg); lastGrp=r.group;
-    }
-    var ytd=st.ytd;
-    var abn = ytd && ytd.pct!==null && Math.abs(ytd.pct)>=10;
-    var ytdCls = chgCls(ytd?ytd.pct:0);
-    var tr=document.createElement('tr'); if(abn) tr.className='abn';
+  tb.innerHTML='';
+  // 分组顺序与组内行
+  var groupOrder=['出口总量','进口总量','重点流向'];
+  var byGroup={};
+  tableRows.forEach(function(r){ (byGroup[r.group]=byGroup[r.group]||[]).push(r); });
+  groupOrder.forEach(function(g){
+    var rows=byGroup[g]||[];
+    if(!rows.length) return;
+    // 分组合计（最新月求和）
+    var gsum=0; rows.forEach(function(r){ if(r.stats) gsum+= (r.stats.latest||0); });
+    var trg=document.createElement('tr'); trg.className='grp collapsible';
+    trg.innerHTML='<td colspan="8"><span class="tri"></span>'+g+
+      '　<span style="color:var(--sub);font-weight:400;font-size:12px">合计 '+fmt(gsum,0)+' 吨（最新月）</span></td>';
+    trg.onclick=function(){ toggleGroup(trg); };
+    tb.appendChild(trg);
+    rows.forEach(function(r){
+      var st=r.stats; if(!st) return;
+      var ytd=st.ytd;
+      var abn = ytd && ytd.pct!==null && Math.abs(ytd.pct)>=10;
+      var ytdCls = chgCls(ytd?ytd.pct:0);
+      var tr=document.createElement('tr'); tr.className='subrow'+(abn?' abn':'');
+      tr.innerHTML=
+        '<td>'+r.title+'</td><td style="color:var(--sub)">'+r.unit+'</td>'+
+        '<td style="color:var(--sub)">'+(st.date||'—')+'</td>'+
+        '<td><b>'+fmt(st.latest,0)+'</b></td>'+
+        '<td class="'+chgCls(st.chg)+'">'+(st.pct===null?'—':(st.pct>0?'+':'')+st.pct.toFixed(1)+'%')+'</td>'+
+        '<td class="'+chgCls(st.yoyChg)+'">'+(st.yoyPct===null?'—':(st.yoyPct>0?'+':'')+st.yoyPct.toFixed(1)+'%')+'</td>'+
+        '<td><b>'+fmt(ytd?ytd.sum:0,0)+'</b></td>'+
+        '<td class="'+ytdCls+'">'+(ytd&&ytd.pct!==null?(ytd.pct>0?'+':'')+ytd.pct.toFixed(1)+'%':'—')+
+          (abn?' <span class="badge'+(ytd.pct<0?' dn':'')+'">大幅'+(ytd.pct>0?'增长':'下降')+'</span>':'')+'</td>';
+      tb.appendChild(tr);
+    });
+  });
+}
+function toggleGroup(headerTr){
+  var collapsed = headerTr.classList.toggle('collapsed');
+  var n=headerTr.nextElementSibling;
+  while(n && n.classList.contains('subrow')){ n.classList.toggle('hidden', collapsed); n=n.nextElementSibling; }
+}
+
+// ===== 主要国家合计（2025 年） =====
+function buildMajor(){
+  var defs=[
+    {key:'Korea_Rep', name:'韩国'},
+    {key:'China', name:'中国'},
+    {key:'Taiwan', name:'中国台湾省'},
+    {key:'Japan', name:'日本'},
+    {key:'USA', name:'美国'},
+  ];
+  var tb=document.querySelector('#majorTable tbody'); tb.innerHTML='';
+  var barCats=[], barExp=[], barImp=[];
+  defs.forEach(function(d){
+    var r=reporters[d.key]; if(!r) return;
+    var exSum=yearSum(r.Export.total,'2025'), imSum=yearSum(r.Import.total,'2025');
+    var exYoY=yoyPct(exSum, yearSum(r.Export.total,'2024'));
+    var imYoY=yoyPct(imSum, yearSum(r.Import.total,'2024'));
+    var tr=document.createElement('tr');
     tr.innerHTML=
-      '<td>'+r.title+'</td><td style="color:var(--sub)">'+r.unit+'</td>'+
-      '<td style="color:var(--sub)">'+(st.date||'—')+'</td>'+
-      '<td><b>'+fmt(st.latest,0)+'</b></td>'+
-      '<td class="'+chgCls(st.chg)+'">'+(st.pct===null?'—':(st.pct>0?'+':'')+st.pct.toFixed(1)+'%')+'</td>'+
-      '<td class="'+chgCls(st.yoyChg)+'">'+(st.yoyPct===null?'—':(st.yoyPct>0?'+':'')+st.yoyPct.toFixed(1)+'%')+'</td>'+
-      '<td><b>'+fmt(ytd?ytd.sum:0,0)+'</b></td>'+
-      '<td class="'+ytdCls+'">'+(ytd&&ytd.pct!==null?(ytd.pct>0?'+':'')+ytd.pct.toFixed(1)+'%':'—')+
-        (abn?' <span class="badge'+(ytd.pct<0?' dn':'')+'">大幅'+(ytd.pct>0?'增长':'下降')+'</span>':'')+'</td>';
+      '<td><b>'+d.name+'</b></td>'+
+      '<td><b>'+fmt(exSum,0)+'</b></td>'+
+      '<td class="'+chgCls(exYoY)+'">'+(exYoY===null?'—':(exYoY>0?'+':'')+exYoY.toFixed(1)+'%')+'</td>'+
+      '<td><b>'+fmt(imSum,0)+'</b></td>'+
+      '<td class="'+chgCls(imYoY)+'">'+(imYoY===null?'—':(imYoY>0?'+':'')+imYoY.toFixed(1)+'%')+'</td>';
     tb.appendChild(tr);
+    barCats.push(d.name); barExp.push(exSum); barImp.push(imSum);
+  });
+  // 分组柱状图
+  var div=document.getElementById('majorBar');
+  var c=echarts.init(div); allCharts.push(c);
+  c.setOption({
+    animation:false,
+    grid:{left:8,right:14,top:30,bottom:24,containLabel:true},
+    legend:{show:true, top:0, itemWidth:14, itemHeight:8, icon:'roundRect', textStyle:{fontSize:11,color:'#6b7686'}},
+    tooltip:{trigger:'axis', axisPointer:{type:'shadow'}, confine:true,
+      formatter:function(ps){ var s=ps[0].axisValue+'<br>'; ps.forEach(function(p){ s+="<br>"+p.marker+p.seriesName+"： <b>"+fmt(p.value,0)+"</b> 吨"; }); return s; }},
+    xAxis:{type:'category', data:barCats, axisLabel:{fontSize:11,color:'#8a93a3'}, axisTick:{show:false}, axisLine:{lineStyle:{color:'#dde3ec'}}},
+    yAxis:{type:'value', name:'吨', nameTextStyle:{fontSize:10,color:'#8a93a3'}, axisLabel:{fontSize:10,color:'#8a93a3', formatter:function(v){return v>=1000?(v/1000).toFixed(0)+'k':v;}}, splitLine:{lineStyle:{color:'#eef1f6'}}},
+    series:[
+      {name:'出口合计', type:'bar', data:barExp, itemStyle:{color:'#0f4c81'}, barMaxWidth:26, emphasis:{focus:'series'}},
+      {name:'进口合计', type:'bar', data:barImp, itemStyle:{color:'#E60000'}, barMaxWidth:26, emphasis:{focus:'series'}}
+    ]
   });
 }
 
+// ===== 年度构成：堆积柱状图（出口/进口切换） =====
+var ANNUAL_YEARS = ['2016','2017','2018','2019','2020','2021','2022','2023','2024','2025'];
+var EXP_COUNTRIES = [
+  {key:'Korea_Rep', name:'韩国', color:'#0f4c81'},
+  {key:'China', name:'中国', color:'#E60000'},
+  {key:'Taiwan', name:'中国台湾省', color:'#8E44AD'},
+  {key:'Japan', name:'日本', color:'#2980B9'},
+  {key:'USA', name:'美国', color:'#2E86DE'},
+  {key:'EU', name:'欧盟', color:'#D4AC0D', src:'regions'},
+  {key:'SEAsia', name:'东南亚', color:'#27AE60', src:'regions'},
+  {key:'MiddleEast', name:'中东', color:'#16A085', src:'regions'},
+];
+var IMP_COUNTRIES = [
+  {key:'China', name:'中国', color:'#E60000'},
+  {key:'Korea_Rep', name:'韩国', color:'#0f4c81'},
+  {key:'USA', name:'美国', color:'#2E86DE'},
+  {key:'Japan', name:'日本', color:'#2980B9'},
+  {key:'Taiwan', name:'中国台湾省', color:'#8E44AD'},
+];
+var annualChart=null;
+function buildAnnualBar(mode){
+  var defs = mode==='export'?EXP_COUNTRIES:IMP_COUNTRIES;
+  var side = mode==='export'?'Export':'Import';
+  var barData={}, totalLine=ANNUAL_YEARS.map(function(){return 0;});
+  defs.forEach(function(d){
+    var rec=(d.src?regions:reporters)[d.key];
+    var s=rec && rec[side] && rec[side].total;
+    var arr=ANNUAL_YEARS.map(function(y){ var v=s?yearSum(s,y):0; totalLine[ANNUAL_YEARS.indexOf(y)]+=v; return v; });
+    barData[d.name]=arr;
+  });
+  var barSeries=defs.map(function(d){
+    return {name:d.name, type:'bar', stack:'total', yAxisIndex:0, data:barData[d.name],
+      itemStyle:{color:d.color, borderColor:'#fff', borderWidth:0.5}, emphasis:{focus:'series'}, barMaxWidth:30};
+  });
+  var totalSeries={name:'合计', type:'line', yAxisIndex:1, data:totalLine, symbol:'circle', symbolSize:6,
+    connectNulls:true, z:10, lineStyle:{width:2.4, color:'#1A1A1A'}, itemStyle:{color:'#1A1A1A'}, emphasis:{focus:'series'}};
+  if(!annualChart) annualChart=echarts.init(document.getElementById('annualBar'));
+  allCharts.push(annualChart);
+  annualChart.setOption({
+    animation:false,
+    color:defs.map(function(d){return d.color;}).concat(['#1A1A1A']),
+    grid:{left:8, right:12, top:34, bottom:54, containLabel:true},
+    legend:{show:true, type:'scroll', top:0, left:0, right:0, itemWidth:14, itemHeight:8, icon:'roundRect', textStyle:{fontSize:11, color:'#6b7686'}},
+    tooltip:{trigger:'axis', axisPointer:{type:'shadow'}, confine:true,
+      formatter:function(ps){ var s=ps[0].axisValue+' 年<br>'; ps.forEach(function(p){ if(p.seriesType==='bar') s+="<br>"+p.marker+p.seriesName+"： <b>"+fmt(p.value,0)+"</b> 吨"; else s+="<br>"+p.marker+p.seriesName+"： <b>"+fmt(p.value,0)+"</b> 吨"; }); return s; }},
+    xAxis:{type:'category', data:ANNUAL_YEARS, axisLabel:{fontSize:11,color:'#8a93a3'}, axisTick:{show:false}, axisLine:{lineStyle:{color:'#dde3ec'}}, splitLine:{show:false}},
+    yAxis:[
+      {type:'value', name:'吨', position:'left', nameTextStyle:{fontSize:10,color:'#8a93a3'}, axisLabel:{fontSize:10,color:'#8a93a3', formatter:function(v){return v>=1000?(v/1000).toFixed(0)+'k':v;}}, splitLine:{lineStyle:{color:'#eef1f6'}}},
+      {type:'value', name:'合计', position:'right', nameTextStyle:{fontSize:10,color:'#8a93a3'}, axisLabel:{fontSize:10,color:'#8a93a3', formatter:function(v){return v>=1000?(v/1000).toFixed(0)+'k':v;}}, splitLine:{show:false}}
+    ],
+    dataZoom:[{type:'slider', xAxisIndex:0, bottom:8, height:16, start:0, end:100, handleSize:'120%', labelFormatter:'{value}'}],
+    series: barSeries.concat([totalSeries])
+  }, true);
+}
+
+// ===== 桑基图（两张：出口视角 / 进口视角） =====
 function buildSankey(){
-  var CN = {"Australia":"澳大利亚","Belgium":"比利时","Brazil":"巴西","Cambodia":"柬埔寨","Canada":"加拿大","China":"中国","Chinese Taipei":"中国台湾省","Czech Republic":"捷克","France":"法国","Germany":"德国","India":"印度","Indonesia":"印度尼西亚","Israel":"以色列","Italy":"意大利","Japan":"日本","Korea, Republic of":"韩国","Malaysia":"马来西亚","Mexico":"墨西哥","Netherlands":"荷兰","Poland":"波兰","Saudi Arabia":"沙特阿拉伯","Singapore":"新加坡","South Africa":"南非","Spain":"西班牙","Sweden":"瑞典","Thailand":"泰国","United Kingdom":"英国","United States of America":"美国","Viet Nam":"越南"};
-  var exporters = [
+  var YEAR='2025';
+  var EX='EX|', IM='IM|';
+  function yrSum(s){ var t=0; for(var k in s){ if(k.indexOf(YEAR+'-')===0 && s[k]) t+=s[k]; } return Math.round(t); }
+
+  // 出口视角：source=出口国(EX)，target=目的地(IM)
+  var expLinks=[], expNodes={}, expColored={};
+  var exporters=[
     {key:'Korea_Rep', name:'韩国'}, {key:'China', name:'中国'}, {key:'Taiwan', name:'中国台湾省'},
     {key:'Japan', name:'日本'}, {key:'USA', name:'美国'}, {key:'EU', name:'欧盟'},
     {key:'SEAsia', name:'东南亚'}, {key:'MiddleEast', name:'中东'}
   ];
-  var YEAR='2025';
-  function yrSum(s){ var t=0; for(var k in s){ if(k.indexOf(YEAR+'-')===0 && s[k]) t+=s[k]; } return Math.round(t); }
-  // 出口方与进口方用不同节点前缀，保证图为有向无环（DAG），避免双向贸易形成环导致 ECharts 桑基图报错
-  var EX='EX|', IM='IM|';
-  var links=[]; var nodeNames={};
   exporters.forEach(function(ex){
-    var rec=(reporters&&reporters[ex.key])||(regions&&regions[ex.key]);
+    var rec=(reporters[ex.key])||(regions[ex.key]);
     if(!rec||!rec.Export||!rec.Export.partners) return;
     var ps=rec.Export.partners;
     var arr=Object.keys(ps).map(function(p){return {p:p, v:yrSum(ps[p])};})
       .filter(function(x){return x.v>0;}).sort(function(a,b){return b.v-a.v;}).slice(0,8);
     arr.forEach(function(x){
       var tgt=CN[x.p]||x.p;
-      links.push({source:EX+ex.name, target:IM+tgt, value:x.v});
-      nodeNames[EX+ex.name]=ex.name; nodeNames[IM+tgt]=tgt;
+      expLinks.push({source:EX+ex.name, target:IM+tgt, value:x.v});
+      expNodes[EX+ex.name]=ex.name; expNodes[IM+tgt]=tgt;
+      expColored[EX+ex.name]=true;
     });
   });
-  var nodes=Object.keys(nodeNames).map(function(n){return {name:n, label:nodeNames[n]};});
-  var el=document.getElementById('sankeyChart');
-  if(!links.length){ el.innerHTML='<div style="padding:40px;color:var(--sub);text-align:center">暂无足够数据绘制桑基图</div>'; return; }
-  try{
-    var chart=echarts.init(el);
-    allCharts.push(chart);
-    chart.setOption({
-      tooltip:{trigger:'item', confine:true, formatter:function(p){
-        if(p.dataType==='edge') return p.data.source.split('|')[1]+' 出口至 '+p.data.target.split('|')[1]+'<br><b>'+(p.data.value||0).toLocaleString()+' 吨</b>';
-        return p.name.split('|')[1];
-      }},
-      series:[{
-        type:'sankey', left:'2%', right:'16%', top:14, bottom:14,
-        nodeWidth:16, nodeGap:10,
-        emphasis:{focus:'adjacency'},
-        lineStyle:{color:'source', opacity:0.4},
-        label:{fontSize:11, color:'#2a3345', formatter:function(p){ return p.name.split('|')[1]; }},
-        itemStyle:{color:'#0f4c81', borderColor:'#0f4c81'},
-        data:nodes, links:links
-      }]
+  var expNodeList=Object.keys(expNodes).map(function(n){ return {name:n, label:{show:true,formatter:function(){return expNodes[n];}}, itemStyle:{color:expColored[n]?nodeColor(expNodes[n]):'#9aa3b2'}}; });
+
+  // 进口视角：source=来源国(EX)，target=进口国(IM)
+  var impLinks=[], impNodes={}, impColored={};
+  var importers=[
+    {key:'China', name:'中国'}, {key:'Korea_Rep', name:'韩国'}, {key:'USA', name:'美国'},
+    {key:'Japan', name:'日本'}, {key:'Taiwan', name:'中国台湾省'}
+  ];
+  importers.forEach(function(im){
+    var rec=reporters[im.key];
+    if(!rec||!rec.Import||!rec.Import.partners) return;
+    var ps=rec.Import.partners;
+    var arr=Object.keys(ps).map(function(p){return {p:p, v:yrSum(ps[p])};})
+      .filter(function(x){return x.v>0;}).sort(function(a,b){return b.v-a.v;}).slice(0,8);
+    arr.forEach(function(x){
+      var src=CN[x.p]||x.p;
+      impLinks.push({source:EX+src, target:IM+im.name, value:x.v});
+      impNodes[EX+src]=src; impNodes[IM+im.name]=im.name;
+      impColored[IM+im.name]=true;
     });
-  }catch(e){
-    console.error('sankey error', e);
-    el.innerHTML='<div style="padding:40px;color:#c00;text-align:center">桑基图渲染失败：'+e.message+'</div>';
+  });
+  var impNodeList=Object.keys(impNodes).map(function(n){ return {name:n, label:{show:true,formatter:function(){return impNodes[n];}}, itemStyle:{color:impColored[n]?nodeColor(impNodes[n]):'#9aa3b2'}}; });
+
+  var tipExp=function(p){ return p.dataType==='edge'
+    ? p.data.source.split('|')[1]+' 出口至 '+p.data.target.split('|')[1]+'<br><b>'+(p.data.value||0).toLocaleString()+' 吨</b>'
+    : p.name.split('|')[1]; };
+  var tipImp=function(p){ return p.dataType==='edge'
+    ? p.data.source.split('|')[1]+' 出口至 '+p.data.target.split('|')[1]+'（'+p.data.target.split('|')[1]+' 自其进口）<br><b>'+(p.data.value||0).toLocaleString()+' 吨</b>'
+    : p.name.split('|')[1]; };
+
+  function renderOne(elId, titleId, title, nodes, links, tip){
+    var el=document.getElementById(elId);
+    document.getElementById(titleId).textContent=title;
+    if(!links.length){ el.innerHTML='<div style="padding:40px;color:var(--sub);text-align:center">暂无足够数据绘制桑基图</div>'; return; }
+    try{
+      var chart=echarts.init(el); allCharts.push(chart);
+      chart.setOption({
+        tooltip:{trigger:'item', confine:true, formatter:tip},
+        series:[{ type:'sankey', left:'2%', right:'14%', top:'5%', bottom:'4%',
+          nodeWidth:14, nodeGap:10, emphasis:{focus:'adjacency'},
+          data:nodes, links:links,
+          lineStyle:{color:'source', opacity:0.4, curveness:0.5},
+          label:{fontSize:11, color:'#2a3345'} }]
+      });
+    }catch(e){
+      console.error('sankey error', e);
+      el.innerHTML='<div style="padding:40px;color:#c00;text-align:center">桑基图渲染失败：'+e.message+'</div>';
+    }
   }
+  renderOne('sankeyExp','sankeyExpTitle','丁二烯出口流向（出口国 → 目的地，2025 年，吨）', expNodeList, expLinks, tipExp);
+  renderOne('sankeyImp','sankeyImpTitle','丁二烯进口流向（来源国 → 进口国，2025 年，吨）', impNodeList, impLinks, tipImp);
 }
 
 function init(){
   if(!D){ document.getElementById('summary').innerHTML='<h2>数据加载失败</h2>'; return; }
 
-  // 初始化年份显隐（默认隐藏 2016-2020）
   Object.keys(YEAR_COLORS).forEach(function(y){ yearVisible[y]=!HIDDEN_YEARS[y]; });
 
   collectCardStats();
   buildFilter();
   buildSummary();
   buildTable();
+  buildMajor();
+  buildAnnualBar('export');
   buildSankey();
 
-  // 最新日期
+  // 年度切换按钮
+  document.querySelectorAll('.tbtn').forEach(function(b){
+    b.onclick=function(){
+      document.querySelectorAll('.tbtn').forEach(function(x){x.classList.remove('active');});
+      b.classList.add('active');
+      buildAnnualBar(b.dataset.mode);
+    };
+  });
+
   var latestDate='';
   tableRows.forEach(function(r){ if(r.stats && r.stats.date && r.stats.date>latestDate) latestDate=r.stats.date; });
   document.getElementById('latestDate').textContent=latestDate;
