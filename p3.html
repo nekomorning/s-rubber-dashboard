@@ -114,7 +114,7 @@ tr.abn td{background:#fff7f0;}
   <div class="grid c4" id="bilateralGrid"></div>
 
   <div class="section-title">丁二烯贸易流向（桑基图）</div>
-  <div class="row-label">2025 年 出口国 → 进口国（吨，取各出口国前八大贸易伙伴）</div>
+  <div class="row-label">2025 年 贸易流向：出口国 → 进口国（左为出口方、右为进口方；吨，取各出口国前八大贸易伙伴）</div>
   <div class="sankey-wrap">
     <div id="sankeyChart"></div>
   </div>
@@ -307,12 +307,12 @@ const importTotals = [
   {key:'Taiwan', name:'中国台湾省总进口'},
 ];
 const bilateralDefs = [
-  {key:'Korea_Rep', flow:'Export', partner:'China', title:'韩国 → 中国'},
-  {key:'Korea_Rep', flow:'Export', partner:'United States of America', title:'韩国 → 美国'},
-  {key:'China', flow:'Import', partner:'Korea, Republic of', title:'中国 ← 韩国'},
-  {key:'China', flow:'Import', partner:'Saudi Arabia', title:'中国 ← 沙特'},
-  {key:'USA', flow:'Export', partner:'Mexico', title:'美国 → 墨西哥'},
-  {key:'Japan', flow:'Import', partner:'Korea, Republic of', title:'日本 ← 韩国'},
+  {key:'Korea_Rep', flow:'Export', partner:'China', title:'韩国出口至中国'},
+  {key:'Korea_Rep', flow:'Export', partner:'United States of America', title:'韩国出口至美国'},
+  {key:'China', flow:'Import', partner:'Korea, Republic of', title:'中国自韩国进口'},
+  {key:'China', flow:'Import', partner:'Saudi Arabia', title:'中国自沙特进口'},
+  {key:'USA', flow:'Export', partner:'Mexico', title:'美国出口至墨西哥'},
+  {key:'Japan', flow:'Import', partner:'Korea, Republic of', title:'日本自韩国进口'},
 ];
 
 var tableRows=[];
@@ -439,7 +439,7 @@ function buildSankey(){
     allCharts.push(chart);
     chart.setOption({
       tooltip:{trigger:'item', confine:true, formatter:function(p){
-        if(p.dataType==='edge') return p.data.source+' → '+p.data.target+'<br><b>'+(p.data.value||0).toLocaleString()+' 吨</b>';
+        if(p.dataType==='edge') return p.data.source+' 出口至 '+p.data.target+'<br><b>'+(p.data.value||0).toLocaleString()+' 吨</b>';
         return p.name;
       }},
       series:[{
