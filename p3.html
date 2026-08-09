@@ -43,6 +43,8 @@ body{background:var(--bg); color:var(--text);
 .card .unit{font-size:11px; color:var(--sub);}
 .card .dt{font-size:11px; color:var(--sub);}
 .card .chart{width:100%; height:170px;}
+  .sankey-wrap{background:var(--card); border:1px solid var(--border); border-radius:10px; padding:10px 12px 6px; margin-bottom:14px;}
+  #sankeyChart{width:100%; height:520px;}
 
 .bottom-nav{position:fixed; left:0; right:0; bottom:0; background:#fff; border-top:1px solid var(--border);
   display:flex; justify-content:space-around; padding:8px 0 12px; z-index:100;}
@@ -79,7 +81,13 @@ body{background:var(--bg); color:var(--text);
   <div class="row-label">主要双边贸易流量</div>
   <div class="grid c3" id="bilateralGrid"></div>
 
-  <div class="footer">注：数量按 Trademap 原始 kg 单位 ÷1000 换算为吨；区域为成员国出口量求和；部分国家/地区存在数据滞后。</div>
+  <div class="section-title">丁二烯贸易流向（桑基图）</div>
+  <div class="row-label">2025 年 出口国 → 进口国（吨，取各出口国前八大贸易伙伴）</div>
+  <div class="sankey-wrap">
+    <div id="sankeyChart" class="chart"></div>
+  </div>
+
+  <div class="footer">注：数量按 Trademap 原始 kg 单位 ÷1000 换算为吨；区域为成员国出口量求和；部分国家/地区存在数据滞后。季节图默认隐藏 2016–2020 年，可在图例勾选显示。</div>
 </div>
 
 <div class="bottom-nav">
@@ -97,9 +105,37 @@ window.__DATA__ = /*DATA*/{"unit": "tons", "hs": "290124", "source": "Trademap l
   const data = window.__DATA__;
   if(!data){ document.getElementById('summary').innerHTML='数据加载失败'; return; }
 
+  // 所有数值取整（吨，保留整数）
+  function roundVal(v){ return (typeof v==='number') ? Math.round(v) : v; }
+  function roundSeries(obj){
+    if(obj && typeof obj==='object' && !Array.isArray(obj)){
+      var out={}; for(var k in obj){ out[k]=roundSeries(obj[k]); } return out;
+    }
+    return roundVal(obj);
+  }
+  ['reporters','regions'].forEach(function(sec){
+    var coll = data[sec]; if(!coll) return;
+    Object.keys(coll).forEach(function(k){
+      var rec=coll[k];
+      ['Export','Import'].forEach(function(side){
+        var s=rec[side]; if(!s) return;
+        if(s.total) s.total=roundSeries(s.total);
+        if(s.partners){ var np={}; Object.keys(s.partners).forEach(function(p){ np[p]=roundSeries(s.partners[p]); }); s.partners=np; }
+      });
+    });
+  });
+
   const monthsOrder = ['01','02','03','04','05','06','07','08','09','10','11','12'];
   const monthLabels = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
-  const palette = ['#0f4c81','#c23531','#2f4554','#61a0a8','#d48265','#91c7ae','#749f83','#ca8622','#bda29a','#6e7074','#546570','#c4ccd3'];
+  // 季节图配色：与一页通 / 页面一 / 页面二保持一致（YEAR_COLORS）
+  var YEAR_COLORS = {
+    "2016":"#B8C4D0","2017":"#9FB0C2","2018":"#869CB4","2019":"#6E89A6","2020":"#5A78A0",
+    "2021":"#12B5A6","2022":"#8B5CF6","2023":"#1E6FFF","2024":"#F59A23","2025":"#E60000","2026":"#1A1A1A"
+  };
+  function yearColor(y){ return YEAR_COLORS[String(y)] || "#888888"; }
+  // 2016–2020 默认隐藏
+  var HIDDEN_YEARS = {"2016":1,"2017":1,"2018":1,"2019":1,"2020":1};
+  function legendSelected(years){ var sel={}; years.forEach(y=>{ sel[y]=!HIDDEN_YEARS[y]; }); return sel; }
 
   function parseMonth(m){ return m.match(/(\d{4})-M(\d{2})/).slice(1); }
   function buildSeasonSeries(seriesObj){
@@ -139,11 +175,13 @@ window.__DATA__ = /*DATA*/{"unit": "tons", "hs": "290124", "source": "Trademap l
     const years = series.map(s=>s.name);
     const option = {
       tooltip:{trigger:'axis'},
-      legend:{data:years, top:0, textStyle:{fontSize:11}, itemWidth:12, itemHeight:6},
+      legend:{data:years, top:0, textStyle:{fontSize:11}, itemWidth:12, itemHeight:6, selected:legendSelected(years)},
       grid:{left:32, right:12, top:28, bottom:18},
       xAxis:{type:'category', data:monthLabels, axisLine:{lineStyle:{color:'#ccc'}}, axisLabel:{fontSize:10}},
       yAxis:{type:'value', axisLine:{show:false}, splitLine:{lineStyle:{color:'#f0f0f0'}}, axisLabel:{fontSize:10, formatter:v=>v>=1000?(v/1000).toFixed(1)+'k':v}},
-      series: series.map((s,idx)=>({name:s.name, type:'line', smooth:true, symbol:'none', data:s.data, lineStyle:{width:1.5, color:palette[idx%palette.length]}, itemStyle:{color:palette[idx%palette.length]}}))
+      series: series.map(s=>({name:s.name, type:'line', smooth:true, symbol:'none', data:s.data, connectNulls:true,
+        lineStyle:{width:(s.name===years[years.length-1]?2.2:1.5), color:yearColor(s.name)},
+        itemStyle:{color:yearColor(s.name)}, z:(s.name===years[years.length-1]?10:5)}))
     };
     chart.setOption(option);
     return {chart, latest};
@@ -224,6 +262,49 @@ window.__DATA__ = /*DATA*/{"unit": "tons", "hs": "290124", "source": "Trademap l
     }
   });
   document.getElementById('latestDate').textContent = latestDate;
+
+  // 桑基图：出口国 → 进口国（2025 年）
+  function buildSankey(){
+    const CN = {"Australia":"澳大利亚","Belgium":"比利时","Brazil":"巴西","Cambodia":"柬埔寨","Canada":"加拿大","China":"中国","Chinese Taipei":"中国台湾省","Czech Republic":"捷克","France":"法国","Germany":"德国","India":"印度","Indonesia":"印度尼西亚","Israel":"以色列","Italy":"意大利","Japan":"日本","Korea, Republic of":"韩国","Malaysia":"马来西亚","Mexico":"墨西哥","Netherlands":"荷兰","Poland":"波兰","Saudi Arabia":"沙特阿拉伯","Singapore":"新加坡","South Africa":"南非","Spain":"西班牙","Sweden":"瑞典","Thailand":"泰国","United Kingdom":"英国","United States of America":"美国","Viet Nam":"越南"};
+    const exporters = [
+      {key:'Korea_Rep', name:'韩国'}, {key:'China', name:'中国'}, {key:'Taiwan', name:'中国台湾省'},
+      {key:'Japan', name:'日本'}, {key:'USA', name:'美国'}, {key:'EU', name:'欧盟'},
+      {key:'SEAsia', name:'东南亚'}, {key:'MiddleEast', name:'中东'}
+    ];
+    const YEAR='2025';
+    function yrSum(s){ let t=0; for(const k in s){ if(k.indexOf(YEAR+'-')===0 && s[k]) t+=s[k]; } return Math.round(t); }
+    const links=[]; const nodeSet={};
+    exporters.forEach(ex=>{
+      const rec=(reporters&&reporters[ex.key])||(regions&&regions[ex.key]);
+      if(!rec||!rec.Export||!rec.Export.partners) return;
+      const ps=rec.Export.partners;
+      const arr=Object.keys(ps).map(p=>({p, v:yrSum(ps[p])}))
+        .filter(x=>x.v>0).sort((a,b)=>b.v-a.v).slice(0,8);
+      arr.forEach(x=>{
+        const tgt=CN[x.p]||x.p;
+        links.push({source:ex.name, target:tgt, value:x.v});
+        nodeSet[ex.name]=1; nodeSet[tgt]=1;
+      });
+    });
+    const nodes=Object.keys(nodeSet).map(n=>({name:n}));
+    const chart=echarts.init(document.getElementById('sankeyChart'));
+    chart.setOption({
+      tooltip:{trigger:'item', confine:true, formatter:function(p){
+        if(p.dataType==='edge') return p.data.source+' → '+p.data.target+'<br><b>'+(p.data.value||0).toLocaleString()+' 吨</b>';
+        return p.name;
+      }},
+      series:[{
+        type:'sankey', left:10, right:150, top:14, bottom:14,
+        nodeWidth:14, nodeGap:9,
+        emphasis:{focus:'adjacency'},
+        lineStyle:{color:'gradient', opacity:0.42, curveness:0.5},
+        label:{fontSize:11, color:'#2a3345'},
+        itemStyle:{color:'#0f4c81', borderColor:'#0f4c81'},
+        data:nodes, links:links
+      }]
+    });
+  }
+  buildSankey();
 
   window.addEventListener('resize', ()=>{
     document.querySelectorAll('.chart').forEach(el=>{
