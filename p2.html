@@ -41,6 +41,15 @@ body{background:var(--bg); color:var(--text);
 .ybtn.exp:hover{filter:brightness(1.08);}
 .ybtn:disabled{opacity:.7; cursor:default;}
 
+/* ===== 排版顺序切换（按环节 / 按指标） ===== */
+.layoutbar{display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:16px;
+  background:var(--card); border:1px solid var(--border); border-radius:10px; padding:10px 16px;}
+.layoutbar .lbl{color:var(--sub); font-size:13px;}
+.layoutbar .hint{color:#b28a3a; font-size:12px;}
+.lbtn{padding:6px 18px; border-radius:16px; border:1px solid var(--border); background:#fff; cursor:pointer;
+  font-size:13px; color:var(--sub); user-select:none; transition:all .15s;}
+.lbtn.active{background:var(--accent); color:#fff; border-color:var(--accent); font-weight:600;}
+
 /* ===== 高清长图导出（合并页面一+页面二图表，仅图表，左对齐多列网格） ===== */
 .exp-stage{position:absolute; left:-10000px; top:0; width:1400px; background:#fff; padding:26px 24px; box-sizing:border-box; visibility:visible;}
 .exp-head{font-size:20px; font-weight:700; color:var(--accent); margin-bottom:16px;}
@@ -136,6 +145,13 @@ tr.abn td{background:#fff7f0;}
 
   <div class="filterbar" id="filterbar"><span class="lbl">年份筛选（点击显隐，作用于全部季节图）：</span></div>
 
+  <div class="layoutbar" id="layoutbar">
+    <span class="lbl">排版顺序：</span>
+    <span class="lbtn active" data-mode="sector">按环节排序</span>
+    <span class="lbtn" data-mode="indicator">按指标排序</span>
+    <span class="lbl hint" id="layoutHint"></span>
+  </div>
+
   <div class="tablecard">
     <h2>最新数据一览表 <span style="font-size:12px;color:var(--sub);font-weight:400">（周环比 = 最新值相对上一周；月环比 = 最新值相对约 4 周前；|环比%| ≥ 5% 标记为大幅变化，利润类指标不参与标记）</span></h2>
     <table id="dataTable">
@@ -222,12 +238,64 @@ function chgLabel(st){
   return "日环比";
 }
 
+/* ===== 排版切换：按环节排序（默认） / 按指标排序（产量·开工·利润·库存·表需） ===== */
+var viewMode='sector';
+var INDICATOR_LAYOUT=[
+  {section:"产量", rows:[
+    {label:"", charts:[
+      {key:"丁二烯周产量"},{key:"丁二烯四大下游产量折丁二烯需求"},{key:"顺丁周产量"},{key:"丁苯周产量"},{key:"ABS周产量"},{key:"SBS周产量"},{key:"半钢周产量"}
+    ]}
+  ]},
+  {section:"开工", rows:[
+    {label:"", charts:[
+      {key:"石脑油裂解乙烯开工"},{key:"丁二烯开工"},{key:"顺丁开工"},{key:"丁苯开工"},{key:"ABS开工"},{key:"SBS开工"},{key:"半钢开工"}
+    ]}
+  ]},
+  {section:"利润", rows:[
+    {label:"", charts:[
+      {key:"石脑油裂解乙烯利润"},{key:"丁二烯碳四抽提利润"},{key:"丁二烯氧化脱氢利润"},{key:"顺丁利润"},{key:"丁苯利润"},{key:"ABS利润"},{key:"SBS利润"},{key:"半钢利润"}
+    ]}
+  ]},
+  {section:"库存", rows:[
+    {label:"", charts:[
+      {key:"丁二烯港口库存"},{key:"丁二烯及四大下游折丁二烯合计库存"},{key:"顺丁总库存"},{key:"丁苯总库存"},{key:"ABS总库存"},{key:"SBS总库存"},{key:"半钢库存天数"}
+    ]}
+  ]},
+  {section:"表需", rows:[
+    {label:"", charts:[
+      {key:"丁二烯四大下游产量折丁二烯需求"},{key:"顺丁表需"},{key:"丁苯表需"},{key:"ABS表需"},{key:"SBS表需"}
+    ]}
+  ]}
+];
+function curLayout(){ return viewMode==="indicator" ? INDICATOR_LAYOUT : D.layout; }
+function setViewMode(mode){
+  if(mode===viewMode) return;
+  viewMode=mode;
+  document.querySelectorAll("#layoutbar .lbtn").forEach(function(b){
+    b.classList.toggle("active", b.dataset.mode===mode);
+  });
+  var hint=document.getElementById("layoutHint");
+  if(hint) hint.textContent = (mode==="indicator")
+    ? "注：按指标排序仅展示产量/开工/利润/库存/表需五大类核心指标；工厂/贸易商库存明细、半钢价格请在「按环节排序」中查看。"
+    : "";
+  // 销毁旧图并重建表格 + 图表区
+  charts.forEach(function(c){ try{ c.dispose(); }catch(e){} });
+  charts=[]; allCharts=[];
+  var tb=document.querySelector("#dataTable tbody"); if(tb) tb.innerHTML="";
+  var root=document.getElementById("sections"); if(root) root.innerHTML="";
+  buildTable(); buildSections();
+}
+
 function init(){
   document.getElementById("latestDate").textContent=D.latestDataDate;
   // 默认展示最近 4 年，更早年份收起（可点击开启）
   var n=D.years.length;
   D.years.forEach(function(y,i){ yearVisible[y]=(i>=n-4); });
   buildFilter(); buildSummary(); buildTable(); buildSections();
+  // 排版切换按钮
+  document.querySelectorAll("#layoutbar .lbtn").forEach(function(b){
+    b.onclick=function(){ setViewMode(b.dataset.mode); };
+  });
   var t; window.addEventListener("resize",function(){ clearTimeout(t); t=setTimeout(function(){ allCharts.forEach(function(c){c.resize();}); },150); });
 }
 
@@ -285,38 +353,42 @@ function buildSummary(){
 
 function buildTable(){
   var tb=document.querySelector("#dataTable tbody");
-  var groups={};
-  D.layout.forEach(function(sec){
+  tb.innerHTML="";
+  var layout=curLayout();
+  var byKey={}; D.table.forEach(function(r){ byKey[r.key]=r; });
+  layout.forEach(function(sec){
+    var secRows=[];
     sec.rows.forEach(function(row){
-      row.charts.forEach(function(ch){ if(!ch.ts) groups[ch.key]=sec.section; });
+      row.charts.forEach(function(ch){
+        if(!ch.ts && byKey[ch.key]) secRows.push(byKey[ch.key]);
+      });
     });
-  });
-  var lastGrp=null;
-  D.table.forEach(function(r){
-    var g=groups[r.key]||"";
-    if(g!==lastGrp){
-      var trg=document.createElement("tr"); trg.className="grp";
-      trg.innerHTML="<td colspan='12'>"+g+"</td>"; tb.appendChild(trg); lastGrp=g;
-    }
-    var elig=!r.margin;                       // 利润类不参与大幅变化标记
-    var dAbn=elig && r.pct!==null && Math.abs(r.pct)>=5;
-    var wAbn=elig && r.monthPct!==null && Math.abs(r.monthPct)>=5;
-    var dCls=chgCls(r.chg), wCls=chgCls(r.monthChg);
-    var tr=document.createElement("tr");
-    if(dAbn||wAbn) tr.className="abn";
-    tr.innerHTML=
-      "<td>"+r.title+"</td><td style='color:var(--sub)'>"+r.unit+"</td>"+
-      "<td style='color:var(--sub)'>"+(r.latestDate||"—")+"</td>"+
-      "<td><b>"+fmt(r.latest,r.dec)+"</b></td>"+
-      "<td>"+fmt(r.prev,r.dec)+"</td>"+
-      "<td class='"+dCls+"'>"+((r.chg>0?"+":"")+fmt(r.chg,r.dec))+"</td>"+
-      "<td class='"+dCls+"'>"+(r.pct===null?"—":(r.pct>0?"+":"")+r.pct.toFixed(2)+"%")+"</td>"+
-      "<td>"+(dAbn?"<span class='badge"+(r.chg<0?" dn":"")+"'>大幅"+(r.chg>0?"上涨":"下跌")+"</span>":"")+"</td>"+
-      "<td>"+fmt(r.monthAgo,r.dec)+"</td>"+
-      "<td class='"+wCls+"'>"+((r.monthChg>0?"+":"")+fmt(r.monthChg,r.dec))+"</td>"+
-      "<td class='"+wCls+"'>"+(r.monthPct===null?"—":(r.monthPct>0?"+":"")+r.monthPct.toFixed(2)+"%")+"</td>"+
-      "<td>"+(wAbn?"<span class='badge"+(r.monthChg<0?" dn":"")+"'>大幅"+(r.monthChg>0?"上涨":"下跌")+"</span>":"")+"</td>";
-    tb.appendChild(tr);
+    // 去重（同一指标可能出现在多个板块，如丁二烯四大下游产量折丁二烯需求）
+    var seen={}; secRows=secRows.filter(function(r){ if(seen[r.key]) return false; seen[r.key]=1; return true; });
+    if(!secRows.length) return;
+    var trg=document.createElement("tr"); trg.className="grp";
+    trg.innerHTML="<td colspan='12'>"+sec.section+"</td>"; tb.appendChild(trg);
+    secRows.forEach(function(r){
+      var elig=!r.margin;                       // 利润类不参与大幅变化标记
+      var dAbn=elig && r.pct!==null && Math.abs(r.pct)>=5;
+      var wAbn=elig && r.monthPct!==null && Math.abs(r.monthPct)>=5;
+      var dCls=chgCls(r.chg), wCls=chgCls(r.monthChg);
+      var tr=document.createElement("tr");
+      if(dAbn||wAbn) tr.className="abn";
+      tr.innerHTML=
+        "<td>"+r.title+"</td><td style='color:var(--sub)'>"+r.unit+"</td>"+
+        "<td style='color:var(--sub)'>"+(r.latestDate||"—")+"</td>"+
+        "<td><b>"+fmt(r.latest,r.dec)+"</b></td>"+
+        "<td>"+fmt(r.prev,r.dec)+"</td>"+
+        "<td class='"+dCls+"'>"+((r.chg>0?"+":"")+fmt(r.chg,r.dec))+"</td>"+
+        "<td class='"+dCls+"'>"+(r.pct===null?"—":(r.pct>0?"+":"")+r.pct.toFixed(2)+"%")+"</td>"+
+        "<td>"+(dAbn?"<span class='badge"+(r.chg<0?" dn":"")+"'>大幅"+(r.chg>0?"上涨":"下跌")+"</span>":"")+"</td>"+
+        "<td>"+fmt(r.monthAgo,r.dec)+"</td>"+
+        "<td class='"+wCls+"'>"+((r.monthChg>0?"+":"")+fmt(r.monthChg,r.dec))+"</td>"+
+        "<td class='"+wCls+"'>"+(r.monthPct===null?"—":(r.monthPct>0?"+":"")+r.monthPct.toFixed(2)+"%")+"</td>"+
+        "<td>"+(wAbn?"<span class='badge"+(r.monthChg<0?" dn":"")+"'>大幅"+(r.monthChg>0?"上涨":"下跌")+"</span>":"")+"</td>";
+      tb.appendChild(tr);
+    });
   });
 }
 
@@ -329,7 +401,7 @@ function monthTicks(){
 function buildSections(){
   var root=document.getElementById("sections");
   var ticks=monthTicks();
-  D.layout.forEach(function(sec){
+  curLayout().forEach(function(sec){
     var h=document.createElement("div");
     h.className="section-title"; h.textContent=sec.section;
     root.appendChild(h);
@@ -541,15 +613,15 @@ function exportLongImage(btn){
     var p1=arr.filter(function(d){ return d.ts; })[0] || arr[0];
     var p2=arr.filter(function(d){ return d.isWeekly; })[0] || (arr.length>1?arr[1]:null);
     var sheets=[
-      {title:"日度价格", D:p1, weekly:false},
-      {title:"开工库存表需", D:p2, weekly:true}
-    ].filter(function(s){ return s.D && s.D.layout; });
+      {title:"日度价格", D:p1, weekly:false, L:(p1&&p1.layout)?p1.layout:null},
+      {title:"开工库存表需", D:p2, weekly:true, L:(p2&&curLayout())?curLayout():null}
+    ].filter(function(s){ return s.D && s.L; });
 
     // 0) 先计算整体尺寸与缩放比例，避免后续底部图表被画到画布外
     var PAGE_TITLE_H=52, SECTION_H=44, ROW_H=36;
     var maxCols=1;
     sheets.forEach(function(s){
-      s.D.layout.forEach(function(sec){
+      s.L.forEach(function(sec){
         sec.rows.forEach(function(row){
           var cols=expColsFor(s.weekly, row.charts.length);
           if(cols>maxCols) maxCols=cols;
@@ -561,7 +633,7 @@ function exportLongImage(btn){
     var Hcss=MARGIN+BANNER+22;
     sheets.forEach(function(s){
       Hcss+=PAGE_TITLE_H;
-      s.D.layout.forEach(function(sec){
+      s.L.forEach(function(sec){
         Hcss+=SECTION_H;
         sec.rows.forEach(function(row){
           if(row.label) Hcss+=ROW_H;
@@ -583,7 +655,7 @@ function exportLongImage(btn){
     var tiles=[];
     sheets.forEach(function(s){
       var D=s.D;
-      D.layout.forEach(function(sec){
+      s.L.forEach(function(sec){
         sec.rows.forEach(function(row){
           row.charts.forEach(function(ch){
             var div=document.createElement("div");
@@ -604,7 +676,7 @@ function exportLongImage(btn){
       var D=s.D;
       textOps.push({x:MARGIN, y:curY+PAGE_TITLE_H/2, text:s.title+"　数据截至："+D.latestDataDate, size:28, color:EXP_ACCENT, bold:true});
       curY+=PAGE_TITLE_H;
-      D.layout.forEach(function(sec){
+      s.L.forEach(function(sec){
         textOps.push({x:MARGIN, y:curY+SECTION_H/2, text:"▍"+sec.section, size:24, color:EXP_ACCENT, bold:true});
         curY+=SECTION_H;
         sec.rows.forEach(function(row){
