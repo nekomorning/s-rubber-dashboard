@@ -45,6 +45,14 @@ body{background:var(--bg); color:var(--text);
 .snap-wrap{background:var(--card); border:1px solid var(--border); border-radius:10px;
   padding:10px 12px; margin-bottom:14px;}
 .snap-wrap img{display:block; width:100%; height:auto; border-radius:4px;}
+/* 9 图对齐：上方 1 张综合图 + 下方 3 列网格 */
+.grid-3{display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:14px;}
+.grid-3 .snap-cell{background:var(--card); border:1px solid var(--border); border-radius:10px;
+  padding:10px 12px;}
+.grid-3 .snap-cell img{display:block; width:100%; height:auto; border-radius:4px;}
+.grid-3 .cell-cap{margin-top:6px; font-size:12px; color:var(--sub); text-align:center;}
+@media (max-width:900px){ .grid-3{grid-template-columns:repeat(2,1fr);} }
+@media (max-width:560px){ .grid-3{grid-template-columns:1fr;} }
 
 .placeholder{background:var(--card); border:2px dashed #d6dae3; border-radius:10px;
   padding:48px 24px; text-align:center; color:var(--sub); margin-bottom:14px;}
@@ -99,8 +107,23 @@ body{background:var(--bg); color:var(--text);
   <div class="section-title">四、全球乙烯检修</div>
   <div class="sub-title">8 月负荷暂时持稳，东南亚部分检修增加，东北亚提负进度继续延后，负荷仍然和海峡通行情况高度相关，欧美季节性检修基本结束，中东装置重启进度后延</div>
   <div class="snap-wrap">
-    <img src="合成胶数据看板_石脑油周报_files/p24_全球乙烯检修.png" alt="全球乙烯检修" />
+    <img src="合成胶数据看板_石脑油周报_files/p24_全球乙烯检修.png" alt="全球乙烯检修（亚太区域）" />
     <div class="row-label" style="margin-top:8px;">东北亚乙烯检修 / 韩国乙烯检修 / 日本乙烯检修 / 台湾乙烯检修 / 中国乙烯检修 / 东南亚乙烯检修</div>
+  </div>
+
+  <div class="grid-3">
+    <div class="snap-cell">
+      <img src="合成胶数据看板_石脑油周报_files/p25_北美乙烯检修.png" alt="北美乙烯检修" />
+      <div class="cell-cap">北美乙烯检修</div>
+    </div>
+    <div class="snap-cell">
+      <img src="合成胶数据看板_石脑油周报_files/p25_中东乙烯检修.png" alt="中东乙烯检修" />
+      <div class="cell-cap">中东乙烯检修</div>
+    </div>
+    <div class="snap-cell">
+      <img src="合成胶数据看板_石脑油周报_files/p25_欧洲乙烯检修.png" alt="欧洲乙烯检修" />
+      <div class="cell-cap">欧洲乙烯检修</div>
+    </div>
   </div>
 
   <div class="footer">合成胶数据看板 · 石脑油周报 · 数据每周更新 · 该页图表不纳入合成胶导出长图</div>
