@@ -166,6 +166,15 @@ function fmt(v, ind){
   return Number(v).toLocaleString("zh-CN",{minimumFractionDigits:2, maximumFractionDigits:2});
 }
 
+/* 红涨绿跌：正值红、负值绿、零/空不着色 */
+function signColor(v){
+  if(v===null || v===undefined || (typeof v==="number" && isNaN(v))) return "";
+  if(v>0) return "#d8392b";
+  if(v<0) return "#1a8a4a";
+  return "";
+}
+function signStyle(v){ var c=signColor(v); return c ? (" style='color:"+c+"'") : ""; }
+
 /* ---------- country tabs ---------- */
 function renderCountryTabs(){
   var box = document.getElementById("countryTabs");
@@ -191,7 +200,9 @@ function renderMonthly(){
     body += "<tr><td class='date-col'>"+mo.date+"</td>";
     mo.v.forEach(function(v, idx){
       var s = fmt(v, ind[idx]);
-      body += "<td"+(s===""?" class='val-null'":"")+">"+s+"</td>";
+      var cls = (s==="") ? " class='val-null'" : "";
+      var sty = ind[idx].cumYoy ? signStyle(v) : "";
+      body += "<td"+cls+sty+">"+s+"</td>";
     });
     body += "</tr>";
   });
@@ -276,22 +287,25 @@ function renderFilterTable(){
   var head = "<thead><tr><th class='date-col'>指标</th>";
   ind.forEach(function(i){ head += "<th>"+i.name+"</th>"; });
   head += "</tr></thead>";
-  function row(name, arr, isPctRow){
+  function row(name, arr, isPctRow, colorFn){
     var r = "<tr><td class='date-col'>"+name+"</td>";
     arr.forEach(function(v, idx){
       var s;
       if(v===null || v===undefined){ s=""; }
       else if(isPctRow){ s = v.toFixed(1)+"%"; }
       else { s = fmt(v, ind[idx]); }
-      r += "<td"+(s===""?" class='val-null'":"")+">"+s+"</td>";
+      var sty = (colorFn && s!=="") ? colorFn(v, idx) : "";
+      r += "<td"+(s===""?" class='val-null'":"")+sty+">"+s+"</td>";
     });
     return r+"</tr>";
   }
+  var cumYoyColor = function(v, idx){ return ind[idx].cumYoy ? signStyle(v) : ""; };
+  var deltaColor  = function(v, idx){ return signStyle(v); };
   var body = "<tbody>";
-  body += row("上年同期累计值", lst, false);
-  body += row("所选周期累计值", sel, false);
-  body += row("同比增减值", diff, false);
-  body += row("同比增减%", pct, true);
+  body += row("上年同期累计值", lst, false, cumYoyColor);
+  body += row("所选周期累计值", sel, false, cumYoyColor);
+  body += row("同比增减值", diff, false, deltaColor);
+  body += row("同比增减%", pct, true, deltaColor);
   body += "</tbody>";
   document.getElementById("filterWrap").innerHTML = "<table class='data'>"+head+body+"</table>";
 }
