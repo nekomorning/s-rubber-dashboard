@@ -35,20 +35,12 @@ body{background:var(--bg); color:var(--text);
 .row-label{font-size:13px; color:var(--sub); margin:14px 0 8px; font-weight:600;}
 
 .card{background:var(--card); border:1px solid var(--border); border-radius:10px; padding:14px 18px; margin-bottom:14px;}
-.overview-table{width:100%; border-collapse:collapse; font-size:13px; min-width:600px;}
-.overview-table th,.overview-table td{padding:10px 14px; border:1px solid #e5e9f0; vertical-align:top; text-align:left; white-space:normal;}
-.overview-table th{background:#f0f4f9; color:var(--accent); font-weight:700; width:96px; text-align:center;}
-.overview-table td .tt{font-weight:700; color:var(--accent); margin-bottom:4px;}
-.overview-table td p{margin:0 0 4px; line-height:1.7;}
-.overview-table td p:last-child{margin-bottom:0;}
-.overview-table tr.focus td{background:#fff8f0;}
-/* 估值/策略/风险区块 */
-.sub-table{width:100%; border-collapse:collapse; font-size:12px; margin-top:8px;}
-.sub-table th,.sub-table td{padding:6px 10px; border:1px solid #eef1f6; text-align:left; white-space:normal; vertical-align:top;}
-.sub-table th{background:#f0f4f9; color:#44506a; font-weight:600; width:88px; text-align:center;}
-.sub-table td.est{font-weight:600; line-height:1.7;}
-.sub-table td.strat{line-height:1.7;}
-.sub-table td.risk{line-height:1.7;}
+/* 本周概览（纯文本三行版） */
+.overview-text{font-size:13px; line-height:1.95; color:var(--text);}
+.overview-text p{margin:0 0 10px;}
+.overview-text p:last-child{margin-bottom:0;}
+.overview-text .k{display:inline-block; min-width:48px; margin-right:6px;
+  color:var(--accent); font-weight:700;}
 
 .snap-wrap{background:var(--card); border:1px solid var(--border); border-radius:10px;
   padding:10px 12px; margin-bottom:14px;}
@@ -79,78 +71,36 @@ body{background:var(--bg); color:var(--text);
 
   <div class="weekly-banner">
     <div class="ttl" id="weeklyTtl">本周石脑油观点：石脑油套利物流或再次起量 乙烯静态利润修复</div>
-    <div class="meta">更新日期：<b id="updateDate">2026-08-10</b>　|　源文件：<b>D:\合成橡胶BR\国君周报\石脑油周报-石脑油套利物流或再次起量 乙烯静态利润修复.pdf</b>　|　本页为对国君周报《石脑油周报》要点摘录与截图归档，详细原文以 PDF 为准　|　本页面周更，有新 PDF 时同步更新</div>
+    <div class="meta">更新日期：<b id="updateDate">2026-08-10</b>　|　本页为对国君周报《石脑油周报》要点摘录与图表归档，详细原文请参考国君周报《石脑油周报》　|　本页面周更，助理截图同步更新</div>
   </div>
 
   <div class="section-title">一、本周概览</div>
-  <div class="row-label">PDF 第 4 页表格 · 石脑油列（要点摘录，括号内为周度变化）</div>
 
-  <div class="card">
-    <table class="overview-table">
-      <thead>
-        <tr><th>维度</th><th>石脑油</th></tr>
-      </thead>
-      <tbody>
-        <tr>
-          <th>供应</th>
-          <td>
-            <p class="tt">要点 1</p>
-            <p>近端中东浮仓石脑油净仓快速下降，实际出口高于表观观察量</p>
-            <p class="tt">要点 2</p>
-            <p>东西方套利物流量预期再次起量，供应端逐步抬升；增量上限取决于海峡通行情况</p>
-          </td>
-        </tr>
-        <tr>
-          <th>需求</th>
-          <td>
-            <p class="tt">要点 1</p>
-            <p>欧美汽油高位回落，调油需求下行；乙烯裂解利润再次转正</p>
-            <p class="tt">要点 2</p>
-            <p>短期刚性需求未回升，预计 9 月份负荷在供应匹配背景下才有明显回升</p>
-          </td>
-        </tr>
-        <tr class="focus">
-          <th>观点</th>
-          <td>
-            <p class="tt">核心判断</p>
-            <p>前期供应双减带动石脑油高位震荡；伴随汽油走弱与中东出口增加，行情再入"供应边际增量"模式</p>
-            <p class="tt">关注点</p>
-            <p>① 海峡通行情况；② 乙烯裂解装置刚需支撑下石脑油再破前低；③ 若短期供应增量超预期，石脑油仍有走弱空间</p>
-          </td>
-        </tr>
-      </tbody>
-    </table>
-
-    <table class="sub-table" style="margin-top:14px;">
-      <thead><tr><th>项目</th><th>内容</th></tr></thead>
-      <tbody>
-        <tr><th>估值</th><td class="est">乙烯裂解利润 <b>+3.8 美元/吨（+102 美元/吨）</b>　|　亚洲汽油-石脑油价差 274 美元/吨（-37 美元/吨）　|　PVC 外采利润 -1061 元/吨（+81 元/吨）　|　苯乙烯外采利润 -199 元/吨（+148 美元/吨）　|　乙烯外采利润 +6 元/吨（+6 美元/吨）　|　欧洲汽油-石脑油价差 245 美元/吨（-37 美元/吨）　|　乙二醇外采利润 -289 元/吨（-165 元/吨）　|　塑料外采利润 -327 元/吨（-70 元/吨）　|　亚洲芳烃重整利润 +60 美元/吨（+49 元/吨）</td></tr>
-        <tr><th>策略</th><td class="strat">MOPJ 裂解价差做缩　|　价格逐步承压</td></tr>
-        <tr><th>风险</th><td class="risk">中东地缘风险继续升级　|　装置意外检修增多</td></tr>
-      </tbody>
-    </table>
+  <div class="card overview-text">
+    <p><span class="k">供应：</span>近端中东浮仓石脑油净仓快速下降，实际出口高于表观观察量；东西方套利物流量预期再次起量，供应端逐步抬升，增量上限取决于海峡通行情况。</p>
+    <p><span class="k">需求：</span>欧美汽油高位回落，调油需求下行；乙烯裂解利润再次转正，但短期刚性需求未回升，预计 9 月份负荷在供应匹配背景下才有明显回升。</p>
+    <p><span class="k">观点：</span>前期供应双减带动石脑油高位震荡；伴随汽油走弱与中东出口增加，行情再入"供应边际增量"模式。关注点：① 海峡通行情况；② 乙烯裂解装置刚需支撑下石脑油再破前低；③ 若短期供应增量超预期，石脑油仍有走弱空间。</p>
   </div>
 
   <div class="section-title">二、石脑油纸货结构</div>
   <div class="sub-title">石脑油 Premium 本周拐头向下，中东暗流增加，关注海峡通行情况，石脑油先行走弱</div>
   <div class="snap-wrap">
-    <img src="合成胶数据看板_石脑油周报_files/p7_石脑油纸货结构.png" alt="石脑油纸货结构 - PDF p7" />
-    <div class="row-label" style="margin-top:8px;">PDF 第 7 页　|　MOPJ Premium（年度叠加） / 石脑油报价结构（30/45/60/75day 远期） / 亚洲石脑油掉期 M1-M6 / 西北欧石脑油掉期 M1-M6</div>
+    <img src="合成胶数据看板_石脑油周报_files/p7_石脑油纸货结构.png" alt="石脑油纸货结构" />
+    <div class="row-label" style="margin-top:8px;">MOPJ Premium（年度叠加） / 石脑油报价结构（30/45/60/75day 远期） / 亚洲石脑油掉期 M1-M6 / 西北欧石脑油掉期 M1-M6</div>
   </div>
 
   <div class="section-title">三、全球裂解利润</div>
   <div class="sub-title">石脑油本周高位环比走弱，下游乙烯裂解利润修复至盈亏平衡上方，关注石脑油供应端修复，下游裂解装置暂无明确提负重启计划</div>
   <div class="snap-wrap">
-    <img src="合成胶数据看板_石脑油周报_files/p17_全球裂解利润.png" alt="全球裂解利润 - PDF p17" />
-    <div class="row-label" style="margin-top:8px;">PDF 第 17 页　|　亚洲乙烯裂解利润 / FEI 裂解利润 / 美国乙烷裂解利润 / 欧洲乙烯裂解利润</div>
+    <img src="合成胶数据看板_石脑油周报_files/p17_全球裂解利润.png" alt="全球裂解利润" />
+    <div class="row-label" style="margin-top:8px;">亚洲乙烯裂解利润 / FEI 裂解利润 / 美国乙烷裂解利润 / 欧洲乙烯裂解利润</div>
   </div>
 
   <div class="section-title">四、全球乙烯检修</div>
   <div class="sub-title">8 月负荷暂时持稳，东南亚部分检修增加，东北亚提负进度继续延后，负荷仍然和海峡通行情况高度相关，欧美季节性检修基本结束，中东装置重启进度后延</div>
-
-  <div class="placeholder">
-    <div class="big">全球乙烯检修图待补</div>
-    <div class="sub">需要 PDF 第 24 页（6 张图）+ 第 25 页（3 张图）的截图<br/>请把图片发给助理，文件命名建议：<br/><code>p24_全球乙烯检修.png</code>、<code>p25_全球乙烯检修.png</code><br/>放到 <code>合成胶数据看板_石脑油周报_files/</code> 目录后再次同步</div>
+  <div class="snap-wrap">
+    <img src="合成胶数据看板_石脑油周报_files/p24_全球乙烯检修.png" alt="全球乙烯检修" />
+    <div class="row-label" style="margin-top:8px;">东北亚乙烯检修 / 韩国乙烯检修 / 日本乙烯检修 / 台湾乙烯检修 / 中国乙烯检修 / 东南亚乙烯检修</div>
   </div>
 
   <div class="footer">合成胶数据看板 · 石脑油周报 · 数据每周更新 · 该页图表不纳入合成胶导出长图</div>
