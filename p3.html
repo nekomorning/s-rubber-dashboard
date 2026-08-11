@@ -161,7 +161,7 @@ tr.drill-detail td.flat{color:var(--flat);}
   <div class="card"><div id="annualBar" class="chart tall"></div></div>
 
   <div class="section-title">丁二烯贸易流向（桑基图）</div>
-  <div class="row-label">2025 年贸易流向（吨，取各视角前八大贸易伙伴）；左图为出口视角（出口国 → 目的地），右图为进口视角（来源国 → 进口国）</div>
+  <div class="row-label">取各视角前八大贸易伙伴，随顶部年份筛选汇总可见年份；左图为出口视角（出口国 → 目的地），右图为进口视角（来源国 → 进口国）</div>
   <div class="grid c2">
     <div class="card"><div class="ttl" id="sankeyExpTitle"></div><div id="sankeyExp" class="chart sankey"></div></div>
     <div class="card"><div class="ttl" id="sankeyImpTitle"></div><div id="sankeyImp" class="chart sankey"></div></div>
@@ -720,81 +720,25 @@ function buildAnnualBar(mode){
 }
 
 // ===== 桑基图（两张：出口视角 / 进口视角） =====
-function buildSankey(){
-  var YEAR='2025';
-  var EX='EX|', IM='IM|';
-  function yrSum(s){ var t=0; for(var k in s){ if(k.indexOf(YEAR+'-')===0 && s[k]) t+=s[k]; } return Math.round(t); }
-
-  // 出口视角：source=出口国(EX)，target=目的地(IM)
-  var expLinks=[], expNodes={}, expColored={};
-  var exporters=[
-    {key:'Korea_Rep', name:'韩国'}, {key:'China', name:'中国'}, {key:'Taiwan', name:'中国台湾省'},
-    {key:'Japan', name:'日本'}, {key:'USA', name:'美国'}, {key:'EU', name:'欧盟'},
-    {key:'SEAsia', name:'东南亚'}
-  ];
-  exporters.forEach(function(ex){
-    var rec=(reporters[ex.key])||(regions[ex.key]);
-    if(!rec||!rec.Export||!rec.Export.partners) return;
-    var ps=rec.Export.partners;
-    var arr=Object.keys(ps).map(function(p){return {p:p, v:yrSum(ps[p])};})
-      .filter(function(x){return x.v>0;}).sort(function(a,b){return b.v-a.v;}).slice(0,8);
-    arr.forEach(function(x){
-      var tgt=CN[x.p]||x.p;
-      expLinks.push({source:EX+ex.name, target:IM+tgt, value:x.v});
-      expNodes[EX+ex.name]=ex.name; expNodes[IM+tgt]=tgt;
-      expColored[EX+ex.name]=true;
+function renderOne(elId, titleId, title, nodes, links, tip){
+  var el=document.getElementById(elId);
+  document.getElementById(titleId).textContent=title;
+  if(!links.length){ el.innerHTML='<div style="padding:40px;color:var(--sub);text-align:center">暂无足够数据绘制桑基图</div>'; return null; }
+  try{
+    var chart=echarts.init(el); allCharts.push(chart);
+    chart.setOption({
+      tooltip:{trigger:'item', confine:true, formatter:tip},
+      series:[{ type:'sankey', left:'2%', right:'14%', top:'5%', bottom:'4%',
+        nodeWidth:14, nodeGap:10, emphasis:{focus:'adjacency'},
+        data:nodes, links:links,
+        lineStyle:{color:'source', opacity:0.4, curveness:0.5},
+        label:{fontSize:11, color:'#2a3345'} }]
     });
-  });
-  var expNodeList=Object.keys(expNodes).map(function(n){ return {name:n, label:{show:true,formatter:function(){return expNodes[n];}}, itemStyle:{color:expColored[n]?nodeColor(expNodes[n]):'#9aa3b2'}}; });
-
-  // 进口视角：source=来源国(EX)，target=进口国(IM)
-  var impLinks=[], impNodes={}, impColored={};
-  var importers=[
-    {key:'China', name:'中国'}, {key:'Korea_Rep', name:'韩国'}, {key:'USA', name:'美国'},
-    {key:'Japan', name:'日本'}, {key:'Taiwan', name:'中国台湾省'}
-  ];
-  importers.forEach(function(im){
-    var rec=reporters[im.key];
-    if(!rec||!rec.Import||!rec.Import.partners) return;
-    var ps=rec.Import.partners;
-    var arr=Object.keys(ps).map(function(p){return {p:p, v:yrSum(ps[p])};})
-      .filter(function(x){return x.v>0;}).sort(function(a,b){return b.v-a.v;}).slice(0,8);
-    arr.forEach(function(x){
-      var src=CN[x.p]||x.p;
-      impLinks.push({source:EX+src, target:IM+im.name, value:x.v});
-      impNodes[EX+src]=src; impNodes[IM+im.name]=im.name;
-      impColored[IM+im.name]=true;
-    });
-  });
-  var impNodeList=Object.keys(impNodes).map(function(n){ return {name:n, label:{show:true,formatter:function(){return impNodes[n];}}, itemStyle:{color:impColored[n]?nodeColor(impNodes[n]):'#9aa3b2'}}; });
-
-  var tipExp=function(p){ return p.dataType==='edge'
-    ? p.data.source.split('|')[1]+' 出口至 '+p.data.target.split('|')[1]+'<br><b>'+(p.data.value||0).toLocaleString()+' 吨</b>'
-    : p.name.split('|')[1]; };
-  var tipImp=function(p){ return p.dataType==='edge'
-    ? p.data.source.split('|')[1]+' 出口至 '+p.data.target.split('|')[1]+'（'+p.data.target.split('|')[1]+' 自其进口）<br><b>'+(p.data.value||0).toLocaleString()+' 吨</b>'
-    : p.name.split('|')[1]; };
-
-  function renderOne(elId, titleId, title, nodes, links, tip){
-    var el=document.getElementById(elId);
-    document.getElementById(titleId).textContent=title;
-    if(!links.length){ el.innerHTML='<div style="padding:40px;color:var(--sub);text-align:center">暂无足够数据绘制桑基图</div>'; return null; }
-    try{
-      var chart=echarts.init(el); allCharts.push(chart);
-      chart.setOption({
-        tooltip:{trigger:'item', confine:true, formatter:tip},
-        series:[{ type:'sankey', left:'2%', right:'14%', top:'5%', bottom:'4%',
-          nodeWidth:14, nodeGap:10, emphasis:{focus:'adjacency'},
-          data:nodes, links:links,
-          lineStyle:{color:'source', opacity:0.4, curveness:0.5},
-          label:{fontSize:11, color:'#2a3345'} }]
-      });
-      return chart;
-    }catch(e){
-      console.error('sankey error', e);
-      el.innerHTML='<div style="padding:40px;color:#c00;text-align:center">桑基图渲染失败：'+e.message+'</div>';
-      return null;
-    }
+    return chart;
+  }catch(e){
+    console.error('sankey error', e);
+    el.innerHTML='<div style="padding:40px;color:#c00;text-align:center">桑基图渲染失败：'+e.message+'</div>';
+    return null;
   }
 }
 
