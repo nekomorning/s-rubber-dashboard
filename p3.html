@@ -1158,7 +1158,10 @@ function buildFilterPanel(){
 }
 
 function init(){
+  D = window.__DATA__[CURRENT];
   if(!D){ document.getElementById('summary').innerHTML='<h2>数据加载失败</h2>'; return; }
+  reporters = D.reporters || {};
+  regions = D.regions || {};
   prepareData();
   setTabTexts();
   Object.keys(YEAR_COLORS).forEach(function(y){ yearVisible[y]=!HIDDEN_YEARS[y]; });
