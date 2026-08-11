@@ -424,6 +424,7 @@ function buildFilter(){
       yearVisible[y]=!yearVisible[y];
       b.classList.toggle('off',!yearVisible[y]);
       charts.forEach(function(c){ c.dispatchAction({type:'legendToggleSelect',name:String(y)}); });
+      buildSankey(); // 桑基图跟随可见年份汇总
     };
     bar.appendChild(b);
   });
@@ -776,7 +777,7 @@ function buildSankey(){
   function renderOne(elId, titleId, title, nodes, links, tip){
     var el=document.getElementById(elId);
     document.getElementById(titleId).textContent=title;
-    if(!links.length){ el.innerHTML='<div style="padding:40px;color:var(--sub);text-align:center">暂无足够数据绘制桑基图</div>'; return; }
+    if(!links.length){ el.innerHTML='<div style="padding:40px;color:var(--sub);text-align:center">暂无足够数据绘制桑基图</div>'; return null; }
     try{
       var chart=echarts.init(el); allCharts.push(chart);
       chart.setOption({
@@ -787,13 +788,96 @@ function buildSankey(){
           lineStyle:{color:'source', opacity:0.4, curveness:0.5},
           label:{fontSize:11, color:'#2a3345'} }]
       });
+      return chart;
     }catch(e){
       console.error('sankey error', e);
       el.innerHTML='<div style="padding:40px;color:#c00;text-align:center">桑基图渲染失败：'+e.message+'</div>';
+      return null;
     }
   }
-  renderOne('sankeyExp','sankeyExpTitle','丁二烯出口流向（出口国 → 目的地，2025 年，吨）', expNodeList, expLinks, tipExp);
-  renderOne('sankeyImp','sankeyImpTitle','丁二烯进口流向（来源国 → 进口国，2025 年，吨）', impNodeList, impLinks, tipImp);
+}
+
+var sankeyExpInst=null, sankeyImpInst=null;
+function buildSankey(){
+  // 释放旧实例，避免内存/重叠
+  function disposeInst(inst){
+    if(!inst) return;
+    var i=allCharts.indexOf(inst); if(i>=0) allCharts.splice(i,1);
+    try{ inst.dispose(); }catch(e){}
+  }
+  disposeInst(sankeyExpInst); disposeInst(sankeyImpInst);
+  sankeyExpInst=null; sankeyImpInst=null;
+
+  // 跟随顶部年份筛选：汇总可见年份的流量
+  var visibleYears = Object.keys(yearVisible).filter(function(y){ return yearVisible[y] && YEAR_COLORS[y]; }).sort();
+  if(!visibleYears.length) visibleYears=['2025']; // 兜底：全隐藏时仍显示 2025
+  var yrLabel = (visibleYears.length===1)
+    ? visibleYears[0]+' 年'
+    : '汇总（'+visibleYears[0]+'–'+visibleYears[visibleYears.length-1]+' 年）';
+
+  var EX='EX|', IM='IM|';
+  function yrSum(s){
+    var t=0;
+    for(var k in s){
+      for(var i=0;i<visibleYears.length;i++){
+        if(k.indexOf(visibleYears[i]+'-')===0 && s[k]){ t+=s[k]; break; }
+      }
+    }
+    return Math.round(t);
+  }
+
+  // 出口视角：source=出口国(EX)，target=目的地(IM)
+  var expLinks=[], expNodes={}, expColored={};
+  var exporters=[
+    {key:'Korea_Rep', name:'韩国'}, {key:'China', name:'中国'}, {key:'Taiwan', name:'中国台湾省'},
+    {key:'Japan', name:'日本'}, {key:'USA', name:'美国'}, {key:'EU', name:'欧盟'},
+    {key:'SEAsia', name:'东南亚'}
+  ];
+  exporters.forEach(function(ex){
+    var rec=(reporters[ex.key])||(regions[ex.key]);
+    if(!rec||!rec.Export||!rec.Export.partners) return;
+    var ps=rec.Export.partners;
+    var arr=Object.keys(ps).map(function(p){return {p:p, v:yrSum(ps[p])};})
+      .filter(function(x){return x.v>0;}).sort(function(a,b){return b.v-a.v;}).slice(0,8);
+    arr.forEach(function(x){
+      var tgt=CN[x.p]||x.p;
+      expLinks.push({source:EX+ex.name, target:IM+tgt, value:x.v});
+      expNodes[EX+ex.name]=ex.name; expNodes[IM+tgt]=tgt;
+      expColored[EX+ex.name]=true;
+    });
+  });
+  var expNodeList=Object.keys(expNodes).map(function(n){ return {name:n, label:{show:true,formatter:function(){return expNodes[n];}}, itemStyle:{color:expColored[n]?nodeColor(expNodes[n]):'#9aa3b2'}}; });
+
+  // 进口视角：source=来源国(EX)，target=进口国(IM)
+  var impLinks=[], impNodes={}, impColored={};
+  var importers=[
+    {key:'China', name:'中国'}, {key:'Korea_Rep', name:'韩国'}, {key:'USA', name:'美国'},
+    {key:'Japan', name:'日本'}, {key:'Taiwan', name:'中国台湾省'}
+  ];
+  importers.forEach(function(im){
+    var rec=reporters[im.key];
+    if(!rec||!rec.Import||!rec.Import.partners) return;
+    var ps=rec.Import.partners;
+    var arr=Object.keys(ps).map(function(p){return {p:p, v:yrSum(ps[p])};})
+      .filter(function(x){return x.v>0;}).sort(function(a,b){return b.v-a.v;}).slice(0,8);
+    arr.forEach(function(x){
+      var src=CN[x.p]||x.p;
+      impLinks.push({source:EX+src, target:IM+im.name, value:x.v});
+      impNodes[EX+src]=src; impNodes[IM+im.name]=im.name;
+      impColored[IM+im.name]=true;
+    });
+  });
+  var impNodeList=Object.keys(impNodes).map(function(n){ return {name:n, label:{show:true,formatter:function(){return impNodes[n];}}, itemStyle:{color:impColored[n]?nodeColor(impNodes[n]):'#9aa3b2'}}; });
+
+  var tipExp=function(p){ return p.dataType==='edge'
+    ? p.data.source.split('|')[1]+' 出口至 '+p.data.target.split('|')[1]+'<br><b>'+(p.data.value||0).toLocaleString()+' 吨</b>'
+    : p.name.split('|')[1]; };
+  var tipImp=function(p){ return p.dataType==='edge'
+    ? p.data.source.split('|')[1]+' 出口至 '+p.data.target.split('|')[1]+'（'+p.data.target.split('|')[1]+' 自其进口）<br><b>'+(p.data.value||0).toLocaleString()+' 吨</b>'
+    : p.name.split('|')[1]; };
+
+  sankeyExpInst = renderOne('sankeyExp','sankeyExpTitle','丁二烯出口流向（出口国 → 目的地，'+yrLabel+'，吨）', expNodeList, expLinks, tipExp);
+  sankeyImpInst = renderOne('sankeyImp','sankeyImpTitle','丁二烯进口流向（来源国 → 进口国，'+yrLabel+'，吨）', impNodeList, impLinks, tipImp);
 }
 
 // ================= 自定义筛选面板（方向 × 国家/地区 × 对手方，驱动下方季节图） =================
