@@ -132,7 +132,7 @@ tr.drill-detail td.flat{color:var(--flat);}
   <div class="filterbar" id="filterbar"><span class="lbl">年份筛选（点击显隐，作用于全部季节图）：</span></div>
 
   <div class="tablecard">
-    <h2>最新数据一览表 <span style="font-size:12px;color:var(--sub);font-weight:400">（点击分组名折叠/展开；点击国家/地区行左侧小三角可下钻展开其细分双边流向，按最新值从高到低排列；最新值/上月值/去年同月值单位均为吨；环比% = 相对上月；同比% = 相对上年同月；累计同比增减值 = 年初至今累计 − 去年同期累计）</span></h2>
+    <h2>最新数据一览表 <span style="font-size:12px;color:var(--sub);font-weight:400">（点击分组名折叠/展开；点击国家/地区行左侧小三角可下钻展开其细分双边流向，按年初至今累计从高到低排列；最新值/上月值/去年同月值单位均为吨；年初至今累计/去年同期累计/累计同比增减值单位为万吨；环比% = 相对上月；同比% = 相对上年同月；累计同比增减值 = 年初至今累计 − 去年同期累计）</span></h2>
     <table id="dataTable">
       <thead><tr>
         <th>指标</th><th>单位</th><th>最新月份</th><th>最新值</th><th>上月值</th><th>去年同月值</th><th>环比%</th><th>同比%</th><th>年初至今累计</th><th>去年同期累计</th><th>累计同比增减值</th><th>累计同比%</th>
@@ -455,16 +455,16 @@ function rowHtml(title, unit, st, isDrill){
   var tri = isDrill ? "<span class='drill-tri'></span>" : "";
   var cls = (isDrill?"drill-total":"subrow");
   return "<tr class='"+cls+"'>"+
-    "<td>"+tri+title+"</td><td style='color:var(--sub)'>"+unit+"</td>"+
+    "<td>"+tri+title+"</td><td style='color:var(--sub)'>"+unit+" · 累计万吨</td>"+
     "<td style='color:var(--sub)'>"+(st.date||'—')+"</td>"+
     "<td><b>"+fmt(st.latest,0)+"</b></td>"+
     "<td>"+(st.prev===null||st.prev===undefined?'—':fmt(st.prev,0))+"</td>"+
     "<td>"+(st.yoy===null||st.yoy===undefined?'—':fmt(st.yoy,0))+"</td>"+
     "<td class='"+chgCls(st.chg)+"'>"+(st.pct===null?'—':(st.pct>0?'+':'')+st.pct.toFixed(1)+'%')+"</td>"+
     "<td class='"+chgCls(st.yoyChg)+"'>"+(st.yoyPct===null?'—':(st.yoyPct>0?'+':'')+st.yoyPct.toFixed(1)+'%')+"</td>"+
-    "<td><b>"+fmt(ytd?ytd.sum:0,0)+"</b></td>"+
-    "<td>"+fmt(ytd?ytd.lsum:0,0)+"</td>"+
-    "<td class='"+diffCls+"'>"+(ytdDiff===null?'—':(ytdDiff>0?'+':'')+fmt(ytdDiff,0))+"</td>"+
+    "<td><b>"+fmt((ytd?ytd.sum:0)/10000,2)+"</b></td>"+
+    "<td>"+fmt((ytd?ytd.lsum:0)/10000,2)+"</td>"+
+    "<td class='"+diffCls+"'>"+(ytdDiff===null?'—':(ytdDiff>0?'+':'')+fmt(ytdDiff/10000,2))+"</td>"+
     "<td class='"+ytdCls+"'>"+(ytd&&ytd.pct!==null?(ytd.pct>0?'+':'')+ytd.pct.toFixed(1)+'%':'—')+"</td></tr>";
 }
 function sumStats(rows){
@@ -700,7 +700,7 @@ function buildAnnualBar(mode){
   defs.forEach(function(d){
     var rec=(d.src?regions:reporters)[d.key];
     var s=rec && rec[side] && rec[side].total;
-    var arr=ANNUAL_YEARS.map(function(y){ var v=s?yearSum(s,y):0; totalLine[ANNUAL_YEARS.indexOf(y)]+=v; return v; });
+    var arr=ANNUAL_YEARS.map(function(y){ var v=s?(yearSum(s,y)/10000):0; totalLine[ANNUAL_YEARS.indexOf(y)]+=v; return Math.round(v*100)/100; });
     barData[d.name]=arr;
   });
   var barSeries=defs.map(function(d){
@@ -717,10 +717,10 @@ function buildAnnualBar(mode){
     grid:{left:8, right:12, top:16, bottom:62, containLabel:true},
     legend:{show:true, type:'scroll', bottom:30, left:'center', right:0, itemWidth:12, itemHeight:6, itemGap:8, icon:'roundRect', textStyle:{fontSize:10, color:'#6b7686'}},
     tooltip:{trigger:'axis', axisPointer:{type:'shadow'}, confine:true,
-      formatter:function(ps){ var s=ps[0].axisValue+' 年<br>'; ps.forEach(function(p){ if(p.seriesType==='bar') s+="<br>"+p.marker+p.seriesName+"： <b>"+fmt(p.value,0)+"</b> 吨"; else s+="<br>"+p.marker+p.seriesName+"： <b>"+fmt(p.value,0)+"</b> 吨"; }); return s; }},
+      formatter:function(ps){ var s=ps[0].axisValue+' 年<br>'; ps.forEach(function(p){ if(p.seriesType==='bar') s+="<br>"+p.marker+p.seriesName+"： <b>"+fmt(p.value,2)+"</b> 万吨"; else s+="<br>"+p.marker+p.seriesName+"： <b>"+fmt(p.value,2)+"</b> 万吨"; }); return s; }},
     xAxis:{type:'category', data:ANNUAL_YEARS, axisLabel:{fontSize:11,color:'#8a93a3'}, axisTick:{show:false}, axisLine:{lineStyle:{color:'#dde3ec'}}, splitLine:{show:false}},
     yAxis:[
-      {type:'value', name:'吨', position:'left', nameTextStyle:{fontSize:10,color:'#8a93a3'}, axisLabel:{fontSize:10,color:'#8a93a3', formatter:function(v){return v>=1000?(v/1000).toFixed(0)+'k':v;}}, splitLine:{lineStyle:{color:'#eef1f6'}}},
+      {type:'value', name:'万吨', position:'left', nameTextStyle:{fontSize:10,color:'#8a93a3'}, axisLabel:{fontSize:10,color:'#8a93a3', formatter:function(v){return v>=1000?(v/1000).toFixed(0)+'k':v;}}, splitLine:{lineStyle:{color:'#eef1f6'}}},
       {type:'value', name:'合计', position:'right', nameTextStyle:{fontSize:10,color:'#8a93a3'}, axisLabel:{fontSize:10,color:'#8a93a3', formatter:function(v){return v>=1000?(v/1000).toFixed(0)+'k':v;}}, splitLine:{show:false}}
     ],
     dataZoom:[{type:'slider', xAxisIndex:0, bottom:8, height:16, start:0, end:100, handleSize:'120%', labelFormatter:'{value}'}],
