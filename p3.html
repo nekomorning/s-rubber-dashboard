@@ -68,7 +68,7 @@ tr.drill-tri{display:inline-block; width:0; height:0; border-left:5px solid var(
 tr.drill-total.expanded .drill-tri{transform:rotate(90deg);}
 tr.drill-detail td{font-weight:400;}
 tr.drill-detail.hidden{display:none;}
-tr.drill-detail td:first-child{padding-left:52px; color:var(--sub); font-size:12px;}
+tr.drill-detail td:first-child{padding-left:28px; color:var(--sub); font-size:12px;}
 tr.drill-detail td.up{color:var(--up); font-weight:600;}
 tr.drill-detail td.down{color:var(--down); font-weight:600;}
 tr.drill-detail td.flat{color:var(--flat);}
@@ -132,10 +132,10 @@ tr.drill-detail td.flat{color:var(--flat);}
   <div class="filterbar" id="filterbar"><span class="lbl">年份筛选（点击显隐，作用于全部季节图）：</span></div>
 
   <div class="tablecard">
-    <h2>最新数据一览表 <span style="font-size:12px;color:var(--sub);font-weight:400">（点击分组名折叠/展开各国汇总行；点击各国行左侧三角可下钻展开其主要双边贸易流向；当月值 = 最新月；环比% = 相对上月；同比% = 相对上年同月；年初至今累计值 = 本年至最新月求和；累计同比% = 该累计值相对上年同期累计值的同比；|累计同比%| ≥ 10% 标记为大幅变化）</span></h2>
+    <h2>最新数据一览表 <span style="font-size:12px;color:var(--sub);font-weight:400">（点击分组名折叠/展开；点击国家/地区行左侧小三角可下钻展开其细分双边流向，按最新值从高到低排列；最新值/上月值/去年同月值单位均为吨；环比% = 相对上月；同比% = 相对上年同月；累计同比增减值 = 年初至今累计 − 去年同期累计）</span></h2>
     <table id="dataTable">
       <thead><tr>
-        <th>指标</th><th>单位</th><th>最新月份</th><th>当月值</th><th>环比%</th><th>同比%</th><th>年初至今累计值</th><th>累计同比%</th>
+        <th>指标</th><th>单位</th><th>最新月份</th><th>最新值</th><th>上月值</th><th>去年同月值</th><th>环比%</th><th>同比%</th><th>年初至今累计</th><th>去年同期累计</th><th>累计同比增减值</th><th>累计同比%</th>
       </tr></thead>
       <tbody></tbody>
     </table>
@@ -468,6 +468,29 @@ function spanYtd(st){
 }
 
 // ===== 一览表：总分结构（可折叠分组 + 各国家行内嵌双边下钻） =====
+function rowHtml(title, unit, st, isDrill){
+  if(!st) return '';
+  var ytd=st.ytd;
+  var ytdDiff = (ytd && ytd.sum!==null && ytd.lsum!==null) ? (ytd.sum - ytd.lsum) : null;
+  var abn = ytd && ytd.pct!==null && Math.abs(ytd.pct)>=10;
+  var ytdCls = chgCls(ytd?ytd.pct:0);
+  var diffCls = chgCls(ytdDiff);
+  var tri = isDrill ? "<span class='drill-tri'></span>" : "";
+  var cls = (isDrill?"drill-total":"subrow")+(abn?' abn':'');
+  return "<tr class='"+cls+"'>"+
+    "<td>"+tri+title+"</td><td style='color:var(--sub)'>"+unit+"</td>"+
+    "<td style='color:var(--sub)'>"+(st.date||'—')+"</td>"+
+    "<td><b>"+fmt(st.latest,0)+"</b></td>"+
+    "<td>"+(st.prev===null||st.prev===undefined?'—':fmt(st.prev,0))+"</td>"+
+    "<td>"+(st.yoy===null||st.yoy===undefined?'—':fmt(st.yoy,0))+"</td>"+
+    "<td class='"+chgCls(st.chg)+"'>"+(st.pct===null?'—':(st.pct>0?'+':'')+st.pct.toFixed(1)+'%')+"</td>"+
+    "<td class='"+chgCls(st.yoyChg)+"'>"+(st.yoyPct===null?'—':(st.yoyPct>0?'+':'')+st.yoyPct.toFixed(1)+'%')+"</td>"+
+    "<td><b>"+fmt(ytd?ytd.sum:0,0)+"</b></td>"+
+    "<td>"+fmt(ytd?ytd.lsum:0,0)+"</td>"+
+    "<td class='"+diffCls+"'>"+(ytdDiff===null?'—':(ytdDiff>0?'+':'')+fmt(ytdDiff,0))+"</td>"+
+    "<td class='"+ytdCls+"'>"+(ytd&&ytd.pct!==null?(ytd.pct>0?'+':'')+ytd.pct.toFixed(1)+'%':'—')+
+      (abn?" <span class='badge"+(ytd.pct<0?' dn':'')+"'>大幅"+(ytd.pct>0?'增长':'下降')+"</span>":'')+"</td></tr>";
+}
 function buildBilateralChildren(countryRow){
   var side = (countryRow.group==='出口总量') ? 'Export' : 'Import';
   var rec = (countryRow.src||reporters)[countryRow.key];
@@ -489,74 +512,44 @@ function buildBilateralChildren(countryRow){
     }
     children.push({title:title, unit:'吨', stats:st});
   });
-  // 按年初至今累计降序，取前 10 个双边伙伴
-  children.sort(function(a,b){
-    var av=(a.stats.ytd&&a.stats.ytd.sum)||a.stats.latest||0;
-    var bv=(b.stats.ytd&&b.stats.ytd.sum)||b.stats.latest||0;
-    return bv-av;
-  });
-  return children.slice(0,10);
+  // 按最新值降序排列双边伙伴（参考天胶进出口页逻辑）
+  children.sort(function(a,b){ return (b.stats.latest||0)-(a.stats.latest||0); });
+  return children;
 }
 
 function buildTable(){
   var tb=document.querySelector('#dataTable tbody');
   tb.innerHTML='';
-  // 分组顺序（重点流向已合并到各国家行的下钻子项中）
+  // 分组映射：参考天胶进出口页，标题为「主要国家合计 · 丁二烯出口量/进口量」
+  var groupMap={'出口总量':'主要国家合计 · 丁二烯出口量','进口总量':'主要国家合计 · 丁二烯进口量'};
   var groupOrder=['出口总量','进口总量'];
   var byGroup={};
   tableRows.forEach(function(r){ (byGroup[r.group]=byGroup[r.group]||[]).push(r); });
   groupOrder.forEach(function(g){
     var rows=byGroup[g]||[];
     if(!rows.length) return;
+    // 组内按最新值从高到低排列
+    rows.sort(function(a,b){ return (b.stats&&b.stats.latest||0)-(a.stats&&a.stats.latest||0); });
     var gsum=0; rows.forEach(function(r){ if(r.stats) gsum+= (r.stats.latest||0); });
     var trg=document.createElement('tr'); trg.className='grp collapsible';
-    trg.innerHTML='<td colspan="8"><span class="tri"></span>'+g+
+    trg.innerHTML='<td colspan="12"><span class="tri"></span>'+groupMap[g]+
       '　<span style="color:var(--sub);font-weight:400;font-size:12px">合计 '+fmt(gsum,0)+' 吨（最新月）</span></td>';
     trg.onclick=function(){ toggleGroup(trg); };
     tb.appendChild(trg);
     rows.forEach(function(r){
       var st=r.stats; if(!st) return;
-      var ytd=st.ytd;
-      var abn = ytd && ytd.pct!==null && Math.abs(ytd.pct)>=10;
-      var ytdCls = chgCls(ytd?ytd.pct:0);
-      // 计算该国家/地区的双边子项
       var children = buildBilateralChildren(r);
       var isDrill = children.length>0;
-      // 渲染主行（国家/地区总进出口）
-      var tr=document.createElement('tr');
-      tr.className = (isDrill?'drill-total':'subrow')+(abn?' abn':'');
-      tr.innerHTML=
-        '<td>'+r.title+'</td><td style="color:var(--sub)">'+r.unit+'</td>'+
-        '<td style="color:var(--sub)">'+(st.date||'—')+'</td>'+
-        '<td><b>'+fmt(st.latest,0)+'</b></td>'+
-        '<td class="'+chgCls(st.chg)+'">'+(st.pct===null?'—':(st.pct>0?'+':'')+st.pct.toFixed(1)+'%')+'</td>'+
-        '<td class="'+chgCls(st.yoyChg)+'">'+(st.yoyPct===null?'—':(st.yoyPct>0?'+':'')+st.yoyPct.toFixed(1)+'%')+'</td>'+
-        '<td><b>'+fmt(ytd?ytd.sum:0,0)+'</b></td>'+
-        '<td class="'+ytdCls+'">'+(ytd&&ytd.pct!==null?(ytd.pct>0?'+':'')+ytd.pct.toFixed(1)+'%':'—')+
-          (abn?' <span class="badge'+(ytd.pct<0?' dn':'')+'">大幅'+(ytd.pct>0?'增长':'下降')+'</span>':'')+'</td>';
+      var wrap=document.createElement('tbody'); wrap.innerHTML=rowHtml(r.title, r.unit, st, isDrill);
+      var tr=wrap.firstChild;
       if(isDrill){
-        tr.innerHTML = tr.innerHTML.replace(/(<td[^>]*>)/, "$1<span class='drill-tri'></span>");
         tr.addEventListener('click', function(){ toggleDrill(tr); });
       }
       tb.appendChild(tr);
       // 渲染下钻子行（双边流向，默认隐藏）
       children.forEach(function(child){
-        var cst=child.stats;
-        var cytd=cst.ytd;
-        var cabn=cytd&&cytd.pct!==null&&Math.abs(cytd.pct)>=10;
-        var cytdCls=chgCls(cytd?cytd.pct:0);
-        var ctr=document.createElement('tr');
-        ctr.className='drill-detail hidden'+(cabn?' abn':'');
-        ctr.innerHTML=
-          '<td>'+child.title+'</td><td style="color:var(--sub)">'+child.unit+'</td>'+
-          '<td style="color:var(--sub)">'+(cst.date||'—')+'</td>'+
-          '<td><b>'+fmt(cst.latest,0)+'</b></td>'+
-          '<td class="'+chgCls(cst.chg)+'">'+(cst.pct===null?'—':(cst.pct>0?'+':'')+cst.pct.toFixed(1)+'%')+'</td>'+
-          '<td class="'+chgCls(cst.yoyChg)+'">'+(cst.yoyPct===null?'—':(cst.yoyPct>0?'+':'')+cst.yoyPct.toFixed(1)+'%')+'</td>'+
-          '<td><b>'+fmt(cytd?cytd.sum:0,0)+'</b></td>'+
-          '<td class="'+cytdCls+'">'+(cytd&&cytd.pct!==null?(cytd.pct>0?'+':'')+cytd.pct.toFixed(1)+'%':'—')+
-            (cabn?' <span class="badge'+(cytd.pct<0?' dn':'')+'">大幅'+(cytd.pct>0?'增长':'下降')+'</span>':'')+'</td>';
-        tb.appendChild(ctr);
+        var cwrap=document.createElement('tbody'); cwrap.innerHTML=rowHtml(child.title, child.unit, child.stats, false);
+        var ctr=cwrap.firstChild; ctr.className='drill-detail hidden'; tb.appendChild(ctr);
       });
     });
   });
