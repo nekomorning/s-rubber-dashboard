@@ -131,20 +131,6 @@ tr.drill-detail td.flat{color:var(--flat);}
 
   <div class="filterbar" id="filterbar"><span class="lbl">年份筛选（点击显隐，作用于全部季节图）：</span></div>
 
-  <div class="section-title" id="filterSectionTitle">自定义筛选 · 月度季节图<span style="font-size:12px;color:var(--sub);font-weight:400">（图表随筛选实时变化，不影响下方桑基图与年度堆积图）</span></div>
-  <div id="filterPanel" class="fpanel">
-    <span class="lbl">方向</span><select id="fDir" class="fsel"></select>
-    <span class="lbl">国家/地区</span><select id="fFocus" class="fsel"></select>
-    <span class="lbl" id="fCpLbl">对手方</span><select id="fCparty" class="fsel"></select>
-    <span class="hint" id="filterHint">单位：吨</span>
-  </div>
-  <div class="card" id="filterSingle">
-    <div class="ttl ttlrow"><span id="filterTtl"></span><span class="dt" id="filterDt"></span></div>
-    <div class="meta pctmode" id="filterMeta"></div>
-    <div id="filterChart" class="chart tall"></div>
-  </div>
-  <div id="filterCharts" class="grid c3" style="margin-top:10px;"></div>
-
   <div class="tablecard">
     <h2>最新数据一览表 <span style="font-size:12px;color:var(--sub);font-weight:400">（点击分组名折叠/展开各国汇总行；点击各国行左侧三角可下钻展开其主要双边贸易流向；当月值 = 最新月；环比% = 相对上月；同比% = 相对上年同月；年初至今累计值 = 本年至最新月求和；累计同比% = 该累计值相对上年同期累计值的同比；|累计同比%| ≥ 10% 标记为大幅变化）</span></h2>
     <table id="dataTable">
@@ -191,6 +177,20 @@ tr.drill-detail td.flat{color:var(--flat);}
     <div class="card"><div class="ttl" id="sankeyExpTitle"></div><div id="sankeyExp" class="chart sankey"></div></div>
     <div class="card"><div class="ttl" id="sankeyImpTitle"></div><div id="sankeyImp" class="chart sankey"></div></div>
   </div>
+
+  <div class="section-title" id="filterSectionTitle">自定义筛选 · 月度季节图<span style="font-size:12px;color:var(--sub);font-weight:400">（图表随筛选实时变化）</span></div>
+  <div id="filterPanel" class="fpanel">
+    <span class="lbl">方向</span><select id="fDir" class="fsel"></select>
+    <span class="lbl">国家/地区</span><select id="fFocus" class="fsel"></select>
+    <span class="lbl" id="fCpLbl">对手方</span><select id="fCparty" class="fsel"></select>
+    <span class="hint" id="filterHint">单位：吨</span>
+  </div>
+  <div class="card" id="filterSingle">
+    <div class="ttl ttlrow"><span id="filterTtl"></span><span class="dt" id="filterDt"></span></div>
+    <div class="meta pctmode" id="filterMeta"></div>
+    <div id="filterChart" class="chart tall"></div>
+  </div>
+  <div id="filterCharts" class="grid c3" style="margin-top:10px;"></div>
 
   <div class="footer">注：数量按 Trademap 原始 kg 单位 ÷1000 换算为吨；区域为成员国出口量求和；部分国家/地区存在数据滞后。季节图默认隐藏 2016–2020 年，可在图例或顶部年份筛选中显隐。桑基图采用有向无环（DAG）结构以避免双向贸易成环。</div>
 </div>
