@@ -47,7 +47,6 @@ tr.abn td{background:#fff7f0;}
 .badge{display:inline-block; margin-left:6px; padding:1px 7px; border-radius:9px; font-size:11px;
   background:var(--up); color:#fff; vertical-align:1px;}
 .badge.dn{background:var(--down);}
-.badge.stale{background:#9aa3b2;}
 /* 一览表 总分结构：可折叠分组 */
 tr.grp td{background:#f7f9fc; color:var(--text); font-weight:600; text-align:right; font-size:13px;}
 tr.grp td:first-child{text-align:left; color:var(--accent); font-weight:700;}
@@ -260,13 +259,6 @@ function roundSeries(obj){
 
 const reporters = D.reporters || {};
 const regions = D.regions || {};
-var GLOBAL_LATEST='';
-function monthDiffMonths(a,b){
-  if(!a||!b) return 0;
-  var pa=a.match(/(\d{4})-M(\d{2})/), pb=b.match(/(\d{4})-M(\d{2})/);
-  if(!pa||!pb) return 0;
-  return (parseInt(pa[1],10)-parseInt(pb[1],10))*12 + (parseInt(pa[2],10)-parseInt(pb[2],10));
-}
 const monthsOrder = ['01','02','03','04','05','06','07','08','09','10','11','12'];
 const monthLabels = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
 // 2016–2020 默认隐藏
@@ -296,10 +288,6 @@ function buildSeasonSeries(seriesObj){
 }
 function latestNonNull(seriesObj){
   const keys = Object.keys(seriesObj).sort();
-  for(var i=keys.length-1;i>=0;i--){
-    const v = seriesObj[keys[i]];
-    if(v!==null && v!==undefined && v!==0) return {date:keys[i], value:v};
-  }
   for(var i=keys.length-1;i>=0;i--){
     const v = seriesObj[keys[i]];
     if(v!==null && v!==undefined) return {date:keys[i], value:v};
@@ -477,7 +465,7 @@ function spanYtd(st){
 }
 
 // ===== 一览表：总分结构（可折叠分组 + 各国家行内嵌双边下钻） =====
-function rowHtml(title, unit, st, isDrill, badge){
+function rowHtml(title, unit, st, isDrill){
   if(!st) return '';
   var ytd=st.ytd;
   var ytdDiff = (ytd && ytd.sum!==null && ytd.lsum!==null) ? (ytd.sum - ytd.lsum) : null;
@@ -487,7 +475,7 @@ function rowHtml(title, unit, st, isDrill, badge){
   var tri = isDrill ? "<span class='drill-tri'></span>" : "";
   var cls = (isDrill?"drill-total":"subrow")+(abn?' abn':'');
   return "<tr class='"+cls+"'>"+
-    "<td>"+tri+title+(badge||"")+"</td><td style='color:var(--sub)'>"+unit+"</td>"+
+    "<td>"+tri+title+"</td><td style='color:var(--sub)'>"+unit+"</td>"+
     "<td style='color:var(--sub)'>"+(st.date||'—')+"</td>"+
     "<td><b>"+fmt(st.latest,0)+"</b></td>"+
     "<td>"+(st.prev===null||st.prev===undefined?'—':fmt(st.prev,0))+"</td>"+
@@ -545,7 +533,7 @@ function buildBilateralChildren(countryRow){
     } else {
       title = parentName + '自' + displayName + '进口';
     }
-    children.push({title:title, unit:'吨', stats:st, stale: (GLOBAL_LATEST && st.date) ? monthDiffMonths(GLOBAL_LATEST, st.date) > 3 : false});
+    children.push({title:title, unit:'吨', stats:st});
   });
   // 按最新值降序排列双边伙伴（参考天胶进出口页逻辑）
   children.sort(function(a,b){ return (b.stats.latest||0)-(a.stats.latest||0); });
@@ -590,8 +578,7 @@ function buildTable(){
       tb.appendChild(tr);
       // 渲染下钻子行（双边流向，默认隐藏）
       children.forEach(function(child){
-        var badge = child.stale ? "<span class='badge stale'>滞后</span>" : "";
-        var cwrap=document.createElement('tbody'); cwrap.innerHTML=rowHtml(child.title, child.unit, child.stats, false, badge);
+        var cwrap=document.createElement('tbody'); cwrap.innerHTML=rowHtml(child.title, child.unit, child.stats, false);
         var ctr=cwrap.firstChild; ctr.className='drill-detail hidden'; tb.appendChild(ctr);
       });
     });
@@ -996,10 +983,6 @@ function init(){
   Object.keys(YEAR_COLORS).forEach(function(y){ yearVisible[y]=!HIDDEN_YEARS[y]; });
 
   collectCardStats();
-  // 全局最新月份（钻取子行"滞后"判断），须在 buildTable 之前计算
-  var latestDate='';
-  tableRows.forEach(function(r){ if(r.stats && r.stats.date && r.stats.date>latestDate) latestDate=r.stats.date; });
-  GLOBAL_LATEST = latestDate;
   buildFilter();
   buildSummary();
   buildTable();
@@ -1017,6 +1000,8 @@ function init(){
     };
   });
 
+  var latestDate='';
+  tableRows.forEach(function(r){ if(r.stats && r.stats.date && r.stats.date>latestDate) latestDate=r.stats.date; });
   document.getElementById('latestDate').textContent=latestDate;
 
   var t; window.addEventListener('resize',function(){ clearTimeout(t); t=setTimeout(function(){ allCharts.forEach(function(c){c.resize();}); },150); });
