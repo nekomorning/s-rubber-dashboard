@@ -752,12 +752,25 @@ function renderOne(elId, titleId, title, nodes, links, tip){
 }
 
 var sankeyExpInst=null, sankeyImpInst=null;
+// 最新"完整"年度：某年 12 个月都有数据（以韩国出口总计判断），数据更新到 12 月后自动切到新一年
+function latestCompleteYear(){
+  var total = reporters['Korea_Rep'] && reporters['Korea_Rep'].Export && reporters['Korea_Rep'].Export.total;
+  if(!total) return null;
+  var cnt={};
+  Object.keys(total).forEach(function(k){
+    var p=k.match(/^(\d{4})-M(\d{2})$/);
+    if(p && total[k]!==null && total[k]!==undefined) cnt[p[1]]=(cnt[p[1]]||0)+1;
+  });
+  var full=Object.keys(cnt).filter(function(y){return cnt[y]>=12;}).sort();
+  return full.length?full[full.length-1]:null;
+}
+
 function initSankeyYear(){
   var sel=document.getElementById('sankeyYear');
   if(!sel) return;
   sel.innerHTML = '<option value="ALL">全部年份汇总</option>' +
     Object.keys(YEAR_COLORS).sort().reverse().map(function(y){ return '<option value="'+y+'">'+y+' 年</option>'; }).join('');
-  sel.value='ALL';
+  sel.value = latestCompleteYear() || 'ALL'; // 默认最新完整年度（如 2025），12 月数据齐全后自动变 2026
   sel.onchange=function(){ buildSankey(); };
 }
 
