@@ -548,8 +548,8 @@ function buildTable(){
   groupOrder.forEach(function(g){
     var rows=byGroup[g]||[];
     if(!rows.length) return;
-    // 组内按最新值从高到低排列
-    rows.sort(function(a,b){ return (b.stats&&b.stats.latest||0)-(a.stats&&a.stats.latest||0); });
+    // 组内按年初至今累计值从高到低排列
+    rows.sort(function(a,b){ return ((b.stats&&b.stats.ytd&&b.stats.ytd.sum)||0)-((a.stats&&a.stats.ytd&&a.stats.ytd.sum)||0); });
 
     // 1) 分组合计行（真实数据行，可折叠）
     var gstats = sumStats(rows);
