@@ -260,6 +260,12 @@ function legendSelected(years){ var sel={}; years.forEach(function(y){ sel[y]=!H
 var CN = {"Argentina":"阿根廷","Australia":"澳大利亚","Austria":"奥地利","Belgium":"比利时","Brazil":"巴西","Bulgaria":"保加利亚","Cambodia":"柬埔寨","Canada":"加拿大","Chile":"智利","China":"中国","Chinese Taipei":"中国台湾省","Colombia":"哥伦比亚","Costa Rica":"哥斯达黎加","Croatia":"克罗地亚","Cyprus":"塞浦路斯","Czech Republic":"捷克","Denmark":"丹麦","Dominican Republic":"多米尼加","Ecuador":"厄瓜多尔","Egypt":"埃及","Estonia":"爱沙尼亚","Finland":"芬兰","France":"法国","Georgia":"格鲁吉亚","Germany":"德国","Greece":"希腊","Haiti":"海地","Hong Kong, China":"中国香港","Hungary":"匈牙利","India":"印度","Indonesia":"印度尼西亚","Iran, Islamic Republic of":"伊朗","Ireland":"爱尔兰","Israel":"以色列","Italy":"意大利","Japan":"日本","Kenya":"肯尼亚","Korea, Republic of":"韩国","Kuwait":"科威特","Latvia":"拉脱维亚","Lithuania":"立陶宛","Luxembourg":"卢森堡","Malta":"马耳他","Malaysia":"马来西亚","Mexico":"墨西哥","Netherlands":"荷兰","New Zealand":"新西兰","Niger":"尼日尔","Oman":"阿曼","Pakistan":"巴基斯坦","Panama":"巴拿马","Paraguay":"巴拉圭","Philippines":"菲律宾","Poland":"波兰","Portugal":"葡萄牙","Qatar":"卡塔尔","Romania":"罗马尼亚","Russian Federation":"俄罗斯","Saudi Arabia":"沙特阿拉伯","Serbia":"塞尔维亚","Ship stores and bunkers":"船舶用品与燃料","Singapore":"新加坡","Slovakia":"斯洛伐克","Slovenia":"斯洛文尼亚","South Africa":"南非","Spain":"西班牙","Special categories":"特殊类别","Sri Lanka":"斯里兰卡","Sweden":"瑞典","Switzerland":"瑞士","Thailand":"泰国","Tunisia":"突尼斯","Türkiye":"土耳其","Ukraine":"乌克兰","United Arab Emirates":"阿联酋","United Kingdom":"英国","United States of America":"美国","Viet Nam":"越南"};
 // 欧盟成员国（Trademap 国家名），用于下钻/桑基把对欧贸易聚合为一个项
 var EU_MEMBERS = ["Austria","Belgium","Bulgaria","Croatia","Cyprus","Czech Republic","Denmark","Estonia","Finland","France","Germany","Greece","Hungary","Ireland","Italy","Latvia","Lithuania","Luxembourg","Malta","Netherlands","Poland","Portugal","Romania","Slovakia","Slovenia","Spain","Sweden"];
+// 东南亚（东盟）成员国（Trademap 国家名），聚合为"东南亚"
+var SEASIA_MEMBERS = ["Brunei Darussalam","Cambodia","Indonesia","Lao People's Democratic Republic","Malaysia","Myanmar","Philippines","Singapore","Thailand","Viet Nam"];
+// 伙伴 → 区域聚合映射（欧盟/东南亚）
+var REGION_OF = {};
+EU_MEMBERS.forEach(function(k){ REGION_OF[k]='欧盟'; });
+SEASIA_MEMBERS.forEach(function(k){ REGION_OF[k]='东南亚'; });
 // 主要国家配色（出口国/进口国着色，其余伙伴灰）
 var MAJOR_COLORS = {'韩国':'#0f4c81','中国':'#E60000','中国台湾省':'#8E44AD','日本':'#2980B9','美国':'#2E86DE','欧盟':'#D4AC0D','东南亚':'#27AE60'};
 function nodeColor(name){ return MAJOR_COLORS[name] || '#9aa3b2'; }
@@ -498,19 +504,21 @@ function buildBilateralChildren(countryRow){
   var partners = rec[side].partners;
   var parentName = countryRow.title.replace(/总(出口|进口)$/,'');
   var children = [];
-  // 累加欧盟成员国贸易，生成单一聚合项
-  var euSum = {};
+  // 累加区域贸易（欧盟/东南亚），生成单一聚合项
+  var regionSum = {};
   Object.keys(partners).forEach(function(pKey){
-    if(EU_MEMBERS.indexOf(pKey) < 0) return;
+    var reg = REGION_OF[pKey];
+    if(!reg) return;
     var s = partners[pKey]; if(!s) return;
+    regionSum[reg] = regionSum[reg] || {};
     Object.keys(s).forEach(function(m){
       var v = s[m];
-      if(v !== null && v !== undefined) euSum[m] = (euSum[m] || 0) + v;
+      if(v !== null && v !== undefined) regionSum[reg][m] = (regionSum[reg][m] || 0) + v;
     });
   });
-  // 单国 child（EU 成员国已聚合，跳过）
+  // 单国 child（区域成员已聚合，跳过）
   Object.keys(partners).forEach(function(pKey){
-    if(EU_MEMBERS.indexOf(pKey) >= 0) return;
+    if(REGION_OF[pKey]) return;
     var displayName = CN[pKey] || pKey;
     if(displayName === parentName) return; // 过滤自身贸易
     var s = partners[pKey];
@@ -524,14 +532,14 @@ function buildBilateralChildren(countryRow){
     }
     children.push({title:title, unit:'吨', stats:st});
   });
-  // 插入"至/自欧盟"聚合 child
-  if(Object.keys(euSum).length){
-    var euSt = calcStats(euSum);
-    if(euSt){
-      var euTitle = (side==='Export') ? (parentName+'出口至欧盟') : (parentName+'自欧盟进口');
-      children.push({title:euTitle, unit:'吨', stats:euSt});
+  // 插入"至/自区域"聚合 child
+  Object.keys(regionSum).forEach(function(reg){
+    var regSt = calcStats(regionSum[reg]);
+    if(regSt){
+      var regTitle = (side==='Export') ? (parentName+'出口至'+reg) : (parentName+'自'+reg+'进口');
+      children.push({title:regTitle, unit:'吨', stats:regSt});
     }
-  }
+  });
   // 按最新值降序排列双边伙伴（参考天胶进出口页逻辑）
   children.sort(function(a,b){ return (b.stats.latest||0)-(a.stats.latest||0); });
   return children;
@@ -800,7 +808,7 @@ function buildSankey(){
     var byTgt={};
     Object.keys(ps).forEach(function(p){
       var v=yrSum(ps[p]); if(v<=0) return;
-      var tgt = (EU_MEMBERS.indexOf(p)>=0) ? '欧盟' : (CN[p]||p);
+      var tgt = REGION_OF[p] || (CN[p]||p);
       byTgt[tgt] = (byTgt[tgt]||0) + v;
     });
     var arr=Object.keys(byTgt).map(function(t){return {t:t, v:byTgt[t]};})
@@ -809,7 +817,7 @@ function buildSankey(){
       expLinks.push({source:EX+ex.name, target:IM+x.t, value:Math.round(x.v/WAN*100)/100}); // 万吨
       expNodes[EX+ex.name]=ex.name; expNodes[IM+x.t]=x.t;
       expColored[EX+ex.name]=true;
-      if(x.t==='欧盟') expColored[IM+x.t]=true; // 聚合欧盟节点着色
+      if(x.t==='欧盟'||x.t==='东南亚') expColored[IM+x.t]=true; // 聚合区域节点着色
     });
   });
   var expNodeList=Object.keys(expNodes).map(function(n){ return {name:n, label:{show:true,formatter:function(){return expNodes[n];}}, itemStyle:{color:expColored[n]?nodeColor(expNodes[n]):'#9aa3b2'}}; });
@@ -827,7 +835,7 @@ function buildSankey(){
     var bySrc={};
     Object.keys(ps).forEach(function(p){
       var v=yrSum(ps[p]); if(v<=0) return;
-      var src = (EU_MEMBERS.indexOf(p)>=0) ? '欧盟' : (CN[p]||p);
+      var src = REGION_OF[p] || (CN[p]||p);
       bySrc[src] = (bySrc[src]||0) + v;
     });
     var arr=Object.keys(bySrc).map(function(s){return {s:s, v:bySrc[s]};})
@@ -836,7 +844,7 @@ function buildSankey(){
       impLinks.push({source:EX+x.s, target:IM+im.name, value:Math.round(x.v/WAN*100)/100}); // 万吨
       impNodes[EX+x.s]=x.s; impNodes[IM+im.name]=im.name;
       impColored[IM+im.name]=true;
-      if(x.s==='欧盟') impColored[EX+x.s]=true;
+      if(x.s==='欧盟'||x.s==='东南亚') impColored[EX+x.s]=true;
     });
   });
   var impNodeList=Object.keys(impNodes).map(function(n){ return {name:n, label:{show:true,formatter:function(){return impNodes[n];}}, itemStyle:{color:impColored[n]?nodeColor(impNodes[n]):'#9aa3b2'}}; });
