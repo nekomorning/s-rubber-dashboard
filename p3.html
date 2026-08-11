@@ -48,7 +48,8 @@ tr.abn td{background:#fff7f0;}
   background:var(--up); color:#fff; vertical-align:1px;}
 .badge.dn{background:var(--down);}
 /* 一览表 总分结构：可折叠分组 */
-tr.grp td{background:#f7f9fc; color:var(--accent); font-weight:700; text-align:left; font-size:13px;}
+tr.grp td{background:#f7f9fc; color:var(--text); font-weight:600; text-align:right; font-size:13px;}
+tr.grp td:first-child{text-align:left; color:var(--accent); font-weight:700;}
 tr.grp.collapsible{cursor:pointer;}
 tr.grp.collapsible:hover td{background:#eef2f7;}
 tr.grp.collapsible .tri{display:inline-block; width:0; height:0; border-left:5px solid var(--sub);
@@ -62,7 +63,7 @@ tr.subrow.hidden{display:none;}
 tr.drill-total{cursor:pointer;}
 tr.drill-total td{font-weight:600;}
 tr.drill-total:hover td{background:#f8fafc;}
-tr.drill-tri{display:inline-block; width:0; height:0; border-left:5px solid var(--sub);
+.drill-tri{display:inline-block; width:0; height:0; border-left:5px solid var(--sub);
   border-top:4px solid transparent; border-bottom:4px solid transparent; margin-right:7px; vertical-align:middle;
   transition:transform .15s ease;}
 tr.drill-total.expanded .drill-tri{transform:rotate(90deg);}
@@ -406,14 +407,14 @@ function collectCardStats(){
     var rec = (item.src||reporters)[item.key];
     if(rec && rec.Export && rec.Export.total){
       var r=renderCard(exportTotalGrid, item.name, '吨', rec.Export.total);
-      tableRows.push({group:'出口总量', title:item.name, unit:'吨', stats:r.stats});
+      tableRows.push({group:'出口总量', title:item.name, unit:'吨', stats:r.stats, key:item.key, src:item.src?item.src.name||'regions':null});
     }
   });
   importTotals.forEach(function(item){
     var rec = reporters[item.key];
     if(rec && rec.Import && rec.Import.total){
       var r=renderCard(importTotalGrid, item.name, '吨', rec.Import.total);
-      tableRows.push({group:'进口总量', title:item.name, unit:'吨', stats:r.stats});
+      tableRows.push({group:'进口总量', title:item.name, unit:'吨', stats:r.stats, key:item.key, src:null});
     }
   });
   bilateralDefs.forEach(function(b){
@@ -491,12 +492,38 @@ function rowHtml(title, unit, st, isDrill){
     "<td class='"+ytdCls+"'>"+(ytd&&ytd.pct!==null?(ytd.pct>0?'+':'')+ytd.pct.toFixed(1)+'%':'—')+
       (abn?" <span class='badge"+(ytd.pct<0?' dn':'')+"'>大幅"+(ytd.pct>0?'增长':'下降')+"</span>":'')+"</td></tr>";
 }
+function sumStats(rows){
+  // 聚合多行的 stats：按数量累加，重新计算环比/同比/累计同比
+  var latest=0, prev=0, yoy=0, sum=0, lsum=0, date='';
+  var hasPrev=false, hasYoy=false, hasYtd=false;
+  rows.forEach(function(r){
+    var s=r.stats; if(!s) return;
+    latest += (s.latest||0);
+    if(s.prev!==null && s.prev!==undefined){ prev += s.prev; hasPrev=true; }
+    if(s.yoy!==null && s.yoy!==undefined){ yoy += s.yoy; hasYoy=true; }
+    if(s.date && s.date>date) date=s.date;
+    if(s.ytd){ sum += (s.ytd.sum||0); lsum += (s.ytd.lsum||0); hasYtd=true; }
+  });
+  var chg=(hasPrev?latest-prev:null);
+  var pct=(hasPrev&&prev!==0)?((latest-prev)/prev*100):null;
+  var yoyChg=(hasYoy?latest-yoy:null);
+  var yoyPct=(hasYoy&&yoy!==0)?((latest-yoy)/yoy*100):null;
+  var ytdPct=(hasYtd&&lsum>0)?((sum-lsum)/lsum*100):null;
+  var ytdObj=(hasYtd?{sum:sum, lsum:lsum, pct:ytdPct, year:parseInt(date,10)||0, month:0}:null);
+  return {latest:latest, date:date, prev:(hasPrev?prev:null), chg:chg, pct:pct,
+          yoy:(hasYoy?yoy:null), yoyChg:yoyChg, yoyPct:yoyPct, ytd:ytdObj};
+}
+
 function buildBilateralChildren(countryRow){
   var side = (countryRow.group==='出口总量') ? 'Export' : 'Import';
-  var rec = (countryRow.src||reporters)[countryRow.key];
+  var src = countryRow.src;
+  var rec;
+  if(src === 'regions') rec = regions[countryRow.key];
+  else if(src && D[src]) rec = D[src][countryRow.key];
+  else rec = reporters[countryRow.key];
   if(!rec || !rec[side] || !rec[side].partners) return [];
   var partners = rec[side].partners;
-  var parentName = countryRow.name.replace(/总(进出口)$/,'');
+  var parentName = countryRow.title.replace(/总(出口|进口)$/,'');
   var children = [];
   Object.keys(partners).forEach(function(pKey){
     var displayName = CN[pKey] || pKey;
@@ -530,12 +557,19 @@ function buildTable(){
     if(!rows.length) return;
     // 组内按最新值从高到低排列
     rows.sort(function(a,b){ return (b.stats&&b.stats.latest||0)-(a.stats&&a.stats.latest||0); });
-    var gsum=0; rows.forEach(function(r){ if(r.stats) gsum+= (r.stats.latest||0); });
-    var trg=document.createElement('tr'); trg.className='grp collapsible';
-    trg.innerHTML='<td colspan="12"><span class="tri"></span>'+groupMap[g]+
-      '　<span style="color:var(--sub);font-weight:400;font-size:12px">合计 '+fmt(gsum,0)+' 吨（最新月）</span></td>';
-    trg.onclick=function(){ toggleGroup(trg); };
-    tb.appendChild(trg);
+
+    // 1) 分组合计行（真实数据行，可折叠）
+    var gstats = sumStats(rows);
+    var gwrap=document.createElement('tbody'); gwrap.innerHTML=rowHtml(groupMap[g], '吨', gstats, false);
+    var gtr=gwrap.firstChild; gtr.className='grp collapsible';
+    // 给第一格加上折叠小三角，并覆盖 rowHtml 默认的 padding-left
+    var firstTd=gtr.querySelector('td');
+    firstTd.innerHTML='<span class="tri"></span>'+firstTd.innerHTML;
+    firstTd.style.paddingLeft='10px';
+    gtr.onclick=function(){ toggleGroup(gtr); };
+    tb.appendChild(gtr);
+
+    // 2) 国家/地区行（可下钻展开双边流向）
     rows.forEach(function(r){
       var st=r.stats; if(!st) return;
       var children = buildBilateralChildren(r);
