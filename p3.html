@@ -161,7 +161,7 @@ tr.drill-detail td.flat{color:var(--flat);}
   <div class="card"><div id="annualBar" class="chart tall"></div></div>
 
   <div class="section-title">丁二烯贸易流向（桑基图）</div>
-  <div class="row-label">取各视角前八大贸易伙伴，随顶部年份筛选汇总可见年份；左图为出口视角（出口国 → 目的地），右图为进口视角（来源国 → 进口国）</div>
+  <div class="row-label">年份：<select id="sankeyYear" class="fsel"></select>　取各视角前八大贸易伙伴（欧盟成员国已聚合为「欧盟」）；左图为出口视角（出口国 → 目的地），右图为进口视角（来源国 → 进口国）</div>
   <div class="grid c2">
     <div class="card"><div class="ttl" id="sankeyExpTitle"></div><div id="sankeyExp" class="chart sankey"></div></div>
     <div class="card"><div class="ttl" id="sankeyImpTitle"></div><div id="sankeyImp" class="chart sankey"></div></div>
@@ -405,7 +405,6 @@ function buildFilter(){
       yearVisible[y]=!yearVisible[y];
       b.classList.toggle('off',!yearVisible[y]);
       charts.forEach(function(c){ c.dispatchAction({type:'legendToggleSelect',name:String(y)}); });
-      buildSankey(); // 桑基图跟随可见年份汇总
     };
     bar.appendChild(b);
   });
@@ -743,6 +742,15 @@ function renderOne(elId, titleId, title, nodes, links, tip){
 }
 
 var sankeyExpInst=null, sankeyImpInst=null;
+function initSankeyYear(){
+  var sel=document.getElementById('sankeyYear');
+  if(!sel) return;
+  sel.innerHTML = '<option value="ALL">全部年份汇总</option>' +
+    Object.keys(YEAR_COLORS).sort().reverse().map(function(y){ return '<option value="'+y+'">'+y+' 年</option>'; }).join('');
+  sel.value='ALL';
+  sel.onchange=function(){ buildSankey(); };
+}
+
 function buildSankey(){
   // 释放旧实例，避免内存/重叠
   function disposeInst(inst){
@@ -753,25 +761,28 @@ function buildSankey(){
   disposeInst(sankeyExpInst); disposeInst(sankeyImpInst);
   sankeyExpInst=null; sankeyImpInst=null;
 
-  // 跟随顶部年份筛选：汇总可见年份的流量
-  var visibleYears = Object.keys(yearVisible).filter(function(y){ return yearVisible[y] && YEAR_COLORS[y]; }).sort();
-  if(!visibleYears.length) visibleYears=['2025']; // 兜底：全隐藏时仍显示 2025
-  var yrLabel = (visibleYears.length===1)
-    ? visibleYears[0]+' 年'
-    : '汇总（'+visibleYears[0]+'–'+visibleYears[visibleYears.length-1]+' 年）';
+  // 独立年份筛选：ALL=全部年份汇总，或单选某年
+  var sel=document.getElementById('sankeyYear');
+  var yv = (sel && sel.value) || 'ALL';
+  var yearList = (yv==='ALL')
+    ? Object.keys(YEAR_COLORS).filter(function(y){ return y>='2016'; }).sort()
+    : [yv];
+  var yrLabel = (yearList.length===1)
+    ? yearList[0]+' 年'
+    : '全部年份汇总（'+yearList[0]+'–'+yearList[yearList.length-1]+' 年）';
 
-  var EX='EX|', IM='IM|';
+  var EX='EX|', IM='IM|', WAN=10000;
   function yrSum(s){
     var t=0;
     for(var k in s){
-      for(var i=0;i<visibleYears.length;i++){
-        if(k.indexOf(visibleYears[i]+'-')===0 && s[k]){ t+=s[k]; break; }
+      for(var i=0;i<yearList.length;i++){
+        if(k.indexOf(yearList[i]+'-')===0 && s[k]){ t+=s[k]; break; }
       }
     }
-    return Math.round(t);
+    return Math.round(t); // 内部按吨累加
   }
 
-  // 出口视角：source=出口国(EX)，target=目的地(IM)
+  // 出口视角：source=出口国(EX)，target=目的地(IM)，欧盟成员国聚合成"欧盟"
   var expLinks=[], expNodes={}, expColored={};
   var exporters=[
     {key:'Korea_Rep', name:'韩国'}, {key:'China', name:'中国'}, {key:'Taiwan', name:'中国台湾省'},
@@ -782,18 +793,24 @@ function buildSankey(){
     var rec=(reporters[ex.key])||(regions[ex.key]);
     if(!rec||!rec.Export||!rec.Export.partners) return;
     var ps=rec.Export.partners;
-    var arr=Object.keys(ps).map(function(p){return {p:p, v:yrSum(ps[p])};})
-      .filter(function(x){return x.v>0;}).sort(function(a,b){return b.v-a.v;}).slice(0,8);
+    var byTgt={};
+    Object.keys(ps).forEach(function(p){
+      var v=yrSum(ps[p]); if(v<=0) return;
+      var tgt = (EU_MEMBERS.indexOf(p)>=0) ? '欧盟' : (CN[p]||p);
+      byTgt[tgt] = (byTgt[tgt]||0) + v;
+    });
+    var arr=Object.keys(byTgt).map(function(t){return {t:t, v:byTgt[t]};})
+      .sort(function(a,b){return b.v-a.v;}).slice(0,8);
     arr.forEach(function(x){
-      var tgt=CN[x.p]||x.p;
-      expLinks.push({source:EX+ex.name, target:IM+tgt, value:x.v});
-      expNodes[EX+ex.name]=ex.name; expNodes[IM+tgt]=tgt;
+      expLinks.push({source:EX+ex.name, target:IM+x.t, value:Math.round(x.v/WAN*100)/100}); // 万吨
+      expNodes[EX+ex.name]=ex.name; expNodes[IM+x.t]=x.t;
       expColored[EX+ex.name]=true;
+      if(x.t==='欧盟') expColored[IM+x.t]=true; // 聚合欧盟节点着色
     });
   });
   var expNodeList=Object.keys(expNodes).map(function(n){ return {name:n, label:{show:true,formatter:function(){return expNodes[n];}}, itemStyle:{color:expColored[n]?nodeColor(expNodes[n]):'#9aa3b2'}}; });
 
-  // 进口视角：source=来源国(EX)，target=进口国(IM)
+  // 进口视角：source=来源国(EX)，target=进口国(IM)，欧盟成员国聚合成"欧盟"
   var impLinks=[], impNodes={}, impColored={};
   var importers=[
     {key:'China', name:'中国'}, {key:'Korea_Rep', name:'韩国'}, {key:'USA', name:'美国'},
@@ -803,26 +820,32 @@ function buildSankey(){
     var rec=reporters[im.key];
     if(!rec||!rec.Import||!rec.Import.partners) return;
     var ps=rec.Import.partners;
-    var arr=Object.keys(ps).map(function(p){return {p:p, v:yrSum(ps[p])};})
-      .filter(function(x){return x.v>0;}).sort(function(a,b){return b.v-a.v;}).slice(0,8);
+    var bySrc={};
+    Object.keys(ps).forEach(function(p){
+      var v=yrSum(ps[p]); if(v<=0) return;
+      var src = (EU_MEMBERS.indexOf(p)>=0) ? '欧盟' : (CN[p]||p);
+      bySrc[src] = (bySrc[src]||0) + v;
+    });
+    var arr=Object.keys(bySrc).map(function(s){return {s:s, v:bySrc[s]};})
+      .sort(function(a,b){return b.v-a.v;}).slice(0,8);
     arr.forEach(function(x){
-      var src=CN[x.p]||x.p;
-      impLinks.push({source:EX+src, target:IM+im.name, value:x.v});
-      impNodes[EX+src]=src; impNodes[IM+im.name]=im.name;
+      impLinks.push({source:EX+x.s, target:IM+im.name, value:Math.round(x.v/WAN*100)/100}); // 万吨
+      impNodes[EX+x.s]=x.s; impNodes[IM+im.name]=im.name;
       impColored[IM+im.name]=true;
+      if(x.s==='欧盟') impColored[EX+x.s]=true;
     });
   });
   var impNodeList=Object.keys(impNodes).map(function(n){ return {name:n, label:{show:true,formatter:function(){return impNodes[n];}}, itemStyle:{color:impColored[n]?nodeColor(impNodes[n]):'#9aa3b2'}}; });
 
   var tipExp=function(p){ return p.dataType==='edge'
-    ? p.data.source.split('|')[1]+' 出口至 '+p.data.target.split('|')[1]+'<br><b>'+(p.data.value||0).toLocaleString()+' 吨</b>'
+    ? p.data.source.split('|')[1]+' 出口至 '+p.data.target.split('|')[1]+'<br><b>'+(p.data.value||0).toFixed(2)+' 万吨</b>'
     : p.name.split('|')[1]; };
   var tipImp=function(p){ return p.dataType==='edge'
-    ? p.data.source.split('|')[1]+' 出口至 '+p.data.target.split('|')[1]+'（'+p.data.target.split('|')[1]+' 自其进口）<br><b>'+(p.data.value||0).toLocaleString()+' 吨</b>'
+    ? p.data.source.split('|')[1]+' 出口至 '+p.data.target.split('|')[1]+'（'+p.data.target.split('|')[1]+' 自其进口）<br><b>'+(p.data.value||0).toFixed(2)+' 万吨</b>'
     : p.name.split('|')[1]; };
 
-  sankeyExpInst = renderOne('sankeyExp','sankeyExpTitle','丁二烯出口流向（出口国 → 目的地，'+yrLabel+'，吨）', expNodeList, expLinks, tipExp);
-  sankeyImpInst = renderOne('sankeyImp','sankeyImpTitle','丁二烯进口流向（来源国 → 进口国，'+yrLabel+'，吨）', impNodeList, impLinks, tipImp);
+  sankeyExpInst = renderOne('sankeyExp','sankeyExpTitle','丁二烯出口流向（出口国 → 目的地，'+yrLabel+'，万吨）', expNodeList, expLinks, tipExp);
+  sankeyImpInst = renderOne('sankeyImp','sankeyImpTitle','丁二烯进口流向（来源国 → 进口国，'+yrLabel+'，万吨）', impNodeList, impLinks, tipImp);
 }
 
 // ================= 自定义筛选面板（方向 × 国家/地区 × 对手方，驱动下方季节图） =================
@@ -1045,6 +1068,7 @@ function init(){
   buildNetSection();
   buildFilterPanel();
   buildAnnualBar('export');
+  initSankeyYear();
   buildSankey();
 
   // 年度切换按钮
