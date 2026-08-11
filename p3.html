@@ -240,7 +240,7 @@ function disposeAllCharts(){
   if(annualChart){ try{ annualChart.dispose(); }catch(e){} annualChart=null; }
 }
 function switchTab(key){
-  if(!D[key]) return;
+  if(!window.__DATA__[key]) return;
   CURRENT=key;
   disposeAllCharts();
   D = window.__DATA__[CURRENT];
