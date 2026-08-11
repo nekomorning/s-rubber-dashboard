@@ -158,8 +158,8 @@ tr.drill-detail td.flat{color:var(--flat);}
   <div class="row-label">重点国家月度总进口量</div>
   <div class="grid c4" id="importTotalGrid"></div>
 
-  <div class="section-title">净进口量（进口 − 出口，负值代表净出口）</div>
-  <div class="row-label">重点国家净进口量（吨，明细已并入上方「最新数据一览表」）</div>
+  <div class="section-title">净出口量（出口 − 进口，正值代表净出口）</div>
+  <div class="row-label">重点国家净出口量（吨，明细已并入上方「最新数据一览表」）</div>
   <div class="grid c4" id="netImportGrid"></div>
 
   <div class="section-title">年度构成（堆积柱状图）</div>
@@ -474,7 +474,7 @@ function buildFilter(){
 }
 
 function buildSummary(){
-  var withData = tableRows.filter(function(r){ return r.stats && r.stats.ytd && r.group!=='净进口总量'; });
+  var withData = tableRows.filter(function(r){ return r.stats && r.stats.ytd && r.group!=='净出口总量'; });
   var ups = withData.filter(function(r){ return r.stats.ytd.pct>0; }).sort(function(a,b){ return b.stats.ytd.pct-a.stats.ytd.pct; }).slice(0,3);
   var dns = withData.filter(function(r){ return r.stats.ytd.pct<0; }).sort(function(a,b){ return a.stats.ytd.pct-b.stats.ytd.pct; }).slice(0,3);
   function li(r){
@@ -544,7 +544,7 @@ function sumStats(rows){
 }
 
 function buildBilateralChildren(countryRow){
-  if(countryRow.group==='净进口总量') return []; // 净进口为差值，不提供双边下钻
+  if(countryRow.group==='净出口总量') return []; // 净出口为差值，不提供双边下钻
   var side = (countryRow.group==='出口总量') ? 'Export' : 'Import';
   var src = countryRow.src;
   var rec;
@@ -601,8 +601,8 @@ function buildTable(){
   var tb=document.querySelector('#dataTable tbody');
   tb.innerHTML='';
   // 分组映射：参考天胶进出口页，标题为「主要国家合计 · 丁二烯出口量/进口量」
-  var groupMap={'出口总量':'主要国家合计 · '+curName()+'出口量','进口总量':'主要国家合计 · '+curName()+'进口量','净进口总量':'主要国家合计 · '+curName()+'净进口量'};
-  var groupOrder=['出口总量','进口总量','净进口总量'];
+  var groupMap={'出口总量':'主要国家合计 · '+curName()+'出口量','进口总量':'主要国家合计 · '+curName()+'进口量','净出口总量':'主要国家合计 · '+curName()+'净出口量'};
+  var groupOrder=['出口总量','进口总量','净出口总量'];
   var byGroup={};
   tableRows.forEach(function(r){ (byGroup[r.group]=byGroup[r.group]||[]).push(r); });
   groupOrder.forEach(function(g){
@@ -664,7 +664,7 @@ function toggleGroup(headerTr){
   }
 }
 
-// ===== 净进口量板块（进口 − 出口，负值=净出口） =====
+// ===== 净出口量板块（出口 − 进口，正值=净出口，负值=净进口） =====
 var NET_COUNTRIES = [
   {key:'Korea_Rep', name:'韩国'}, {key:'China', name:'中国'},
   {key:'Taiwan', name:'中国台湾省'}, {key:'Japan', name:'日本'}, {key:'USA', name:'美国'}
@@ -683,9 +683,9 @@ function pushNetRows(){
   NET_COUNTRIES.forEach(function(c){
     var rec=reporters[c.key];
     if(!rec || !rec.Import || !rec.Export) return;
-    var net=diffSeries(rec.Import.total, rec.Export.total);
+    var net=diffSeries(rec.Export.total, rec.Import.total); // 净出口 = 出口 − 进口
     var st=calcStats(net);
-    if(st) tableRows.push({group:'净进口总量', title:c.name+'净进口', unit:'吨', stats:st, key:c.key, src:null});
+    if(st) tableRows.push({group:'净出口总量', title:c.name+'净出口', unit:'吨', stats:st, key:c.key, src:null});
   });
 }
 function buildNetSection(){
@@ -693,15 +693,15 @@ function buildNetSection(){
   NET_COUNTRIES.forEach(function(c){
     var rec=reporters[c.key];
     if(!rec || !rec.Import || !rec.Export) return;
-    var net=diffSeries(rec.Import.total, rec.Export.total);
+    var net=diffSeries(rec.Export.total, rec.Import.total); // 净出口 = 出口 − 进口
     var st=calcStats(net);
     // 卡片
     var wrap=document.createElement('div'); wrap.className='card';
     var id='net_chart_'+Math.random().toString(36).slice(2);
     var latest=st?st.latest:null;
-    var levelCls=(latest===null)?'flat':(latest>=0?'up':'down'); // 正=净进口(红) 负=净出口(绿)
+    var levelCls=(latest===null)?'flat':(latest>=0?'up':'down'); // 正=净出口(红) 负=净进口(绿)
     var levelTxt=(latest===null)?'—':((latest>0?'+':'')+fmt(latest,0));
-    wrap.innerHTML='<div class="ttl">'+c.name+' 净进口</div>'+
+    wrap.innerHTML='<div class="ttl">'+c.name+' 净出口</div>'+
       '<div class="meta"><span class="val '+levelCls+'">'+levelTxt+'</span>'+
       '<span class="unit">吨</span>'+
       (st?pctSpan2('环比', st.pct)+pctSpan2('同比', st.yoyPct)+pctSpan2('累计同比', st.ytd?st.ytd.pct:null):'')+
@@ -967,9 +967,9 @@ function getFilterSeries(dir, focus, cparty){
   if(!rec) return {};
   var isRegion = (cparty==='__EU__' || cparty==='__SEASIA__');
   var regName = (cparty==='__EU__') ? '欧盟' : '东南亚';
-  if(dir==="Net"){ // 净进口 = 进口 − 出口（全球合计 / 区域聚合 / 特定对手方）
+  if(dir==="Net"){ // 净出口 = 出口 − 进口（全球合计 / 区域聚合 / 特定对手方）
     if(!rec.Import || !rec.Export) return {};
-    if(cparty==="__ALL__") return diffSeries(rec.Import.total, rec.Export.total);
+    if(cparty==="__ALL__") return diffSeries(rec.Export.total, rec.Import.total);
     var impP, expP;
     if(isRegion){
       impP = regionAggregate(rec.Import.partners, regName);
@@ -978,7 +978,7 @@ function getFilterSeries(dir, focus, cparty){
       impP = rec.Import.partners && rec.Import.partners[cparty];
       expP = rec.Export.partners && rec.Export.partners[cparty];
     }
-    return diffSeries(impP, expP);
+    return diffSeries(expP, impP);
   }
   var s = rec[dir];
   if(!s) return {};
@@ -997,9 +997,9 @@ function topCounterparts(dir, focus){
     var keys={}; Object.keys(imp).forEach(function(k){keys[k]=1;}); Object.keys(exp).forEach(function(k){keys[k]=1;});
     Object.keys(keys).forEach(function(c){
       if(!imp[c] || !exp[c]) return;
-      var net=diffSeries(imp[c], exp[c]);
+      var net=diffSeries(exp[c], imp[c]); // 净出口 = 出口 − 进口
       var sum=0; Object.keys(net).sort().slice(-12).forEach(function(mm){ var v=net[mm]; if(v!==null && v!==undefined) sum+=v; });
-      byC[c]=Math.abs(sum); // 净进口/净出口按绝对量排序
+      byC[c]=Math.abs(sum); // 净出口/净进口按绝对量排序
     });
   } else {
     var ps = rec[dir] && rec[dir].partners;
@@ -1072,7 +1072,7 @@ function renderSingleFilterChart(cfg){
   var dir=gF.dir, focus=cfg.focus, cparty=cfg.cparty;
   var sdict=getFilterSeries(dir, focus, cparty);
   var ser=monthDictToSeries(sdict);
-  var dirName=(dir==="Net")?"净进口":((dir==="Export")?"出口":"进口");
+  var dirName=(dir==="Net")?"净出口":((dir==="Export")?"出口":"进口");
   var focusName=FOCUS_NAMES[focus]||focus;
   var cpText=(cparty==="__ALL__")?"全球合计":((dir==="Net")?("相对"+regionName(cparty)):((dir==="Export")?("至"+regionName(cparty)):("自"+regionName(cparty))));
   document.getElementById("filterTtl").textContent = focusName+" · "+dirName+" · "+cpText;
@@ -1108,7 +1108,7 @@ function renderMultiFilterCard(mount, dirName, cfg){
 
 function renderFilterChart(){
   var dir=gF.dir, focus=gF.focus, cparty=gF.cparty;
-  var dirName=(dir==="Net")?"净进口":((dir==="Export")?"出口":"进口");
+  var dirName=(dir==="Net")?"净出口":((dir==="Export")?"出口":"进口");
   var chartsCfg=[];
   if(focus !== "__ALL__" && cparty === "__ALL__"){
     var top5 = topCounterparts(dir, focus);
@@ -1130,18 +1130,18 @@ function buildFilterPanel(){
   var dirSel=document.getElementById("fDir"), focusSel=document.getElementById("fFocus"),
       cpSel=document.getElementById("fCparty"), cpLbl=document.getElementById("fCpLbl"),
       hintEl=document.getElementById("filterHint");
-  dirSel.innerHTML = '<option value="Export">出口</option><option value="Import">进口</option><option value="Net">净进口</option>';
+  dirSel.innerHTML = '<option value="Export">出口</option><option value="Import">进口</option><option value="Net">净出口</option>';
   hintEl.textContent = "单位：吨";
   function fillFocus(){ focusSel.innerHTML = FOCUS_LIST.map(function(f){ return '<option value="'+f.key+'">'+f.name+'</option>'; }).join(""); }
   function fillCparty(){
     var rec=(regions[gF.focus]||reporters[gF.focus]);
     var regOpts = '<option value="__EU__">欧盟（聚合）</option><option value="__SEASIA__">东南亚（聚合）</option>';
     if(gF.dir==="Net"){
-      // 净进口对对手方 = 自其进口 − 出口至其；仅列双向都有数据的伙伴
+      // 净出口对对手方 = 出口至其 − 自其进口；仅列双向都有数据的伙伴
       var imp=(rec && rec.Import && rec.Import.partners)?Object.keys(rec.Import.partners):[];
       var exp=(rec && rec.Export && rec.Export.partners)?Object.keys(rec.Export.partners):[];
       var both=imp.filter(function(k){return exp.indexOf(k)>=0;});
-      cpSel.innerHTML = '<option value="__ALL__">全球合计（进口−出口）</option>' + regOpts + both.map(function(c){ return '<option value="'+c+'">'+ (CN[c]||c) +'</option>'; }).join("");
+      cpSel.innerHTML = '<option value="__ALL__">全球合计（出口−进口）</option>' + regOpts + both.map(function(c){ return '<option value="'+c+'">'+ (CN[c]||c) +'</option>'; }).join("");
       cpLbl.textContent = "对手方";
       return;
     }
