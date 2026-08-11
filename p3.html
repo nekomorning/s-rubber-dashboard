@@ -154,18 +154,6 @@ tr.drill-detail td.flat{color:var(--flat);}
   <div class="row-label">主要双边贸易流量</div>
   <div class="grid c4" id="bilateralGrid"></div>
 
-  <div class="section-title">主要国家合计（2025 年）</div>
-  <div class="row-label">各主要国家年度出口合计与进口合计（吨），及同比%</div>
-  <div class="grid c2">
-    <div class="tablecard" style="margin-bottom:0;">
-      <table id="majorTable">
-        <thead><tr><th>国家</th><th>出口合计(吨)</th><th>出口同比%</th><th>进口合计(吨)</th><th>进口同比%</th></tr></thead>
-        <tbody></tbody>
-      </table>
-    </div>
-    <div class="card"><div class="ttl">主要国家出口 vs 进口（2025 年，吨）</div><div id="majorBar" class="chart tall"></div></div>
-  </div>
-
   <div class="section-title">年度构成（堆积柱状图）</div>
   <div class="row-label">各年份分国家堆积，2016–2025（2026 仅部分月份未纳入）
     <span class="togglebar"><span class="tbtn active" data-mode="export">出口合计</span><span class="tbtn" data-mode="import">进口合计</span></span>
@@ -611,50 +599,6 @@ function toggleGroup(headerTr){
   }
 }
 
-// ===== 主要国家合计（2025 年） =====
-function buildMajor(){
-  var defs=[
-    {key:'Korea_Rep', name:'韩国'},
-    {key:'China', name:'中国'},
-    {key:'Taiwan', name:'中国台湾省'},
-    {key:'Japan', name:'日本'},
-    {key:'USA', name:'美国'},
-  ];
-  var tb=document.querySelector('#majorTable tbody'); tb.innerHTML='';
-  var barCats=[], barExp=[], barImp=[];
-  defs.forEach(function(d){
-    var r=reporters[d.key]; if(!r) return;
-    var exSum=yearSum(r.Export.total,'2025'), imSum=yearSum(r.Import.total,'2025');
-    var exYoY=yoyPct(exSum, yearSum(r.Export.total,'2024'));
-    var imYoY=yoyPct(imSum, yearSum(r.Import.total,'2024'));
-    var tr=document.createElement('tr');
-    tr.innerHTML=
-      '<td><b>'+d.name+'</b></td>'+
-      '<td><b>'+fmt(exSum,0)+'</b></td>'+
-      '<td class="'+chgCls(exYoY)+'">'+(exYoY===null?'—':(exYoY>0?'+':'')+exYoY.toFixed(1)+'%')+'</td>'+
-      '<td><b>'+fmt(imSum,0)+'</b></td>'+
-      '<td class="'+chgCls(imYoY)+'">'+(imYoY===null?'—':(imYoY>0?'+':'')+imYoY.toFixed(1)+'%')+'</td>';
-    tb.appendChild(tr);
-    barCats.push(d.name); barExp.push(exSum); barImp.push(imSum);
-  });
-  // 分组柱状图
-  var div=document.getElementById('majorBar');
-  var c=echarts.init(div); allCharts.push(c);
-  c.setOption({
-    animation:false,
-    grid:{left:8,right:14,top:30,bottom:24,containLabel:true},
-    legend:{show:true, top:0, itemWidth:14, itemHeight:8, icon:'roundRect', textStyle:{fontSize:11,color:'#6b7686'}},
-    tooltip:{trigger:'axis', axisPointer:{type:'shadow'}, confine:true,
-      formatter:function(ps){ var s=ps[0].axisValue+'<br>'; ps.forEach(function(p){ s+="<br>"+p.marker+p.seriesName+"： <b>"+fmt(p.value,0)+"</b> 吨"; }); return s; }},
-    xAxis:{type:'category', data:barCats, axisLabel:{fontSize:11,color:'#8a93a3'}, axisTick:{show:false}, axisLine:{lineStyle:{color:'#dde3ec'}}},
-    yAxis:{type:'value', name:'吨', nameTextStyle:{fontSize:10,color:'#8a93a3'}, axisLabel:{fontSize:10,color:'#8a93a3', formatter:function(v){return v>=1000?(v/1000).toFixed(0)+'k':v;}}, splitLine:{lineStyle:{color:'#eef1f6'}}},
-    series:[
-      {name:'出口合计', type:'bar', data:barExp, itemStyle:{color:'#0f4c81'}, barMaxWidth:26, emphasis:{focus:'series'}},
-      {name:'进口合计', type:'bar', data:barImp, itemStyle:{color:'#E60000'}, barMaxWidth:26, emphasis:{focus:'series'}}
-    ]
-  });
-}
-
 // ===== 年度构成：堆积柱状图（出口/进口切换） =====
 var ANNUAL_YEARS = ['2016','2017','2018','2019','2020','2021','2022','2023','2024','2025'];
 var EXP_COUNTRIES = [
@@ -976,7 +920,6 @@ function init(){
   buildSummary();
   buildTable();
   buildFilterPanel();
-  buildMajor();
   buildAnnualBar('export');
   buildSankey();
 
