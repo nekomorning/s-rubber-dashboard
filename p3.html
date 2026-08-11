@@ -254,6 +254,8 @@ function legendSelected(years){ var sel={}; years.forEach(function(y){ sel[y]=!H
 
 // 国家中文映射
 var CN = {"Australia":"澳大利亚","Belgium":"比利时","Brazil":"巴西","Cambodia":"柬埔寨","Canada":"加拿大","China":"中国","Chinese Taipei":"中国台湾省","Czech Republic":"捷克","France":"法国","Germany":"德国","India":"印度","Indonesia":"印度尼西亚","Iran, Islamic Republic of":"伊朗","Israel":"以色列","Italy":"意大利","Japan":"日本","Korea, Republic of":"韩国","Malaysia":"马来西亚","Mexico":"墨西哥","Netherlands":"荷兰","Poland":"波兰","Saudi Arabia":"沙特阿拉伯","Singapore":"新加坡","South Africa":"南非","Spain":"西班牙","Sweden":"瑞典","Thailand":"泰国","United Kingdom":"英国","United States of America":"美国","Viet Nam":"越南"};
+// 欧盟成员国（Trademap 国家名），用于下钻时把对欧贸易聚合为一个项
+var EU_MEMBERS = ["Austria","Belgium","Bulgaria","Croatia","Cyprus","Czech Republic","Denmark","Estonia","Finland","France","Germany","Greece","Hungary","Ireland","Italy","Latvia","Lithuania","Luxembourg","Malta","Netherlands","Poland","Portugal","Romania","Slovak Republic","Slovenia","Spain","Sweden"];
 // 主要国家配色（出口国/进口国着色，其余伙伴灰）
 var MAJOR_COLORS = {'韩国':'#0f4c81','中国':'#E60000','中国台湾省':'#8E44AD','日本':'#2980B9','美国':'#2E86DE','欧盟':'#D4AC0D','东南亚':'#27AE60'};
 function nodeColor(name){ return MAJOR_COLORS[name] || '#9aa3b2'; }
@@ -493,7 +495,19 @@ function buildBilateralChildren(countryRow){
   var partners = rec[side].partners;
   var parentName = countryRow.title.replace(/总(出口|进口)$/,'');
   var children = [];
+  // 累加欧盟成员国贸易，生成单一聚合项
+  var euSum = {};
   Object.keys(partners).forEach(function(pKey){
+    if(EU_MEMBERS.indexOf(pKey) < 0) return;
+    var s = partners[pKey]; if(!s) return;
+    Object.keys(s).forEach(function(m){
+      var v = s[m];
+      if(v !== null && v !== undefined) euSum[m] = (euSum[m] || 0) + v;
+    });
+  });
+  // 单国 child（EU 成员国已聚合，跳过）
+  Object.keys(partners).forEach(function(pKey){
+    if(EU_MEMBERS.indexOf(pKey) >= 0) return;
     var displayName = CN[pKey] || pKey;
     if(displayName === parentName) return; // 过滤自身贸易
     var s = partners[pKey];
@@ -507,6 +521,14 @@ function buildBilateralChildren(countryRow){
     }
     children.push({title:title, unit:'吨', stats:st});
   });
+  // 插入"至/自欧盟"聚合 child
+  if(Object.keys(euSum).length){
+    var euSt = calcStats(euSum);
+    if(euSt){
+      var euTitle = (side==='Export') ? (parentName+'出口至欧盟') : (parentName+'自欧盟进口');
+      children.push({title:euTitle, unit:'吨', stats:euSt});
+    }
+  }
   // 按最新值降序排列双边伙伴（参考天胶进出口页逻辑）
   children.sort(function(a,b){ return (b.stats.latest||0)-(a.stats.latest||0); });
   return children;
