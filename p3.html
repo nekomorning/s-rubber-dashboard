@@ -154,10 +154,6 @@ tr.drill-detail td.flat{color:var(--flat);}
   <div class="row-label">重点国家净进口量（吨，明细已并入上方「最新数据一览表」）</div>
   <div class="grid c4" id="netImportGrid"></div>
 
-  <div class="section-title">重点流向</div>
-  <div class="row-label">主要双边贸易流量</div>
-  <div class="grid c4" id="bilateralGrid"></div>
-
   <div class="section-title">年度构成（堆积柱状图）</div>
   <div class="row-label">各年份分国家堆积，2016–2025（2026 仅部分月份未纳入）
     <span class="togglebar"><span class="tbtn active" data-mode="export">出口合计</span><span class="tbtn" data-mode="import">进口合计</span></span>
@@ -361,7 +357,6 @@ function renderCard(container, title, unit, seriesObj){
 
 const exportTotalGrid = document.getElementById('exportTotalGrid');
 const importTotalGrid = document.getElementById('importTotalGrid');
-const bilateralGrid = document.getElementById('bilateralGrid');
 
 const exportTotals = [
   {key:'Korea_Rep', name:'韩国总出口'},
@@ -379,14 +374,6 @@ const importTotals = [
   {key:'Japan', name:'日本总进口'},
   {key:'Taiwan', name:'中国台湾省总进口'},
 ];
-const bilateralDefs = [
-  {key:'Korea_Rep', flow:'Export', partner:'China', title:'韩国出口至中国'},
-  {key:'Korea_Rep', flow:'Export', partner:'United States of America', title:'韩国出口至美国'},
-  {key:'China', flow:'Import', partner:'Korea, Republic of', title:'中国自韩国进口'},
-  {key:'China', flow:'Import', partner:'Saudi Arabia', title:'中国自沙特进口'},
-  {key:'USA', flow:'Export', partner:'Mexico', title:'美国出口至墨西哥'},
-  {key:'Japan', flow:'Import', partner:'Korea, Republic of', title:'日本自韩国进口'},
-];
 
 var tableRows=[];
 function collectCardStats(){
@@ -402,14 +389,6 @@ function collectCardStats(){
     if(rec && rec.Import && rec.Import.total){
       var r=renderCard(importTotalGrid, item.name, '吨', rec.Import.total);
       tableRows.push({group:'进口总量', title:item.name, unit:'吨', stats:r.stats, key:item.key, src:null});
-    }
-  });
-  bilateralDefs.forEach(function(b){
-    var rec = reporters[b.key];
-    var side = b.flow;
-    if(rec && rec[side] && rec[side].partners && rec[side].partners[b.partner]){
-      renderCard(bilateralGrid, b.title, '吨', rec[side].partners[b.partner]);
-      // 重点流向已合并到各国家行的内嵌下钻，tableRows 不再单独收录
     }
   });
 }
