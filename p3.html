@@ -101,6 +101,15 @@ tr.drill-detail td.flat{color:var(--flat);}
 .tbtn.active{background:var(--accent); color:#fff; border-color:var(--accent); font-weight:600;}
 
 .footer{margin-top:30px; color:var(--sub); font-size:12px; text-align:center;}
+
+/* 自定义筛选面板（方向 × 国家/地区 × 对手方，驱动下方季节图） */
+.fpanel{padding:10px 12px; background:#fff; border:1px solid var(--border); border-radius:10px; margin:16px 0 8px; display:flex; flex-wrap:wrap; gap:8px 10px; align-items:center;}
+.fpanel .lbl{font-size:12px; color:var(--sub); margin-left:6px;}
+.fpanel .lbl:first-child{margin-left:0;}
+.fsel{font-size:13px; padding:5px 8px; border:1px solid var(--border); border-radius:7px; background:#fff; color:var(--text); cursor:pointer;}
+.fsel:focus{outline:none; border-color:#9fb3c8;}
+.fpanel .hint{font-size:11px; color:var(--sub); margin-left:auto;}
+.card .ttl.ttlrow{display:flex; justify-content:space-between; align-items:baseline;}
 </style>
 </head>
 <body>
@@ -121,6 +130,20 @@ tr.drill-detail td.flat{color:var(--flat);}
   <div class="summary" id="summary"></div>
 
   <div class="filterbar" id="filterbar"><span class="lbl">年份筛选（点击显隐，作用于全部季节图）：</span></div>
+
+  <div class="section-title" id="filterSectionTitle">自定义筛选 · 月度季节图<span style="font-size:12px;color:var(--sub);font-weight:400">（图表随筛选实时变化，不影响下方桑基图与年度堆积图）</span></div>
+  <div id="filterPanel" class="fpanel">
+    <span class="lbl">方向</span><select id="fDir" class="fsel"></select>
+    <span class="lbl">国家/地区</span><select id="fFocus" class="fsel"></select>
+    <span class="lbl" id="fCpLbl">对手方</span><select id="fCparty" class="fsel"></select>
+    <span class="hint" id="filterHint">单位：吨</span>
+  </div>
+  <div class="card" id="filterSingle">
+    <div class="ttl ttlrow"><span id="filterTtl"></span><span class="dt" id="filterDt"></span></div>
+    <div class="meta pctmode" id="filterMeta"></div>
+    <div id="filterChart" class="chart tall"></div>
+  </div>
+  <div id="filterCharts" class="grid c3" style="margin-top:10px;"></div>
 
   <div class="tablecard">
     <h2>最新数据一览表 <span style="font-size:12px;color:var(--sub);font-weight:400">（点击分组名折叠/展开各国汇总行；点击各国行左侧三角可下钻展开其主要双边贸易流向；当月值 = 最新月；环比% = 相对上月；同比% = 相对上年同月；年初至今累计值 = 本年至最新月求和；累计同比% = 该累计值相对上年同期累计值的同比；|累计同比%| ≥ 10% 标记为大幅变化）</span></h2>
@@ -739,15 +762,193 @@ function buildSankey(){
   renderOne('sankeyImp','sankeyImpTitle','丁二烯进口流向（来源国 → 进口国，2025 年，吨）', impNodeList, impLinks, tipImp);
 }
 
+// ================= 自定义筛选面板（方向 × 国家/地区 × 对手方，驱动下方季节图） =================
+var FOCUS_LIST = [
+  {key:"Korea_Rep", name:"韩国"}, {key:"China", name:"中国"}, {key:"Taiwan", name:"中国台湾省"},
+  {key:"Japan", name:"日本"}, {key:"USA", name:"美国"},
+  {key:"EU", name:"欧盟"}, {key:"SEAsia", name:"东南亚"}, {key:"MiddleEast", name:"中东"}
+];
+var FOCUS_NAMES = {}; FOCUS_LIST.forEach(function(f){ FOCUS_NAMES[f.key]=f.name; });
+var gF = {dir:"Export", focus:"Korea_Rep", cparty:"__ALL__"};
+var filterChartInst = null, filterChartInsts = [];
+
+function disposeFilterInsts(){
+  var all=[];
+  if(filterChartInst) all.push(filterChartInst);
+  filterChartInsts.forEach(function(i){ all.push(i); });
+  all.forEach(function(inst){
+    var i=charts.indexOf(inst); if(i>=0) charts.splice(i,1);
+    var j=allCharts.indexOf(inst); if(j>=0) allCharts.splice(j,1);
+    try{ inst.dispose(); }catch(e){}
+  });
+  filterChartInst=null; filterChartInsts=[];
+}
+
+function getFilterSeries(dir, focus, cparty){
+  var rec = (regions[focus] || reporters[focus]);
+  if(!rec) return {};
+  var s = rec[dir];
+  if(!s) return {};
+  if(cparty === "__ALL__") return s.total || {};
+  return (s.partners && s.partners[cparty]) || {};
+}
+
+function topCounterparts(dir, focus){
+  var rec = (regions[focus] || reporters[focus]);
+  if(!rec || !rec[dir] || !rec[dir].partners) return [];
+  var ps = rec[dir].partners;
+  var byC = {};
+  Object.keys(ps).forEach(function(c){
+    var m = ps[c]; if(!m) return;
+    var sum=0; Object.keys(m).sort().slice(-12).forEach(function(mm){ sum += (m[mm]||0); });
+    byC[c]=sum;
+  });
+  return Object.keys(byC).sort(function(a,b){return byC[b]-byC[a];}).slice(0,5);
+}
+
+function monthDictToSeries(d){
+  var out={};
+  Object.keys(d).forEach(function(m){
+    var p=m.match(/(\d{4})-M(\d{2})/); if(!p) return;
+    var y=p[1], mi=parseInt(p[2],10)-1;
+    if(!out[y]) out[y]=[];
+    out[y].push([mi, d[m]]);
+  });
+  Object.keys(out).forEach(function(y){ out[y].sort(function(a,b){return a[0]-b[0];}); });
+  return out;
+}
+
+function computeFilterMeta(sdict){
+  var st = calcStats(sdict);
+  if(!st || st.latest==null) return {last:null, latest:null, metaHtml:'<span class="val">—<span class="unit"> 吨</span></span><span class="chg flat">该筛选无数据</span>'};
+  function pctSpan(lab,v){
+    if(v===null||v===undefined||isNaN(v)) return '<span class="chg flat">'+lab+' —</span>';
+    return '<span class="chg '+chgCls(v)+'">'+lab+' '+(v>0?"+":"")+v.toFixed(1)+'%</span>';
+  }
+  var metaHtml = '<span class="val">'+fmt(st.latest,0)+'<span class="unit"> 吨</span></span>'
+    + pctSpan("环比", st.pct) + pctSpan("同比", st.yoyPct) + pctSpan("累计同比", st.ytd?st.ytd.pct:null);
+  return {last:st.date, latest:st.latest, metaHtml:metaHtml};
+}
+
+// 共享：构造筛选图表 option（单图/多图同款），x=1–12 月，series=年，配色同其他页
+function buildFilterChartOption(ser){
+  var years = Object.keys(ser).sort();
+  var series=[], legend=[];
+  years.forEach(function(y){
+    var pts = ser[y]; if(!pts||!pts.length) return;
+    legend.push(y);
+    var arr=new Array(12).fill(null);
+    pts.forEach(function(p){ arr[p[0]] = p[1]; });
+    var isLatest = (y === years[years.length-1]);
+    series.push({name:y, type:'line', smooth:true, symbol:'none', data:arr, connectNulls:true,
+      lineStyle:{width:isLatest?2.2:1.5, color:yearColor(y)}, itemStyle:{color:yearColor(y)}, z:isLatest?10:5});
+  });
+  return {
+    animation:false,
+    grid:{left:34,right:14,top:28,bottom:18,containLabel:true},
+    legend:{show:true, top:0, right:0, itemWidth:14, itemHeight:6, icon:'roundRect', textStyle:{fontSize:11, color:'#6b7686'}, data:legend},
+    tooltip:{trigger:'axis', confine:true,
+      formatter:function(ps){ var s=ps[0].axisValue+'<br>'; ps.sort(function(a,b){return Number(b.seriesName)-Number(a.seriesName);});
+        ps.forEach(function(p){ s+="<br>"+p.marker+p.seriesName+"年： <b>"+fmt(p.value,0)+"</b> 吨"; }); return s; }},
+    xAxis:{type:'category', data:monthLabels, axisLine:{lineStyle:{color:'#ccc'}}, axisLabel:{fontSize:10}},
+    yAxis:{type:'value', scale:true, axisLine:{show:false}, splitLine:{lineStyle:{color:'#f0f0f0'}},
+      axisLabel:{fontSize:10, formatter:function(v){ return Math.abs(v)>=1000?(v/1000).toFixed(1)+'k':v; }}},
+    series:series
+  };
+}
+
+function applyYearVisibility(inst){
+  Object.keys(yearVisible).forEach(function(y){ if(!yearVisible[y]) inst.dispatchAction({type:'legendToggleSelect', name:String(y)}); });
+}
+
+function renderSingleFilterChart(cfg){
+  var dir=gF.dir, focus=cfg.focus, cparty=cfg.cparty;
+  var sdict=getFilterSeries(dir, focus, cparty);
+  var ser=monthDictToSeries(sdict);
+  var dirName=(dir==="Export")?"出口":"进口";
+  var focusName=FOCUS_NAMES[focus]||focus;
+  var cpText=(cparty==="__ALL__")?"全球合计":((dir==="Export")?("至"+(CN[cparty]||cparty)):("自"+(CN[cparty]||cparty)));
+  document.getElementById("filterTtl").textContent = focusName+" · "+dirName+" · "+cpText;
+  var meta=computeFilterMeta(sdict);
+  document.getElementById("filterMeta").innerHTML=meta.metaHtml;
+  document.getElementById("filterDt").textContent=(meta.last||"");
+  if(!filterChartInst) filterChartInst = echarts.init(document.getElementById("filterChart"));
+  filterChartInst.setOption(buildFilterChartOption(ser), true);
+  applyYearVisibility(filterChartInst);
+  charts.push(filterChartInst); allCharts.push(filterChartInst);
+}
+
+function renderMultiFilterCard(mount, dirName, cfg){
+  var dir=gF.dir, focus=cfg.focus, cparty=cfg.cparty;
+  var sdict=getFilterSeries(dir, focus, cparty);
+  var ser=monthDictToSeries(sdict);
+  var meta=computeFilterMeta(sdict);
+  var card=document.createElement("div"); card.className="card";
+  var focusName=FOCUS_NAMES[focus]||focus;
+  var cpText=(cparty==="__ALL__")?"全球合计":((dir==="Export")?("至"+(CN[cparty]||cparty)):("自"+(CN[cparty]||cparty)));
+  var tag = cfg.isGlobal?'<span class="dt" style="float:right;font-size:11px;color:var(--sub);font-weight:400;">全球总计</span>'
+                       :'<span class="dt" style="float:right;font-size:11px;color:var(--sub);font-weight:400;">Top'+cfg._idx+'</span>';
+  var ttl=document.createElement("div"); ttl.className="ttl"; ttl.innerHTML=focusName+" · "+dirName+" · "+cpText+tag;
+  card.appendChild(ttl);
+  var metaDiv=document.createElement("div"); metaDiv.className="meta"; metaDiv.innerHTML=meta.metaHtml; card.appendChild(metaDiv);
+  var chartDiv=document.createElement("div"); chartDiv.style.width="100%"; chartDiv.style.height="170px"; card.appendChild(chartDiv);
+  mount.appendChild(card);
+  var inst=echarts.init(chartDiv);
+  inst.setOption(buildFilterChartOption(ser), true);
+  applyYearVisibility(inst);
+  charts.push(inst); allCharts.push(inst); filterChartInsts.push(inst);
+}
+
+function renderFilterChart(){
+  var dir=gF.dir, focus=gF.focus, cparty=gF.cparty;
+  var dirName=(dir==="Export")?"出口":"进口";
+  var chartsCfg=[];
+  if(focus !== "__ALL__" && cparty === "__ALL__"){
+    var top5 = topCounterparts(dir, focus);
+    chartsCfg.push({focus:focus, cparty:"__ALL__", isGlobal:true});
+    top5.forEach(function(c){ chartsCfg.push({focus:focus, cparty:c, isGlobal:false}); });
+  } else {
+    chartsCfg.push({focus:focus, cparty:cparty, isGlobal:(cparty==="__ALL__")});
+  }
+  disposeFilterInsts();
+  document.getElementById("filterSingle").style.display = (chartsCfg.length===1)?"":"none";
+  document.getElementById("filterCharts").style.display = (chartsCfg.length===1)?"none":"";
+  if(chartsCfg.length===1) renderSingleFilterChart(chartsCfg[0]);
+  else { var mount=document.getElementById("filterCharts"); mount.innerHTML=""; chartsCfg.forEach(function(cfg,idx){ cfg._idx=idx; renderMultiFilterCard(mount, dirName, cfg); }); }
+}
+
+function buildFilterPanel(){
+  var sec=document.getElementById("filterSectionTitle"), panel=document.getElementById("filterPanel");
+  if(!sec||!panel) return;
+  var dirSel=document.getElementById("fDir"), focusSel=document.getElementById("fFocus"),
+      cpSel=document.getElementById("fCparty"), cpLbl=document.getElementById("fCpLbl"),
+      hintEl=document.getElementById("filterHint");
+  dirSel.innerHTML = '<option value="Export">出口</option><option value="Import">进口</option>';
+  hintEl.textContent = "单位：吨";
+  function fillFocus(){ focusSel.innerHTML = FOCUS_LIST.map(function(f){ return '<option value="'+f.key+'">'+f.name+'</option>'; }).join(""); }
+  function fillCparty(){
+    var rec=(regions[gF.focus]||reporters[gF.focus]);
+    var side=rec && rec[gF.dir];
+    var parts=(side && side.partners)?Object.keys(side.partners):[];
+    cpSel.innerHTML = '<option value="__ALL__">全球合计</option>' + parts.map(function(c){ return '<option value="'+c+'">'+ (CN[c]||c) +'</option>'; }).join("");
+    cpLbl.textContent = (gF.dir==="Import") ? "来源国" : "目的地";
+  }
+  dirSel.value=gF.dir; fillFocus(); focusSel.value=gF.focus; fillCparty(); cpSel.value=gF.cparty;
+  dirSel.onchange=function(){ gF.dir=this.value; gF.focus="Korea_Rep"; gF.cparty="__ALL__"; fillFocus(); focusSel.value=gF.focus; fillCparty(); cpSel.value=gF.cparty; renderFilterChart(); };
+  focusSel.onchange=function(){ gF.focus=this.value; gF.cparty="__ALL__"; fillCparty(); cpSel.value="__ALL__"; renderFilterChart(); };
+  cpSel.onchange=function(){ gF.cparty=this.value; renderFilterChart(); };
+  renderFilterChart();
+}
+
 function init(){
   if(!D){ document.getElementById('summary').innerHTML='<h2>数据加载失败</h2>'; return; }
-
   Object.keys(YEAR_COLORS).forEach(function(y){ yearVisible[y]=!HIDDEN_YEARS[y]; });
 
   collectCardStats();
   buildFilter();
   buildSummary();
   buildTable();
+  buildFilterPanel();
   buildMajor();
   buildAnnualBar('export');
   buildSankey();
