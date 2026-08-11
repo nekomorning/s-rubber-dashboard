@@ -701,8 +701,8 @@ function buildAnnualBar(mode){
   annualChart.setOption({
     animation:false,
     color:defs.map(function(d){return d.color;}).concat(['#1A1A1A']),
-    grid:{left:8, right:12, top:34, bottom:54, containLabel:true},
-    legend:{show:true, type:'scroll', top:0, left:0, right:0, itemWidth:14, itemHeight:8, icon:'roundRect', textStyle:{fontSize:11, color:'#6b7686'}},
+    grid:{left:8, right:12, top:16, bottom:62, containLabel:true},
+    legend:{show:true, type:'scroll', bottom:30, left:'center', right:0, itemWidth:12, itemHeight:6, itemGap:8, icon:'roundRect', textStyle:{fontSize:10, color:'#6b7686'}},
     tooltip:{trigger:'axis', axisPointer:{type:'shadow'}, confine:true,
       formatter:function(ps){ var s=ps[0].axisValue+' 年<br>'; ps.forEach(function(p){ if(p.seriesType==='bar') s+="<br>"+p.marker+p.seriesName+"： <b>"+fmt(p.value,0)+"</b> 吨"; else s+="<br>"+p.marker+p.seriesName+"： <b>"+fmt(p.value,0)+"</b> 吨"; }); return s; }},
     xAxis:{type:'category', data:ANNUAL_YEARS, axisLabel:{fontSize:11,color:'#8a93a3'}, axisTick:{show:false}, axisLine:{lineStyle:{color:'#dde3ec'}}, splitLine:{show:false}},
