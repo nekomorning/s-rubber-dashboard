@@ -43,7 +43,6 @@ th,td{padding:6px 10px; text-align:right; border-bottom:1px solid #eef1f6; white
 th{background:#f0f4f9; color:#44506a; font-weight:600; position:sticky; top:0;}
 td:first-child, th:first-child{text-align:left;}
 td.up{color:var(--up); font-weight:600;} td.down{color:var(--down); font-weight:600;} td.flat{color:var(--flat);}
-tr.abn td{background:#fff7f0;}
 .badge{display:inline-block; margin-left:6px; padding:1px 7px; border-radius:9px; font-size:11px;
   background:var(--up); color:#fff; vertical-align:1px;}
 .badge.dn{background:var(--down);}
@@ -451,11 +450,10 @@ function rowHtml(title, unit, st, isDrill){
   if(!st) return '';
   var ytd=st.ytd;
   var ytdDiff = (ytd && ytd.sum!==null && ytd.lsum!==null) ? (ytd.sum - ytd.lsum) : null;
-  var abn = ytd && ytd.pct!==null && Math.abs(ytd.pct)>=10;
   var ytdCls = chgCls(ytd?ytd.pct:0);
   var diffCls = chgCls(ytdDiff);
   var tri = isDrill ? "<span class='drill-tri'></span>" : "";
-  var cls = (isDrill?"drill-total":"subrow")+(abn?' abn':'');
+  var cls = (isDrill?"drill-total":"subrow");
   return "<tr class='"+cls+"'>"+
     "<td>"+tri+title+"</td><td style='color:var(--sub)'>"+unit+"</td>"+
     "<td style='color:var(--sub)'>"+(st.date||'—')+"</td>"+
@@ -467,8 +465,7 @@ function rowHtml(title, unit, st, isDrill){
     "<td><b>"+fmt(ytd?ytd.sum:0,0)+"</b></td>"+
     "<td>"+fmt(ytd?ytd.lsum:0,0)+"</td>"+
     "<td class='"+diffCls+"'>"+(ytdDiff===null?'—':(ytdDiff>0?'+':'')+fmt(ytdDiff,0))+"</td>"+
-    "<td class='"+ytdCls+"'>"+(ytd&&ytd.pct!==null?(ytd.pct>0?'+':'')+ytd.pct.toFixed(1)+'%':'—')+
-      (abn?" <span class='badge"+(ytd.pct<0?' dn':'')+"'>大幅"+(ytd.pct>0?'增长':'下降')+"</span>":'')+"</td></tr>";
+    "<td class='"+ytdCls+"'>"+(ytd&&ytd.pct!==null?(ytd.pct>0?'+':'')+ytd.pct.toFixed(1)+'%':'—')+"</td></tr>";
 }
 function sumStats(rows){
   // 聚合多行的 stats：按数量累加，重新计算环比/同比/累计同比
