@@ -880,20 +880,42 @@ function disposeFilterInsts(){
   filterChartInst=null; filterChartInsts=[];
 }
 
+function regionAggregate(partners, reg){
+  var out = {};
+  if(!partners) return out;
+  Object.keys(partners).forEach(function(p){
+    if(REGION_OF[p] !== reg) return;
+    var s = partners[p]; if(!s) return;
+    Object.keys(s).forEach(function(m){
+      var v = s[m];
+      if(v!==null && v!==undefined) out[m] = (out[m]||0) + v;
+    });
+  });
+  return out;
+}
+function regionName(c){ return (c==='__EU__')?'欧盟':((c==='__SEASIA__')?'东南亚':(CN[c]||c)); }
 function getFilterSeries(dir, focus, cparty){
   var rec = (regions[focus] || reporters[focus]);
   if(!rec) return {};
-  if(dir==="Net"){ // 净进口 = 进口 − 出口（全球合计 或 对特定对手方）
+  var isRegion = (cparty==='__EU__' || cparty==='__SEASIA__');
+  var regName = (cparty==='__EU__') ? '欧盟' : '东南亚';
+  if(dir==="Net"){ // 净进口 = 进口 − 出口（全球合计 / 区域聚合 / 特定对手方）
     if(!rec.Import || !rec.Export) return {};
     if(cparty==="__ALL__") return diffSeries(rec.Import.total, rec.Export.total);
-    var impP = rec.Import.partners && rec.Import.partners[cparty];
-    var expP = rec.Export.partners && rec.Export.partners[cparty];
-    if(!impP || !expP) return {};
+    var impP, expP;
+    if(isRegion){
+      impP = regionAggregate(rec.Import.partners, regName);
+      expP = regionAggregate(rec.Export.partners, regName);
+    } else {
+      impP = rec.Import.partners && rec.Import.partners[cparty];
+      expP = rec.Export.partners && rec.Export.partners[cparty];
+    }
     return diffSeries(impP, expP);
   }
   var s = rec[dir];
   if(!s) return {};
   if(cparty === "__ALL__") return s.total || {};
+  if(isRegion) return regionAggregate(s.partners, regName);
   return (s.partners && s.partners[cparty]) || {};
 }
 
@@ -984,7 +1006,7 @@ function renderSingleFilterChart(cfg){
   var ser=monthDictToSeries(sdict);
   var dirName=(dir==="Net")?"净进口":((dir==="Export")?"出口":"进口");
   var focusName=FOCUS_NAMES[focus]||focus;
-  var cpText=(cparty==="__ALL__")?"全球合计":((dir==="Net")?("相对"+(CN[cparty]||cparty)):((dir==="Export")?("至"+(CN[cparty]||cparty)):("自"+(CN[cparty]||cparty))));
+  var cpText=(cparty==="__ALL__")?"全球合计":((dir==="Net")?("相对"+regionName(cparty)):((dir==="Export")?("至"+regionName(cparty)):("自"+regionName(cparty))));
   document.getElementById("filterTtl").textContent = focusName+" · "+dirName+" · "+cpText;
   var meta=computeFilterMeta(sdict);
   document.getElementById("filterMeta").innerHTML=meta.metaHtml;
@@ -1002,7 +1024,7 @@ function renderMultiFilterCard(mount, dirName, cfg){
   var meta=computeFilterMeta(sdict);
   var card=document.createElement("div"); card.className="card";
   var focusName=FOCUS_NAMES[focus]||focus;
-  var cpText=(cparty==="__ALL__")?"全球合计":((dir==="Net")?("相对"+(CN[cparty]||cparty)):((dir==="Export")?("至"+(CN[cparty]||cparty)):("自"+(CN[cparty]||cparty))));
+  var cpText=(cparty==="__ALL__")?"全球合计":((dir==="Net")?("相对"+regionName(cparty)):((dir==="Export")?("至"+regionName(cparty)):("自"+regionName(cparty))));
   var tag = cfg.isGlobal?'<span class="dt" style="float:right;font-size:11px;color:var(--sub);font-weight:400;">全球总计</span>'
                        :'<span class="dt" style="float:right;font-size:11px;color:var(--sub);font-weight:400;">Top'+cfg._idx+'</span>';
   var ttl=document.createElement("div"); ttl.className="ttl"; ttl.innerHTML=focusName+" · "+dirName+" · "+cpText+tag;
@@ -1045,18 +1067,19 @@ function buildFilterPanel(){
   function fillFocus(){ focusSel.innerHTML = FOCUS_LIST.map(function(f){ return '<option value="'+f.key+'">'+f.name+'</option>'; }).join(""); }
   function fillCparty(){
     var rec=(regions[gF.focus]||reporters[gF.focus]);
+    var regOpts = '<option value="__EU__">欧盟（聚合）</option><option value="__SEASIA__">东南亚（聚合）</option>';
     if(gF.dir==="Net"){
       // 净进口对对手方 = 自其进口 − 出口至其；仅列双向都有数据的伙伴
       var imp=(rec && rec.Import && rec.Import.partners)?Object.keys(rec.Import.partners):[];
       var exp=(rec && rec.Export && rec.Export.partners)?Object.keys(rec.Export.partners):[];
       var both=imp.filter(function(k){return exp.indexOf(k)>=0;});
-      cpSel.innerHTML = '<option value="__ALL__">全球合计（进口−出口）</option>' + both.map(function(c){ return '<option value="'+c+'">'+ (CN[c]||c) +'</option>'; }).join("");
+      cpSel.innerHTML = '<option value="__ALL__">全球合计（进口−出口）</option>' + regOpts + both.map(function(c){ return '<option value="'+c+'">'+ (CN[c]||c) +'</option>'; }).join("");
       cpLbl.textContent = "对手方";
       return;
     }
     var side=rec && rec[gF.dir];
     var parts=(side && side.partners)?Object.keys(side.partners):[];
-    cpSel.innerHTML = '<option value="__ALL__">全球合计</option>' + parts.map(function(c){ return '<option value="'+c+'">'+ (CN[c]||c) +'</option>'; }).join("");
+    cpSel.innerHTML = '<option value="__ALL__">全球合计</option>' + regOpts + parts.map(function(c){ return '<option value="'+c+'">'+ (CN[c]||c) +'</option>'; }).join("");
     cpLbl.textContent = (gF.dir==="Import") ? "来源国" : "目的地";
   }
   dirSel.value=gF.dir; fillFocus(); focusSel.value=gF.focus; fillCparty(); cpSel.value=gF.cparty;
