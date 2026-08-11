@@ -222,6 +222,10 @@ function fmt(v,dec){
 }
 function chgCls(c){ if(c===null||c===undefined||c===0) return "flat"; return c>0?"up":"down"; }
 function arrow(c){ if(c===null||c===undefined||c===0) return "→"; return c>0?"▲":"▼"; }
+function pctSpan2(lab, v){
+  if(v===null||v===undefined||isNaN(v)) return '<span class="chg flat">'+lab+' —</span>';
+  return '<span class="chg '+chgCls(v)+'">'+lab+' '+(v>0?'+':'')+v.toFixed(1)+'%</span>';
+}
 function yoyPct(cur, prev){ if(prev===null||prev===undefined||prev===0||cur===null) return null; return (cur-prev)/prev*100; }
 
 // 所有数值取整（吨，保留整数）
@@ -330,7 +334,7 @@ function renderCard(container, title, unit, seriesObj){
   wrap.innerHTML = '<div class="ttl">'+title+'</div>'+
     '<div class="meta"><span class="val">'+(st?fmt(st.latest,0):'-')+'</span>'+
     '<span class="unit">'+unit+'</span>'+
-    (st?'<span class="chg '+chgCls(st.chg)+'">'+(st.chg>0?'+':'')+fmt(st.chg,0)+' '+arrow(st.chg)+'</span>':'')+
+    (st?pctSpan2('环比', st.pct)+pctSpan2('同比', st.yoyPct)+pctSpan2('累计同比', st.ytd?st.ytd.pct:null):'')+
     '<span class="dt">'+(st?st.date:'')+'</span></div>'+
     '<div class="chart" id="'+id+'"></div>';
   container.appendChild(wrap);
@@ -637,11 +641,11 @@ function buildNetSection(){
     var latest=st?st.latest:null;
     var levelCls=(latest===null)?'flat':(latest>=0?'up':'down'); // 正=净进口(红) 负=净出口(绿)
     var levelTxt=(latest===null)?'—':((latest>0?'+':'')+fmt(latest,0));
-    var chgHtml=st?'<span class="chg '+chgCls(st.chg)+'">'+(st.chg>0?'+':'')+fmt(st.chg,0)+' '+arrow(st.chg)+'</span>':'';
     wrap.innerHTML='<div class="ttl">'+c.name+' 净进口</div>'+
       '<div class="meta"><span class="val '+levelCls+'">'+levelTxt+'</span>'+
       '<span class="unit">吨</span>'+
-      (st?'<span class="dt">'+st.date+'</span>':'')+chgHtml+'</div>'+
+      (st?pctSpan2('环比', st.pct)+pctSpan2('同比', st.yoyPct)+pctSpan2('累计同比', st.ytd?st.ytd.pct:null):'')+
+      '<span class="dt">'+(st?st.date:'')+'</span></div>'+
       '<div class="chart" id="'+id+'"></div>';
     grid.appendChild(wrap);
     var chart=echarts.init(document.getElementById(id)); allCharts.push(chart);
