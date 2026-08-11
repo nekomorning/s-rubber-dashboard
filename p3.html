@@ -151,17 +151,8 @@ tr.drill-detail td.flat{color:var(--flat);}
   <div class="grid c4" id="importTotalGrid"></div>
 
   <div class="section-title">净进口量（进口 − 出口，负值代表净出口）</div>
-  <div class="row-label">重点国家净进口量（吨）</div>
+  <div class="row-label">重点国家净进口量（吨，明细已并入上方「最新数据一览表」）</div>
   <div class="grid c4" id="netImportGrid"></div>
-  <div class="tablecard">
-    <h2>净进口量一览表 <span style="font-size:12px;color:var(--sub);font-weight:400">（负值=净出口；最新值/上月值/去年同月值单位均为吨；环比%=相对上月；同比%=相对上年同月；累计同比增减值=年初至今累计−去年同期累计）</span></h2>
-    <table id="netTable">
-      <thead><tr>
-        <th>指标</th><th>单位</th><th>最新月份</th><th>最新值</th><th>上月值</th><th>去年同月值</th><th>环比%</th><th>同比%</th><th>年初至今累计</th><th>去年同期累计</th><th>累计同比增减值</th><th>累计同比%</th>
-      </tr></thead>
-      <tbody></tbody>
-    </table>
-  </div>
 
   <div class="section-title">重点流向</div>
   <div class="row-label">主要双边贸易流量</div>
@@ -439,7 +430,7 @@ function buildFilter(){
 }
 
 function buildSummary(){
-  var withData = tableRows.filter(function(r){ return r.stats && r.stats.ytd; });
+  var withData = tableRows.filter(function(r){ return r.stats && r.stats.ytd && r.group!=='净进口总量'; });
   var ups = withData.filter(function(r){ return r.stats.ytd.pct>0; }).sort(function(a,b){ return b.stats.ytd.pct-a.stats.ytd.pct; }).slice(0,3);
   var dns = withData.filter(function(r){ return r.stats.ytd.pct<0; }).sort(function(a,b){ return a.stats.ytd.pct-b.stats.ytd.pct; }).slice(0,3);
   function li(r){
@@ -511,6 +502,7 @@ function sumStats(rows){
 }
 
 function buildBilateralChildren(countryRow){
+  if(countryRow.group==='净进口总量') return []; // 净进口为差值，不提供双边下钻
   var side = (countryRow.group==='出口总量') ? 'Export' : 'Import';
   var src = countryRow.src;
   var rec;
@@ -544,8 +536,8 @@ function buildTable(){
   var tb=document.querySelector('#dataTable tbody');
   tb.innerHTML='';
   // 分组映射：参考天胶进出口页，标题为「主要国家合计 · 丁二烯出口量/进口量」
-  var groupMap={'出口总量':'主要国家合计 · 丁二烯出口量','进口总量':'主要国家合计 · 丁二烯进口量'};
-  var groupOrder=['出口总量','进口总量'];
+  var groupMap={'出口总量':'主要国家合计 · 丁二烯出口量','进口总量':'主要国家合计 · 丁二烯进口量','净进口总量':'主要国家合计 · 丁二烯净进口量'};
+  var groupOrder=['出口总量','进口总量','净进口总量'];
   var byGroup={};
   tableRows.forEach(function(r){ (byGroup[r.group]=byGroup[r.group]||[]).push(r); });
   groupOrder.forEach(function(g){
@@ -620,10 +612,17 @@ function diffSeries(a,b){
   });
   return out;
 }
+function pushNetRows(){
+  NET_COUNTRIES.forEach(function(c){
+    var rec=reporters[c.key];
+    if(!rec || !rec.Import || !rec.Export) return;
+    var net=diffSeries(rec.Import.total, rec.Export.total);
+    var st=calcStats(net);
+    if(st) tableRows.push({group:'净进口总量', title:c.name+'净进口', unit:'吨', stats:st, key:c.key, src:null});
+  });
+}
 function buildNetSection(){
   var grid=document.getElementById('netImportGrid');
-  var tb=document.querySelector('#netTable tbody');
-  if(tb) tb.innerHTML='';
   NET_COUNTRIES.forEach(function(c){
     var rec=reporters[c.key];
     if(!rec || !rec.Import || !rec.Export) return;
@@ -659,11 +658,6 @@ function buildNetSection(){
       })
     });
     charts.push(chart);
-    // 表行
-    if(tb){
-      var tr=document.createElement('tbody'); tr.innerHTML=rowHtml(c.name+' 净进口','吨',st,false);
-      tb.appendChild(tr.firstChild);
-    }
   });
 }
 
@@ -983,6 +977,7 @@ function init(){
   Object.keys(YEAR_COLORS).forEach(function(y){ yearVisible[y]=!HIDDEN_YEARS[y]; });
 
   collectCardStats();
+  pushNetRows();
   buildFilter();
   buildSummary();
   buildTable();
