@@ -819,6 +819,10 @@ function disposeFilterInsts(){
 function getFilterSeries(dir, focus, cparty){
   var rec = (regions[focus] || reporters[focus]);
   if(!rec) return {};
+  if(dir==="Net"){ // 净进口 = 进口 − 出口，仅全球合计
+    if(!rec.Import || !rec.Export) return {};
+    return diffSeries(rec.Import.total, rec.Export.total);
+  }
   var s = rec[dir];
   if(!s) return {};
   if(cparty === "__ALL__") return s.total || {};
@@ -897,7 +901,7 @@ function renderSingleFilterChart(cfg){
   var dir=gF.dir, focus=cfg.focus, cparty=cfg.cparty;
   var sdict=getFilterSeries(dir, focus, cparty);
   var ser=monthDictToSeries(sdict);
-  var dirName=(dir==="Export")?"出口":"进口";
+  var dirName=(dir==="Net")?"净进口":((dir==="Export")?"出口":"进口");
   var focusName=FOCUS_NAMES[focus]||focus;
   var cpText=(cparty==="__ALL__")?"全球合计":((dir==="Export")?("至"+(CN[cparty]||cparty)):("自"+(CN[cparty]||cparty)));
   document.getElementById("filterTtl").textContent = focusName+" · "+dirName+" · "+cpText;
@@ -933,7 +937,7 @@ function renderMultiFilterCard(mount, dirName, cfg){
 
 function renderFilterChart(){
   var dir=gF.dir, focus=gF.focus, cparty=gF.cparty;
-  var dirName=(dir==="Export")?"出口":"进口";
+  var dirName=(dir==="Net")?"净进口":((dir==="Export")?"出口":"进口");
   var chartsCfg=[];
   if(focus !== "__ALL__" && cparty === "__ALL__"){
     var top5 = topCounterparts(dir, focus);
@@ -955,10 +959,15 @@ function buildFilterPanel(){
   var dirSel=document.getElementById("fDir"), focusSel=document.getElementById("fFocus"),
       cpSel=document.getElementById("fCparty"), cpLbl=document.getElementById("fCpLbl"),
       hintEl=document.getElementById("filterHint");
-  dirSel.innerHTML = '<option value="Export">出口</option><option value="Import">进口</option>';
+  dirSel.innerHTML = '<option value="Export">出口</option><option value="Import">进口</option><option value="Net">净进口</option>';
   hintEl.textContent = "单位：吨";
   function fillFocus(){ focusSel.innerHTML = FOCUS_LIST.map(function(f){ return '<option value="'+f.key+'">'+f.name+'</option>'; }).join(""); }
   function fillCparty(){
+    if(gF.dir==="Net"){ // 净进口为差值，无对手方细分
+      cpSel.innerHTML = '<option value="__ALL__">全球合计（进口−出口）</option>';
+      cpLbl.textContent = "口径";
+      return;
+    }
     var rec=(regions[gF.focus]||reporters[gF.focus]);
     var side=rec && rec[gF.dir];
     var parts=(side && side.partners)?Object.keys(side.partners):[];
