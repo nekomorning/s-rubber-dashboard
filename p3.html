@@ -276,10 +276,10 @@ function legendSelected(years){ var sel={}; years.forEach(function(y){ sel[y]=!H
 // 国家中文映射
 var CN = {"Australia":"澳大利亚","Belgium":"比利时","Brazil":"巴西","Cambodia":"柬埔寨","Canada":"加拿大","China":"中国","Chinese Taipei":"中国台湾省","Czech Republic":"捷克","France":"法国","Germany":"德国","India":"印度","Indonesia":"印度尼西亚","Iran, Islamic Republic of":"伊朗","Israel":"以色列","Italy":"意大利","Japan":"日本","Korea, Republic of":"韩国","Malaysia":"马来西亚","Mexico":"墨西哥","Netherlands":"荷兰","Poland":"波兰","Saudi Arabia":"沙特阿拉伯","Singapore":"新加坡","South Africa":"南非","Spain":"西班牙","Sweden":"瑞典","Thailand":"泰国","United Kingdom":"英国","United States of America":"美国","Viet Nam":"越南"};
 // 主要国家配色（出口国/进口国着色，其余伙伴灰）
-var MAJOR_COLORS = {'韩国':'#0f4c81','中国':'#E60000','中国台湾省':'#8E44AD','日本':'#2980B9','美国':'#2E86DE','欧盟':'#D4AC0D','东南亚':'#27AE60','中东':'#16A085'};
+var MAJOR_COLORS = {'韩国':'#0f4c81','中国':'#E60000','中国台湾省':'#8E44AD','日本':'#2980B9','美国':'#2E86DE','欧盟':'#D4AC0D','东南亚':'#27AE60'};
 function nodeColor(name){ return MAJOR_COLORS[name] || '#9aa3b2'; }
 // 出口国/进口国（用于桑基图着色判断）
-var EXPORTER_NAMES = {'韩国':1,'中国':1,'中国台湾省':1,'日本':1,'美国':1,'欧盟':1,'东南亚':1,'中东':1};
+var EXPORTER_NAMES = {'韩国':1,'中国':1,'中国台湾省':1,'日本':1,'美国':1,'欧盟':1,'东南亚':1};
 var IMPORTER_NAMES = {'韩国':1,'中国':1,'中国台湾省':1,'日本':1,'美国':1};
 
 function parseMonth(m){ return m.match(/(\d{4})-M(\d{2})/).slice(1); }
