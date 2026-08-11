@@ -540,8 +540,9 @@ function buildBilateralChildren(countryRow){
       children.push({title:regTitle, unit:'吨', stats:regSt});
     }
   });
-  // 按最新值降序排列双边伙伴（参考天胶进出口页逻辑）
-  children.sort(function(a,b){ return (b.stats.latest||0)-(a.stats.latest||0); });
+  // 按年初至今累计值从高到低排列（无 ytd 数据时按 0 排后），并隐藏 YTD 累计为 0 的（当年无贸易）
+  children.sort(function(a,b){ return ((b.stats.ytd&&b.stats.ytd.sum)||0)-((a.stats.ytd&&a.stats.ytd.sum)||0); });
+  children = children.filter(function(c){ return c.stats.ytd && c.stats.ytd.sum > 0; });
   return children;
 }
 
