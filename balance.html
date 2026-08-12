@@ -350,7 +350,10 @@ function renderSeasonal(){
     wrap.appendChild(cell);
     var chart = echarts.init(ech);
     charts.push(chart);
-    var years = Object.keys(se.series).sort();
+    var years = Object.keys(se.series).sort().filter(function(y){
+      var n = parseInt(y, 10);
+      return n >= 2021 && n <= 2027;   // 季节图只展示 2021–2027
+    });
     var series = years.map(function(y){
       return { name:y, type:"line", data: se.series[y], showSymbol:false,
         lineStyle:{width:1.5}, itemStyle:{color:yearColor(y)} };
