@@ -421,7 +421,7 @@ function renderSeasonal(){
     chart.setOption({
       color: years.map(function(y){ return (y==="2027") ? "#FF69B4" : yearColor(y); }),
       tooltip:{ trigger:"axis" },
-      legend:{ data:years, type:"scroll", top:0, textStyle:{fontSize:10} },
+      legend:{ data:years, type:"plain", top:2, right:0, left:0, textStyle:{fontSize:9}, itemWidth:14, itemHeight:8, itemGap:5 },
       grid:{ left:38, right:12, top:28, bottom:24 },
       xAxis:{ type:"category", data:["1","2","3","4","5","6","7","8","9","10","11","12"],
         axisLabel:{fontSize:10} },
