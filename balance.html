@@ -251,8 +251,19 @@ function yearRange(){
 function renderFilterBar(){
   var box = document.getElementById("filterBar");
   var yr = yearRange();
-  var fy = yr[1], fm = 4, ty = yr[1], tm = 6;  // default 2026-04 ~ 2026-06
-  if(fy-1 >= yr[0]){ /* ok */ } else { fy = yr[1]; }
+  // 默认：2026年1月 ~ 最新月（当前自然月-1；与数据实际最新月取较小者，避免越界）
+  var now = new Date();
+  var curY = now.getFullYear(), curM = now.getMonth(); // getMonth() 0-based
+  var lastM = (curM === 0) ? {y:curY-1, m:12} : {y:curY, m:curM}; // 上个月
+  var lastData = months()[months().length-1]; // 数据最新月
+  var ty = Math.min(lastM.y, lastData.y);
+  var tm;
+  if(ty === lastM.y && ty === lastData.y) tm = Math.min(lastM.m, lastData.m);
+  else if(ty === lastM.y) tm = lastM.m;
+  else tm = lastData.m;
+  // 起始固定在 2026-01
+  var fy = 2026, fm = 1;
+  if(fy > ty || (fy === ty && fm > tm)){ fy = yr[1]; fm = 1; ty = yr[1]; tm = 12; } // 兜底：取数据最后一年全年
   box.innerHTML =
     "<label>从</label>"+
     "<select id='fY'>"+yr[0]+"</select>"+
