@@ -444,8 +444,8 @@ const exportTotals = [
   {key:'Taiwan', name:'中国台湾省总出口'},
   {key:'Japan', name:'日本总出口'},
   {key:'USA', name:'美国总出口'},
-  {key:'EU', name:'欧盟总出口', src:regions},
-  {key:'SEAsia', name:'东南亚总出口', src:regions},
+  {key:'EU', name:'欧盟总出口', src:'regions'},
+  {key:'SEAsia', name:'东南亚总出口', src:'regions'},
 ];
 const importTotals = [
   {key:'China', name:'中国总进口'},
@@ -458,10 +458,10 @@ const importTotals = [
 var tableRows=[];
 function collectCardStats(){
   exportTotals.forEach(function(item){
-    var rec = (item.src||reporters)[item.key];
+    var rec = ((item.src === 'regions') ? regions : reporters)[item.key];
     if(rec && rec.Export && rec.Export.total){
       var r=renderCard(exportTotalGrid, item.name, '吨', rec.Export.total);
-      tableRows.push({group:'出口总量', title:item.name, unit:'吨', stats:r.stats, key:item.key, src:item.src?item.src.name||'regions':null});
+      tableRows.push({group:'出口总量', title:item.name, unit:'吨', stats:r.stats, key:item.key, src:(item.src==='regions')?'regions':null});
     }
   });
   importTotals.forEach(function(item){
