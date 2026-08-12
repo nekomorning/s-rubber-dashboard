@@ -375,10 +375,15 @@ function renderAnnual(){
 
   // 底部汇总：26增量/26增速%（2026−2025）与 27增量/27增速%（2027−2026）
   // 规则：累计同比列 增量/增速% 都不算；进口占比/开工(pct)列 不算增速%（增量保留）
-  function deltaRow(label, y2, y1, isPct){
+  // 样式：26增量保留黑线上框线(与数据区区分)；26增速%不再用黑线；26 两行浅黄底、27 两行浅蓝底
+  function deltaRow(label, y2, y1, isPct, opt){
+    opt = opt || {};
     var r2 = c.annual[String(y2)] || [];
     var r1 = c.annual[String(y1)] || [];
-    var r = "<tr style='border-top:2px solid #000'><td class='date-col'>"+label+"</td>";
+    var trStyle = "";
+    if(opt.borderTop){ trStyle += "border-top:2px solid #000;"; }
+    if(opt.bg){ trStyle += "background:"+opt.bg+";"; }
+    var r = "<tr style='"+trStyle+"'><td class='date-col'>"+label+"</td>";
     ind.forEach(function(i, idx){
       var a = r2[idx], b = r1[idx];
       var out = "";
@@ -398,10 +403,10 @@ function renderAnnual(){
     });
     return r+"</tr>";
   }
-  body += deltaRow("26增量", 2026, 2025, false);
-  body += deltaRow("26增速%", 2026, 2025, true);
-  body += deltaRow("27增量", 2027, 2026, false);
-  body += deltaRow("27增速%", 2027, 2026, true);
+  body += deltaRow("26增量", 2026, 2025, false, {borderTop:true, bg:"#FFF9C4"});
+  body += deltaRow("26增速%", 2026, 2025, true,  {bg:"#FFF9C4"});
+  body += deltaRow("27增量", 2027, 2026, false, {bg:"#E3F2FD"});
+  body += deltaRow("27增速%", 2027, 2026, true,  {bg:"#E3F2FD"});
   body += "</tbody>";
   document.getElementById("annualWrap").innerHTML = "<table class='data'>"+head+body+"</table>";
 }
