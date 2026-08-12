@@ -388,13 +388,25 @@ function renderFilterTable(){
   function row(name, arr, isPctRow, colorFn){
     var r = "<tr><td class='date-col'>"+name+"</td>";
     arr.forEach(function(v, idx){
+      var ii = ind[idx];
       var s;
       if(v===null || v===undefined){ s=""; }
+      else if(name==="同比增减值"){
+        // 累计同比：本身就是同比，不再计算增减值；占比/开工：增减值按百分点 pp 显示
+        if(ii.cumYoy){ s=""; }
+        else if(ii.pct){ s = (v>0?"+":"")+v.toFixed(1)+" pp"; }
+        else { s = fmt(v, ii); }
+      }
+      else if(name==="同比增减%"){
+        // 累计同比、占比/开工：不计算增减%
+        if(ii.cumYoy || ii.pct){ s=""; }
+        else { s = v.toFixed(1)+"%"; }
+      }
       else if(isPctRow){ s = v.toFixed(1)+"%"; }
-      else { s = fmt(v, ind[idx]); }
+      else { s = fmt(v, ii); }
       var sty = (colorFn && s!=="") ? colorFn(v, idx) : "";
       var cls = (s==="") ? "val-null" : "";
-      if(ind[idx].grp === "sub"){ cls = (cls ? cls+" grp-sub" : "grp-sub"); }
+      if(ii.grp === "sub"){ cls = (cls ? cls+" grp-sub" : "grp-sub"); }
       r += "<td"+(cls?" class='"+cls+"'":"")+sty+">"+s+"</td>";
     });
     return r+"</tr>";
