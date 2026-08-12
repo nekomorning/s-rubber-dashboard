@@ -1300,16 +1300,27 @@ function renderChainMonthly(){
 function renderChainAnnual(){
   var cols=chainCols();
   var years=CHAIN.years||[];
+  function ySum(col, y){
+    var s=0;
+    CHAIN.months.forEach(function(mm){ if(mm.slice(0,4)===''+y){ var x=chainVal(col, mm); if(x!==null&&x!==undefined) s+=x; } });
+    return s;
+  }
   var head='<thead><tr><th class="date-col">年度</th>';
   var lastY=years.length?years[years.length-1]:null;
   cols.forEach(function(c){
-    var v=lastY ? (((CHAIN.annual[chainSubject]||{})[lastY]||{})[c]) : null;
+    var v = isAll() ? ySum(c, lastY) : (lastY ? (((CHAIN.annual[chainSubject]||{})[lastY]||{})[c]) : null);
     head+='<th class="'+(c==='合计'?'chain-total ':'')+netCls(v)+'">'+c+'</th>';
   });
   head+='</tr></thead>';
   var body='<tbody>';
   years.forEach(function(y){
-    var row=(CHAIN.annual[chainSubject]||{})[y]||{};
+    var row;
+    if(isAll()){
+      row={};
+      cols.forEach(function(c){ row[c]=ySum(c, y); });
+    } else {
+      row=(CHAIN.annual[chainSubject]||{})[y]||{};
+    }
     var partial=(CHAIN.annualPartial||{})[chainSubject] && CHAIN.annualPartial[chainSubject][y];
     body+='<tr><td class="date-col">'+y+(partial?' <span class="yr-partial">*</span>':'')+'</td>';
     cols.forEach(function(c){ var v=row[c]; var st=fmtWan(v); body+='<td class="'+(st===''?'val-null ':'')+netCls(v)+'">'+st+'</td>'; });
