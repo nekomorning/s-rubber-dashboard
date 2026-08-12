@@ -1239,7 +1239,7 @@ var chainChartInst = null;
 function chainLatestDate(){ var ms=CHAIN.months||[]; return ms.length ? monthLabel(ms[ms.length-1]) : ''; }
 function monthLabel(m){ var p=/^(\d{4})-M(\d{2})$/.exec(m); return p ? p[1]+'.'+parseInt(p[2],10) : m; }
 function fmtTon(v){ if(v===null||v===undefined) return ''; return Math.round(v).toString(); }
-function fmtWan(v){ if(v===null||v===undefined) return ''; var r=(v/10000); return (Math.round(r*10)/10).toString(); }
+function fmtWan(v){ if(v===null||v===undefined) return ''; return (Math.round(v/10000*10)/10).toFixed(1); }
 function netCls(v){ if(v===null||v===undefined) return ''; return v>=0 ? 'net-pos' : 'net-neg'; }
 function chainVal(col, m){
   if(col==='合计') return (CHAIN.total[chainSubject]||{})[m];
