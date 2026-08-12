@@ -152,8 +152,8 @@ table.chain-tbl td.chain-total{font-weight:700;}
     <a class="tab" href="https://nekomorning.github.io/s-rubber-dashboard/p3.html">贸易流</a>
   </div>
   <div class="subtabs" id="subtabs">
-    <span class="stab" data-tab="chain" onclick="switchTab('chain')">产业链合计</span>
-    <span class="stab active" data-tab="bta" onclick="switchTab('bta')">丁二烯</span>
+    <span class="stab active" data-tab="chain" onclick="switchTab('chain')">产业链合计</span>
+    <span class="stab" data-tab="bta" onclick="switchTab('bta')">丁二烯</span>
     <span class="stab" data-tab="pbr" onclick="switchTab('pbr')">顺丁橡胶</span>
     <span class="stab" data-tab="sbr" onclick="switchTab('sbr')">丁苯橡胶</span>
     <span class="stab" data-tab="abs" onclick="switchTab('abs')">ABS</span>
@@ -257,7 +257,7 @@ window.__DATA__ = {"chain": /*CHAIN*/{"subjectKeys": ["中国", "韩国", "美�
 })();
 
 var D=window.__DATA__;
-var CURRENT='bta';
+var CURRENT='chain';
 var PRODUCTS={
   chain:{name:'产业链合计', hs:'', chain:true},
   bta:{name:'丁二烯', hs:'HS290124', netDir:'imp', netName:'净进口', netGroup:'净进口总量', netTitle:'净进口量（进口 − 出口，负值代表净出口）'},
@@ -1341,7 +1341,15 @@ function renderChainAll(){
 }
 
 function init(){
-  if(CURRENT==='chain'){ renderChainAll(); return; }
+  if(CURRENT==='chain'){
+    var rp=document.getElementById('regularPanel'), cp=document.getElementById('chainPanel');
+    if(rp) rp.style.display='none';
+    if(cp) cp.style.display='';
+    document.getElementById('srcHs').textContent='四品种合计';
+    document.getElementById('latestDate').textContent=chainLatestDate();
+    renderChainAll();
+    return;
+  }
   D = window.__DATA__[CURRENT];
   if(!D){ document.getElementById('summary').innerHTML='<h2>数据加载失败</h2>'; return; }
   reporters = D.reporters || {};
