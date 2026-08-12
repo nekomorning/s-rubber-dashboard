@@ -382,11 +382,13 @@ function renderSeasonal(){
       return n >= 2021 && n <= 2027;   // 季节图只展示 2021–2027
     });
     var series = years.map(function(y){
+      var is2027 = (y === "2027");
       return { name:y, type:"line", data: se.series[y], showSymbol:false,
-        lineStyle:{width:1.5}, itemStyle:{color:yearColor(y)} };
+        lineStyle:{ width:1.5, type: is2027 ? "dashed" : "solid" },
+        itemStyle:{ color: is2027 ? "#FF69B4" : yearColor(y) } };
     });
     chart.setOption({
-      color: years.map(yearColor),
+      color: years.map(function(y){ return (y==="2027") ? "#FF69B4" : yearColor(y); }),
       tooltip:{ trigger:"axis" },
       legend:{ data:years, type:"scroll", top:0, textStyle:{fontSize:10} },
       grid:{ left:38, right:12, top:28, bottom:24 },
