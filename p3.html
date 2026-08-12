@@ -200,15 +200,15 @@ table.chain-tbl td.chain-total{font-weight:700;}
   </div>
 
   <div class="section-title"><span id="secExp">丁二烯</span>出口量（吨）</div>
-  <div class="row-label">重点国家 / 地区月度总出口量</div>
+  <div class="row-label">重点国家/地区月度总出口量</div>
   <div class="grid c4" id="exportTotalGrid"></div>
 
   <div class="section-title"><span id="secImp">丁二烯</span>进口量（吨）</div>
-  <div class="row-label">重点国家月度总进口量</div>
+  <div class="row-label">重点国家/地区月度总进口量</div>
   <div class="grid c4" id="importTotalGrid"></div>
 
   <div class="section-title" id="secNetTtl">净进口量（进口 − 出口，负值代表净出口）</div>
-  <div class="row-label" id="secNetRow">重点国家净进口量（吨，明细已并入上方「最新数据一览表」）</div>
+  <div class="row-label" id="secNetRow">重点国家/地区净进口量（吨，明细已并入上方「最新数据一览表」）</div>
   <div class="grid c4" id="netImportGrid"></div>
 
   <div class="section-title">年度构成（堆积柱状图）</div>
@@ -334,7 +334,7 @@ function switchTab(key){
   document.getElementById('secImp').textContent = curName();
   document.getElementById('secSankey').textContent = curName();
   document.getElementById('secNetTtl').textContent = netTitle();
-  document.getElementById('secNetRow').textContent = '重点国家'+netName()+'量（吨，明细已并入上方「最新数据一览表」）';
+  document.getElementById('secNetRow').textContent = '重点国家/地区'+netName()+'量（吨，明细已并入上方「最新数据一览表」）';
   document.getElementById('latestDate').textContent='';
   init();
 }
@@ -344,7 +344,7 @@ function setTabTexts(){
   document.getElementById('secImp').textContent = curName();
   document.getElementById('secSankey').textContent = curName();
   document.getElementById('secNetTtl').textContent = netTitle();
-  document.getElementById('secNetRow').textContent = '重点国家'+netName()+'量（吨，明细已并入上方「最新数据一览表」）';
+  document.getElementById('secNetRow').textContent = '重点国家/地区'+netName()+'量（吨，明细已并入上方「最新数据一览表」）';
 }
 
 function fmt(v,dec){
@@ -518,6 +518,8 @@ const importTotals = [
   {key:'USA', name:'美国总进口'},
   {key:'Japan', name:'日本总进口'},
   {key:'Taiwan', name:'中国台湾省总进口'},
+  {key:'EU', name:'欧盟总进口', src:'regions'},
+  {key:'SEAsia', name:'东南亚总进口', src:'regions'},
 ];
 
 var tableRows=[];
@@ -530,10 +532,10 @@ function collectCardStats(){
     }
   });
   importTotals.forEach(function(item){
-    var rec = reporters[item.key];
+    var rec = ((item.src === 'regions') ? regions : reporters)[item.key];
     if(rec && rec.Import && rec.Import.total){
       var r=renderCard(importTotalGrid, item.name, '吨', rec.Import.total);
-      tableRows.push({group:'进口总量', title:item.name, unit:'吨', stats:r.stats, key:item.key, src:null});
+      tableRows.push({group:'进口总量', title:item.name, unit:'吨', stats:r.stats, key:item.key, src:(item.src==='regions')?'regions':null});
     }
   });
 }
@@ -682,8 +684,8 @@ function buildTable(){
   var tb=document.querySelector('#dataTable tbody');
   tb.innerHTML='';
   // 分组映射：参考天胶进出口页，标题为「主要国家合计 · 丁二烯出口量/进口量」
-  var groupMap={'出口总量':'主要国家合计 · '+curName()+'出口量','进口总量':'主要国家合计 · '+curName()+'进口量'};
-  groupMap[netGroup()] = '主要国家合计 · '+curName()+netName()+'量';
+  var groupMap={'出口总量':'主要国家/地区合计 · '+curName()+'出口量','进口总量':'主要国家/地区合计 · '+curName()+'进口量'};
+  groupMap[netGroup()] = '主要国家/地区合计 · '+curName()+netName()+'量';
   var groupOrder=['出口总量','进口总量',netGroup()];
   var byGroup={};
   tableRows.forEach(function(r){ (byGroup[r.group]=byGroup[r.group]||[]).push(r); });
@@ -749,7 +751,8 @@ function toggleGroup(headerTr){
 // ===== 净出口量板块（出口 − 进口，正值=净出口，负值=净进口） =====
 var NET_COUNTRIES = [
   {key:'Korea_Rep', name:'韩国'}, {key:'China', name:'中国'},
-  {key:'Taiwan', name:'中国台湾省'}, {key:'Japan', name:'日本'}, {key:'USA', name:'美国'}
+  {key:'Taiwan', name:'中国台湾省'}, {key:'Japan', name:'日本'}, {key:'USA', name:'美国'},
+  {key:'EU', name:'欧盟', src:'regions'}, {key:'SEAsia', name:'东南亚', src:'regions'}
 ];
 function diffSeries(a,b){
   a=a||{}; b=b||{};
@@ -763,17 +766,17 @@ function diffSeries(a,b){
 }
 function pushNetRows(){
   NET_COUNTRIES.forEach(function(c){
-    var rec=reporters[c.key];
+    var rec=((c.src==='regions')?regions:reporters)[c.key];
     if(!rec || !rec.Import || !rec.Export) return;
     var net=netPair(rec.Export.total, rec.Import.total);
     var st=calcStats(net);
-    if(st) tableRows.push({group:netGroup(), title:c.name+netName(), unit:'吨', stats:st, key:c.key, src:null});
+    if(st) tableRows.push({group:netGroup(), title:c.name+netName(), unit:'吨', stats:st, key:c.key, src:(c.src==='regions')?'regions':null});
   });
 }
 function buildNetSection(){
   var grid=document.getElementById('netImportGrid');
   NET_COUNTRIES.forEach(function(c){
-    var rec=reporters[c.key];
+    var rec=((c.src==='regions')?regions:reporters)[c.key];
     if(!rec || !rec.Import || !rec.Export) return;
     var net=netPair(rec.Export.total, rec.Import.total);
     var st=calcStats(net);
@@ -827,6 +830,8 @@ var IMP_COUNTRIES = [
   {key:'USA', name:'美国', color:'#2E86DE'},
   {key:'Japan', name:'日本', color:'#2980B9'},
   {key:'Taiwan', name:'中国台湾省', color:'#8E44AD'},
+  {key:'EU', name:'欧盟', color:'#D4AC0D', src:'regions'},
+  {key:'SEAsia', name:'东南亚', color:'#27AE60', src:'regions'},
 ];
 var annualChart=null;
 function buildAnnualBar(mode){
