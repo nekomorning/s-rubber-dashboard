@@ -81,6 +81,8 @@ table.data th.grp-parent{cursor:pointer; user-select:none;}
 table.data th.grp-parent:hover{background:#14538f;}
 table.data .grp-tri{font-weight:700; margin-left:3px;}
 table.data th.grp-sub, table.data td.grp-sub{display:none; background:#e8eef5; color:#1a1a1a; font-weight:600;}
+table.data thead th.grp-sub.cum-yoy-hd{background:#fff; color:#000; font-weight:400;}
+table.data td.grp-sub.cum-yoy-hd{background:transparent; font-weight:400;}
 
 .filter-bar{display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:10px;
   background:var(--card); border:1px solid var(--border); border-radius:10px; padding:12px 16px;}
@@ -254,7 +256,7 @@ function renderCountryTabs(){
 function thCell(i, idx){
   // 折叠分组：父列可点击展开子列，子列默认隐藏
   if(i.grp === "parent") return "<th class='grp-parent' data-grp='"+idx+"' onclick='toggleGrp(this)'>"+i.name+"<span class='grp-tri'>＋</span></th>";
-  if(i.grp === "sub")    return "<th class='grp-sub' data-grp='"+idx+"'>"+i.name+"</th>";
+  if(i.grp === "sub"){ var sc = (i.cumYoy) ? "grp-sub cum-yoy-hd" : "grp-sub"; return "<th class='"+sc+"' data-grp='"+idx+"'>"+i.name+"</th>"; }
   // 累计同比表头不突出：白底黑字不加粗
   if(i.cumYoy) return "<th class='cum-yoy-hd'>"+i.name+"</th>";
   // 高亮列（产量/进口/出口/顺丁消费）：浅红表头
@@ -269,7 +271,7 @@ function tdCell(v, i, idx){
   var s = fmt(v, i);
   var sty = i.cumYoy ? signStyle(v) : "";
   var cls = (s==="") ? "val-null" : "";
-  if(i.grp === "sub"){ cls = (cls ? cls+" grp-sub" : "grp-sub"); }
+  if(i.grp === "sub"){ cls = (cls ? cls+" grp-sub" : "grp-sub"); if(i.cumYoy){ cls += " cum-yoy-hd"; } }
   if(i.hl){ cls = (cls ? cls+" hl-cell" : "hl-cell"); }
   if(i.blockStart){ cls = (cls ? cls+" block-sep" : "block-sep"); }
   var grpAttr = (i.grp === "sub") ? " data-grp='"+idx+"'" : "";
@@ -431,7 +433,7 @@ function renderFilterTable(){
       else { s = fmt(v, ii); }
       var sty = (colorFn && s!=="") ? colorFn(v, idx) : "";
       var cls = (s==="") ? "val-null" : "";
-      if(ii.grp === "sub"){ cls = (cls ? cls+" grp-sub" : "grp-sub"); }
+      if(ii.grp === "sub"){ cls = (cls ? cls+" grp-sub" : "grp-sub"); if(ii.cumYoy){ cls += " cum-yoy-hd"; } }
       if(ii.hl){ cls = (cls ? cls+" hl-cell" : "hl-cell"); }
       if(ii.blockStart){ cls = (cls ? cls+" block-sep" : "block-sep"); }
       var gAttr = (ii.grp === "sub") ? " data-grp='"+idx+"'" : "";
@@ -493,7 +495,7 @@ function renderAnnual(){
       }
       var sty = (out!=="") ? signStyle((isPct)?(a-b):(a-b)) : "";
       var cls = (out==="") ? "val-null" : "";
-      if(i.grp === "sub"){ cls = (cls ? cls+" grp-sub" : "grp-sub"); }
+      if(i.grp === "sub"){ cls = (cls ? cls+" grp-sub" : "grp-sub"); if(i.cumYoy){ cls += " cum-yoy-hd"; } }
       if(i.hl){ cls = (cls ? cls+" hl-cell" : "hl-cell"); }
       if(i.blockStart){ cls = (cls ? cls+" block-sep" : "block-sep"); }
       var gAttr = (i.grp === "sub") ? " data-grp='"+idx+"'" : "";
