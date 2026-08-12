@@ -116,6 +116,11 @@ tr.drill-detail td.flat{color:var(--flat);}
 .fpanel .hint{font-size:11px; color:var(--sub); margin-left:auto;}
 .card .ttl.ttlrow{display:flex; justify-content:space-between; align-items:baseline;}
 /* ===== 产业链合计 ===== */
+.grid.c5{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;}
+.seg{display:inline-block;margin-left:10px;vertical-align:middle;}
+.seg-btn{display:inline-block;padding:2px 12px;font-size:11px;border:1px solid var(--accent);color:var(--accent);border-radius:10px;cursor:pointer;margin-left:4px;user-select:none;}
+.seg-btn:hover{background:var(--accent);color:#fff;}
+.seg-btn.active{background:var(--accent);color:#fff;font-weight:600;}
 .chain-subjects{margin:4px 0 12px;}
 .csub{display:inline-block;padding:4px 14px;margin-right:8px;border:1px solid var(--border);border-radius:14px;cursor:pointer;font-size:13px;background:#fff;color:var(--sub);user-select:none;}
 .csub:hover{border-color:var(--accent);color:var(--accent);}
@@ -172,9 +177,12 @@ table.chain-tbl td.chain-total{font-weight:700;}
       <div class="tbl-scroll" id="chainAnnualScroll" style="max-height:240px;overflow-y:auto;"><table class="chain-tbl" id="chainAnnualTable"></table></div>
     </div>
     <div class="card">
-      <div class="ttl" id="chainChartTitle">月度堆积柱状图（万吨）</div>
+      <div class="ttl"><span id="chainChartModeLabel">月度堆积柱状图</span><span class="seg" id="chainModeSeg"><span class="seg-btn active" data-mode="monthly" onclick="chainModeSwitch('monthly')">月度</span><span class="seg-btn" data-mode="annual" onclick="chainModeSwitch('annual')">年度</span></span><span style="font-size:11px;color:var(--sub);font-weight:400">（万吨）</span></div>
       <div class="chart tall" id="chainChart" style="height:420px;"></div>
     </div>
+    <div class="section-title">净出口季节图（单位：折丁二烯吨）</div>
+    <div class="row-label">按年份展示各月净出口（品种 × 折算权重：丁二烯×1.0、顺丁×1.03、丁苯×0.75、ABS×0.15；合计 = 四品种加权之和），横轴 1-12 月</div>
+    <div class="grid c5" id="chainSeasonGrid"></div>
   </div>
   <div id="regularPanel">
   <div class="summary" id="summary"></div>
@@ -289,6 +297,7 @@ function disposeAllCharts(){
   allCharts.forEach(function(c){ if(c && typeof c.dispose==='function'){ all.push(c); } });
   all.forEach(function(c){ var i=allCharts.indexOf(c); if(i>=0) allCharts.splice(i,1); try{ c.dispose(); }catch(e){} });
   charts=[]; filterChartInst=null; filterChartInsts=[];
+  chainSeasonInsts.forEach(function(c){ try{ c.dispose(); }catch(e){} }); chainSeasonInsts=[];
   if(annualChart){ try{ annualChart.dispose(); }catch(e){} annualChart=null; }
 }
 function switchTab(key){
@@ -1236,6 +1245,8 @@ function buildFilterPanel(){
 var CHAIN = window.__DATA__['chain'] || {subjectKeys:[], months:[], years:[], net:{}, total:{}, annual:{}, annualPartial:{}};
 var chainSubject = (CHAIN.subjectKeys && CHAIN.subjectKeys[0]) || '中国';
 var chainChartInst = null;
+var chainChartMode = 'monthly';  // monthly | annual
+var chainSeasonInsts = [];
 function chainLatestDate(){ var ms=CHAIN.months||[]; return ms.length ? monthLabel(ms[ms.length-1]) : ''; }
 function monthLabel(m){ var p=/^(\d{4})-M(\d{2})$/.exec(m); return p ? p[1]+'.'+parseInt(p[2],10) : m; }
 function fmtTon(v){ if(v===null||v===undefined) return ''; return Math.round(v).toString(); }
@@ -1256,7 +1267,7 @@ function renderChainSubjects(){
     return '<span class="csub'+(s===chainSubject?' active':'')+'" onclick="chainSwitchSubject(\''+s+'\')">'+s+'</span>';
   }).join('');
 }
-function chainSwitchSubject(s){ chainSubject=s; renderChainSubjects(); renderChainMonthly(); renderChainAnnual(); renderChainChart(); }
+function chainSwitchSubject(s){ chainSubject=s; renderChainSubjects(); renderChainMonthly(); renderChainAnnual(); renderChainChart(); renderChainSeasonal(); }
 function renderChainMonthly(){
   var cols=['合计','丁二烯','顺丁橡胶','丁苯橡胶','ABS'];
   var head='<thead><tr><th class="date-col">日期</th>';
@@ -1293,43 +1304,114 @@ function renderChainAnnual(){
   body+='</tbody>';
   var t=document.getElementById('chainAnnualTable'); if(t) t.innerHTML=head+body;
 }
+function chainModeSwitch(mode){
+  chainChartMode = mode;
+  document.querySelectorAll('#chainModeSeg .seg-btn').forEach(function(b){
+    b.classList.toggle('active', b.dataset.mode === mode);
+  });
+  renderChainChart();
+}
 function renderChainChart(){
   var el=document.getElementById('chainChart'); if(!el) return;
   if(chainChartInst){ try{ chainChartInst.dispose(); }catch(e){} chainChartInst=null; }
   if(!window.echarts){ el.innerHTML='<div class="note">图表库加载失败</div>'; return; }
   chainChartInst=echarts.init(el);
-  var ms=CHAIN.months||[];
   var cols=['丁二烯','顺丁橡胶','丁苯橡胶','ABS'];
   var W=CHAIN.weights||{};
-  var series=cols.map(function(c){
-    return {name:c, type:'bar', stack:'net', barMaxWidth:12, data:ms.map(function(m){
-      var v=chainVal(c, m);
-      return (v===null||v===undefined) ? null : +((v/10000)*(W[c]||1)).toFixed(2);
-    })};
-  });
-  // 合计净出口（丁二烯元素，加权）折线
-  series.push({
-    name:'合计', type:'line', smooth:true, symbol:'circle', symbolSize:5,
-    lineStyle:{width:2, color:'#1a1a1a'}, itemStyle:{color:'#1a1a1a'},
-    data:ms.map(function(m){
-      var v=(CHAIN.total[chainSubject]||{})[m];
-      return (v===null||v===undefined) ? null : +((v/10000)).toFixed(2);
-    })
-  });
-  var ttl=document.getElementById('chainChartTitle'); if(ttl) ttl.textContent=chainSubject+' · 丁二烯元素净出口结构（月度，万吨）';
+  var isMonth = (chainChartMode==='monthly');
+  var ml=document.getElementById('chainChartModeLabel'); if(ml) ml.textContent = isMonth ? '月度堆积柱状图' : '年度堆积柱状图';
+  var cats, series, zoom, gridB, interval;
+  if(isMonth){
+    var ms=CHAIN.months||[];
+    cats = ms.map(monthLabel);
+    series = cols.map(function(c){
+      return {name:c, type:'bar', stack:'net', barMaxWidth:12, data:ms.map(function(m){
+        var v=chainVal(c, m);
+        return (v===null||v===undefined) ? null : +((v/10000)*(W[c]||1)).toFixed(2);
+      })};
+    });
+    series.push({name:'合计', type:'line', smooth:true, symbol:'circle', symbolSize:5,
+      lineStyle:{width:2, color:'#1a1a1a'}, itemStyle:{color:'#1a1a1a'},
+      data:ms.map(function(m){
+        var v=(CHAIN.total[chainSubject]||{})[m];
+        return (v===null||v===undefined) ? null : +((v/10000)).toFixed(2);
+      })});
+    interval = 11;
+    gridB = 64;
+    zoom = [{type:'inside'},{type:'slider', height:16, bottom:10, start:Math.max(0, 100-Math.round(24/ms.length*100))}];
+  } else {
+    var years=CHAIN.years||[];
+    cats = years.map(String);
+    series = cols.map(function(c){
+      return {name:c, type:'bar', stack:'net', barMaxWidth:36, data:years.map(function(y){
+        var v=((CHAIN.annual[chainSubject]||{})[y]||{})[c];
+        return (v===null||v===undefined) ? null : +((v/10000)*(W[c]||1)).toFixed(2);
+      })};
+    });
+    series.push({name:'合计', type:'line', smooth:true, symbol:'circle', symbolSize:5,
+      lineStyle:{width:2, color:'#1a1a1a'}, itemStyle:{color:'#1a1a1a'},
+      data:years.map(function(y){
+        var v=((CHAIN.annual[chainSubject]||{})[y]||{})['合计'];
+        return (v===null||v===undefined) ? null : +((v/10000)).toFixed(2);
+      })});
+    interval = 0;
+    gridB = 44;
+    zoom = [];
+  }
   chainChartInst.setOption({
-    title:{text:chainSubject+' · 丁二烯元素净出口结构（月度，万吨）', left:'center', textStyle:{fontSize:13, color:'#1a1a1a'}},
+    title:{text:chainSubject+' · 丁二烯元素净出口结构（'+(isMonth?'月度':'年度')+'，万吨）', left:'center', textStyle:{fontSize:13, color:'#1a1a1a'}},
     tooltip:{trigger:'axis', axisPointer:{type:'shadow'}},
     legend:{bottom:0, left:'center', textStyle:{fontSize:10}, itemWidth:14, itemHeight:8, itemGap:5},
-    grid:{left:60, right:24, top:46, bottom:64},
-    xAxis:{type:'category', data:ms.map(monthLabel), axisLabel:{fontSize:9, interval:11}},
+    grid:{left:60, right:24, top:46, bottom:gridB},
+    xAxis:{type:'category', data:cats, axisLabel:{fontSize:9, interval:interval}},
     yAxis:{type:'value', axisLabel:{fontSize:10}},
-    dataZoom:[{type:'inside'},{type:'slider', height:16, bottom:10, start:Math.max(0, 100-Math.round(24/ms.length*100))}],
+    dataZoom:zoom,
     graphic:[
       {type:'text', right:10, top:12, style:{text:'▲ 净出口', fill:'#2E7D32', font:'bold 13px sans-serif'}},
       {type:'text', right:10, bottom:36, style:{text:'▼ 净进口', fill:'#C62828', font:'bold 13px sans-serif'}}
     ],
     series:series
+  });
+}
+function renderChainSeasonal(){
+  var grid=document.getElementById('chainSeasonGrid'); if(!grid) return;
+  chainSeasonInsts.forEach(function(c){ try{ c.dispose(); }catch(e){} });
+  chainSeasonInsts=[];
+  if(!window.echarts){ grid.innerHTML='<div class="note">图表库加载失败</div>'; return; }
+  grid.innerHTML='';
+  var cols=['合计','丁二烯','顺丁橡胶','丁苯橡胶','ABS'];
+  var YEARS=CHAIN.years||[];
+  var W=CHAIN.weights||{};
+  cols.forEach(function(col){
+    // 按月重组 {year:[12 值]}，值=折丁二烯吨（品种×权重 / 合计直接用）
+    var by={};
+    YEARS.forEach(function(y){ by[y]=[null,null,null,null,null,null,null,null,null,null,null,null]; });
+    (CHAIN.months||[]).forEach(function(m){
+      var p=/^(\d{4})-M(\d{2})$/.exec(m); if(!p) return;
+      var y=+p[1], mo=+p[2]; if(!by[y]) return;
+      var v = (col==='合计') ? ((CHAIN.total[chainSubject]||{})[m]) : (((CHAIN.net[chainSubject]||{})[col]||{})[m]);
+      if(v===null||v===undefined) return;
+      var w = (col==='合计') ? 1 : (W[col]||1);
+      by[y][mo-1] = Math.round(v*w);
+    });
+    var wrap=document.createElement('div'); wrap.className='card';
+    var chart=document.createElement('div'); chart.style.height='250px';
+    wrap.innerHTML='<div class="ttl">'+col+'净出口</div>';
+    wrap.appendChild(chart);
+    grid.appendChild(wrap);
+    var inst=echarts.init(chart);
+    chainSeasonInsts.push(inst);
+    inst.setOption({
+      title:{text:chainSubject+' · '+col+'净出口（折丁二烯吨）', left:'center', textStyle:{fontSize:10, color:'#1a1a1a'}},
+      tooltip:{trigger:'axis'},
+      legend:{type:'scroll', top:20, textStyle:{fontSize:8}, itemWidth:10, itemHeight:6, itemGap:3},
+      grid:{left:48, right:10, top:46, bottom:22},
+      xAxis:{type:'category', data:['1','2','3','4','5','6','7','8','9','10','11','12'], axisLabel:{fontSize:9}},
+      yAxis:{type:'value', axisLabel:{fontSize:8, formatter:function(v){ return Math.abs(v)>=10000 ? (v/10000)+'万' : v; }}},
+      series:YEARS.map(function(y){
+        return {name:String(y), type:'line', showSymbol:false, lineStyle:{width:1}, data:by[y]};
+      })
+    });
   });
 }
 function renderChainAll(){
@@ -1338,6 +1420,7 @@ function renderChainAll(){
   renderChainMonthly();
   renderChainAnnual();
   renderChainChart();
+  renderChainSeasonal();
 }
 
 function init(){
