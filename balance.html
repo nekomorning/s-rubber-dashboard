@@ -43,6 +43,9 @@ table.data th.date-col, table.data td.date-col{position:sticky; left:0; z-index:
 table.data thead th.date-col{z-index:4;}
 table.data tbody tr:hover td{background:#f0f6ff;}
 table.data td.val-null{color:#bbb;}
+/* 「预」预测标记：2026-08 起日期旁的小徽标 */
+table.data .fcst-tag{display:inline-block; margin-left:4px; padding:0 4px; border-radius:3px;
+  font-size:10px; line-height:14px; font-weight:600; color:#fff; background:#FF9800; vertical-align:1px;}
 /* 折叠分组：子列默认隐藏，父列表头显示 ＋ 可点击 */
 table.data th.grp-parent{cursor:pointer; user-select:none;}
 table.data th.grp-parent:hover{background:#14538f;}
@@ -235,7 +238,10 @@ function renderMonthly(){
   months().forEach(function(mo){
     // 每年 12 月行加黑色实线下框线，区分各年
     var yrBorder = (mo.m === 12) ? " style='border-bottom:2px solid #000'" : "";
-    body += "<tr"+yrBorder+"><td class='date-col'>"+mo.date+"</td>";
+    // 2026-08 起为预测数据，日期加「预」标记
+    var isFcst = (mo.y === 2026 && mo.m >= 8) || mo.y >= 2027;
+    var dateTxt = mo.date + (isFcst ? " <span class='fcst-tag'>预</span>" : "");
+    body += "<tr"+yrBorder+"><td class='date-col'>"+dateTxt+"</td>";
     mo.v.forEach(function(v, idx){
       body += tdCell(v, ind[idx], idx);
     });
