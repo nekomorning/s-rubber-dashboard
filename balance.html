@@ -43,6 +43,30 @@ table.data th.date-col, table.data td.date-col{position:sticky; left:0; z-index:
 table.data thead th.date-col{z-index:4;}
 table.data tbody tr:hover td{background:#f0f6ff;}
 table.data td.val-null{color:#bbb;}
+/* 核心结论与假设 笔记卡片：白底，与表格同宽 */
+.note-card{background:#fff; border:1px solid var(--border); border-radius:10px; padding:12px 14px; margin-bottom:14px;}
+.note-head{display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:8px;}
+.note-title{font-size:15px; font-weight:700; color:var(--accent);}
+.note-meta{font-size:12px; color:#999;}
+.note-actions{margin-left:auto; display:flex; gap:6px;}
+.note-btn{padding:4px 12px; border:1px solid var(--border); border-radius:6px; font-size:12px;
+  background:#fff; color:var(--text); cursor:pointer;}
+.note-btn:hover{background:#f0f6ff; border-color:var(--accent);}
+.note-btn.primary{background:var(--accent); border-color:var(--accent); color:#fff; font-weight:600;}
+.note-body{font-size:13px; line-height:1.7; color:var(--text); white-space:pre-wrap; word-break:break-word;}
+.note-empty{color:#bbb;}
+.note-editor textarea{width:100%; box-sizing:border-box; min-height:120px; padding:10px;
+  border:1px solid var(--border); border-radius:8px; font-size:13px; line-height:1.6;
+  font-family:inherit; resize:vertical; background:#fbfcfe;}
+.note-editor textarea:focus{outline:none; border-color:var(--accent); box-shadow:0 0 0 2px rgba(30,111,255,.12);}
+.note-editbar{display:flex; align-items:center; gap:8px; margin-top:8px;}
+.note-hint{font-size:12px; color:#999; margin-right:auto;}
+.note-hist{margin-top:8px; border-top:1px dashed var(--border); padding-top:8px; max-height:240px; overflow:auto;}
+.note-hist-item{display:flex; align-items:flex-start; gap:8px; padding:6px 8px; border-radius:6px; cursor:pointer;}
+.note-hist-item:hover{background:#f0f6ff;}
+.note-hist-item .ts{font-size:11px; color:#999; white-space:nowrap; min-width:120px; padding-top:1px;}
+.note-hist-item .snip{font-size:12px; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:calc(100% - 130px);}
+.note-hist-empty{font-size:12px; color:#bbb; padding:6px 8px;}
 /* 「预」预测标记：2026-08 起日期旁的小徽标 */
 table.data .fcst-tag{display:inline-block; margin-left:4px; padding:0 4px; border-radius:3px;
   font-size:10px; line-height:14px; font-weight:600; color:#fff; background:#FF9800; vertical-align:1px;}
@@ -88,6 +112,27 @@ table.data th.grp-sub, table.data td.grp-sub{display:none; background:#f7fafd;}
 
   <div class="section-title">月度数据<span class="sub-inline">：默认显示最新 24 个月，向上滚动可查看更早年份；横向可滚动查看全部指标</span></div>
   <div class="tbl-scroll" id="monthlyScroll"><table class="data" id="monthlyTable"></table></div>
+
+  <div class="note-card" id="noteCard">
+    <div class="note-head">
+      <span class="note-title">核心结论与假设</span>
+      <span class="note-meta" id="noteMeta"></span>
+      <span class="note-actions">
+        <button class="note-btn" id="noteEditBtn" onclick="openNoteEditor()">编辑</button>
+        <button class="note-btn" id="noteHistBtn" onclick="toggleNoteHist()">历史</button>
+      </span>
+    </div>
+    <div class="note-body" id="noteBody"><span class="note-empty">（暂无内容，点击「编辑」记录核心结论与假设）</span></div>
+    <div class="note-editor" id="noteEditor" style="display:none;">
+      <textarea id="noteText" placeholder="记录本页核心结论、假设与数据说明（自动按国家保存）"></textarea>
+      <div class="note-editbar">
+        <span class="note-hint" id="noteHint"></span>
+        <button class="note-btn primary" id="noteSaveBtn" onclick="saveNote()">保存</button>
+        <button class="note-btn" id="noteCancelBtn" onclick="cancelNote()">取消</button>
+      </div>
+    </div>
+    <div class="note-hist" id="noteHist" style="display:none;"></div>
+  </div>
 
   <div class="section-title">区间筛选（同比对照）</div>
   <div class="filter-bar" id="filterBar"></div>
@@ -467,6 +512,83 @@ function renderAll(){
   renderFilterBar();
   renderAnnual();
   try{ renderSeasonal(); }catch(e){ console.error('seasonal chart error', e); }
+  loadNote();
+}
+/* ---------- 核心结论与假设 笔记（localStorage 按国家隔离 + 历史） ---------- */
+function noteKey(){ return "bal_note_" + state.country; }
+function noteHistKey(){ return "bal_note_hist_" + state.country; }
+function escHtml(s){ return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+function getHist(){
+  try { var h = JSON.parse(localStorage.getItem(noteHistKey()) || "[]"); return Array.isArray(h) ? h : []; }
+  catch(e){ return []; }
+}
+function loadNote(){
+  var content = localStorage.getItem(noteKey());
+  var body = document.getElementById("noteBody");
+  if(content){
+    body.textContent = content;
+  } else {
+    body.innerHTML = "<span class='note-empty'>（暂无内容，点击「编辑」记录核心结论与假设）</span>";
+  }
+  var hist = getHist();
+  document.getElementById("noteMeta").textContent = hist.length ? ("已保存 " + hist.length + " 次 · 最近 " + hist[hist.length-1].ts) : "尚未保存";
+  document.getElementById("noteEditor").style.display = "none";
+  document.getElementById("noteHist").style.display = "none";
+}
+function openNoteEditor(){
+  document.getElementById("noteText").value = localStorage.getItem(noteKey()) || "";
+  document.getElementById("noteEditor").style.display = "block";
+  document.getElementById("noteHint").textContent = "保存后自动按国家（" + state.country + "）隔离并记录历史";
+  document.getElementById("noteText").focus();
+}
+function saveNote(){
+  var content = document.getElementById("noteText").value;
+  var prev = localStorage.getItem(noteKey()) || "";
+  var hist = getHist();
+  var d = new Date();
+  function pad(n){ return (n < 10 ? "0" : "") + n; }
+  var ts = d.getFullYear() + "-" + pad(d.getMonth()+1) + "-" + pad(d.getDate()) + " " + pad(d.getHours()) + ":" + pad(d.getMinutes());
+  if(content !== prev){
+    hist.push({ ts: ts, content: content });
+    if(hist.length > 30) hist = hist.slice(hist.length - 30);
+    localStorage.setItem(noteHistKey(), JSON.stringify(hist));
+  }
+  localStorage.setItem(noteKey(), content);
+  loadNote();
+  var b = document.getElementById("noteSaveBtn");
+  b.textContent = "已保存 ✓";
+  setTimeout(function(){ b.textContent = "保存"; }, 1500);
+}
+function cancelNote(){
+  loadNote();
+}
+function toggleNoteHist(){
+  var box = document.getElementById("noteHist");
+  if(box.style.display === "block"){ box.style.display = "none"; return; }
+  var hist = getHist();
+  if(!hist.length){
+    box.innerHTML = "<div class='note-hist-empty'>暂无历史记录</div>";
+  } else {
+    var html = "";
+    for(var i = hist.length - 1; i >= 0; i--){
+      var h = hist[i];
+      var snip = (h.content || "").replace(/\n/g, " ");
+      html += "<div class='note-hist-item' title='点击载入编辑器，可修改后保存' onclick='restoreNote(" + i + ")'>" +
+        "<span class='ts'>" + h.ts + "</span><span class='snip'>" + (snip ? escHtml(snip) : "（空内容）") + "</span></div>";
+    }
+    box.innerHTML = html;
+  }
+  box.style.display = "block";
+}
+function restoreNote(idx){
+  var hist = getHist();
+  var h = hist[idx];
+  if(!h) return;
+  document.getElementById("noteHist").style.display = "none";
+  document.getElementById("noteText").value = h.content || "";
+  document.getElementById("noteEditor").style.display = "block";
+  document.getElementById("noteHint").textContent = "已载入历史版本（" + h.ts + "），点击「保存」确认恢复";
+  document.getElementById("noteText").focus();
 }
 function init(){
   if(!D || !D.countries){ document.body.insertAdjacentHTML("afterbegin","<div style='padding:20px;color:#c00'>数据未加载</div>"); return; }
