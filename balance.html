@@ -362,6 +362,7 @@ function renderAnnual(){
   });
 
   // 底部汇总：26增量/26增速%（2026−2025）与 27增量/27增速%（2027−2026）
+  // 规则：累计同比列 增量/增速% 都不算；进口占比/开工(pct)列 不算增速%（增量保留）
   function deltaRow(label, y2, y1, isPct){
     var r2 = c.annual[String(y2)] || [];
     var r1 = c.annual[String(y1)] || [];
@@ -369,7 +370,8 @@ function renderAnnual(){
     ind.forEach(function(i, idx){
       var a = r2[idx], b = r1[idx];
       var out = "";
-      if(a!==null && a!==undefined && b!==null && b!==undefined){
+      var skip = i.cumYoy || (isPct && i.pct); // 累计同比：都跳过；占比/开工：增速%跳过
+      if(!skip && a!==null && a!==undefined && b!==null && b!==undefined){
         if(isPct){
           var d = (b===0) ? null : (a-b)/b*100;
           if(d!==null){ out = (d>0?"+":"")+d.toFixed(1)+"%"; }
