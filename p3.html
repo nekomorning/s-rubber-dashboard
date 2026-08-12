@@ -1325,6 +1325,10 @@ function renderChainChart(){
     xAxis:{type:'category', data:ms.map(monthLabel), axisLabel:{fontSize:9, interval:5}},
     yAxis:{type:'value', axisLabel:{fontSize:10}},
     dataZoom:[{type:'inside'},{type:'slider', height:16, bottom:10, start:Math.max(0, 100-Math.round(24/ms.length*100))}],
+    graphic:[
+      {type:'text', right:10, top:12, style:{text:'▲ 净出口', fill:'#2E7D32', font:'bold 13px sans-serif'}},
+      {type:'text', right:10, bottom:36, style:{text:'▼ 净进口', fill:'#C62828', font:'bold 13px sans-serif'}}
+    ],
     series:series
   });
 }
