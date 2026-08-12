@@ -172,7 +172,7 @@ table.chain-tbl td.chain-total{font-weight:700;}
       <div class="tbl-scroll" id="chainAnnualScroll" style="max-height:240px;overflow-y:auto;"><table class="chain-tbl" id="chainAnnualTable"></table></div>
     </div>
     <div class="card">
-      <div class="ttl" id="chainChartTitle">年度堆积柱状图（万吨）</div>
+      <div class="ttl" id="chainChartTitle">月度堆积柱状图（万吨）</div>
       <div class="chart tall" id="chainChart" style="height:420px;"></div>
     </div>
   </div>
@@ -1298,23 +1298,24 @@ function renderChainChart(){
   if(chainChartInst){ try{ chainChartInst.dispose(); }catch(e){} chainChartInst=null; }
   if(!window.echarts){ el.innerHTML='<div class="note">图表库加载失败</div>'; return; }
   chainChartInst=echarts.init(el);
-  var years=CHAIN.years||[];
+  var ms=CHAIN.months||[];
   var cols=['丁二烯','顺丁橡胶','丁苯橡胶','ABS'];
   var W=CHAIN.weights||{};
   var series=cols.map(function(c){
-    return {name:c, type:'bar', stack:'net', barMaxWidth:36, data:years.map(function(y){
-      var v=((CHAIN.annual[chainSubject]||{})[y]||{})[c];
+    return {name:c, type:'bar', stack:'net', barMaxWidth:12, data:ms.map(function(m){
+      var v=chainVal(c, m);
       return (v===null||v===undefined) ? null : +((v/10000)*(W[c]||1)).toFixed(2);
     })};
   });
-  var ttl=document.getElementById('chainChartTitle'); if(ttl) ttl.textContent=chainSubject+' · 丁二烯元素净出口结构（年度，万吨）';
+  var ttl=document.getElementById('chainChartTitle'); if(ttl) ttl.textContent=chainSubject+' · 丁二烯元素净出口结构（月度，万吨）';
   chainChartInst.setOption({
-    title:{text:chainSubject+' · 丁二烯元素净出口结构（年度，万吨）', left:'center', textStyle:{fontSize:13, color:'#1a1a1a'}},
+    title:{text:chainSubject+' · 丁二烯元素净出口结构（月度，万吨）', left:'center', textStyle:{fontSize:13, color:'#1a1a1a'}},
     tooltip:{trigger:'axis', axisPointer:{type:'shadow'}},
     legend:{bottom:0, left:'center', textStyle:{fontSize:10}, itemWidth:14, itemHeight:8, itemGap:5},
-    grid:{left:60, right:24, top:46, bottom:44},
-    xAxis:{type:'category', data:years.map(String), axisLabel:{fontSize:10}},
+    grid:{left:60, right:24, top:46, bottom:64},
+    xAxis:{type:'category', data:ms.map(monthLabel), axisLabel:{fontSize:9, interval:5}},
     yAxis:{type:'value', axisLabel:{fontSize:10}},
+    dataZoom:[{type:'inside'},{type:'slider', height:16, bottom:10, start:Math.max(0, 100-Math.round(24/ms.length*100))}],
     series:series
   });
 }
