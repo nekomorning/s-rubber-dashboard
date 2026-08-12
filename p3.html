@@ -1307,6 +1307,15 @@ function renderChainChart(){
       return (v===null||v===undefined) ? null : +((v/10000)*(W[c]||1)).toFixed(2);
     })};
   });
+  // 合计净出口（丁二烯元素，加权）折线
+  series.push({
+    name:'合计', type:'line', smooth:true, symbol:'circle', symbolSize:5,
+    lineStyle:{width:2, color:'#1a1a1a'}, itemStyle:{color:'#1a1a1a'},
+    data:ms.map(function(m){
+      var v=(CHAIN.total[chainSubject]||{})[m];
+      return (v===null||v===undefined) ? null : +((v/10000)).toFixed(2);
+    })
+  });
   var ttl=document.getElementById('chainChartTitle'); if(ttl) ttl.textContent=chainSubject+' · 丁二烯元素净出口结构（月度，万吨）';
   chainChartInst.setOption({
     title:{text:chainSubject+' · 丁二烯元素净出口结构（月度，万吨）', left:'center', textStyle:{fontSize:13, color:'#1a1a1a'}},
