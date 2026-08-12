@@ -36,6 +36,8 @@ body{background:var(--bg); color:var(--text);
 table.data{border-collapse:collapse; font-size:12px; white-space:nowrap;}
 table.data th, table.data td{padding:5px 9px; border:1px solid var(--border); text-align:right;}
 table.data thead th{position:sticky; top:0; z-index:3; background:var(--accent); color:#fff; font-weight:600;}
+/* 累计同比表头不突出：白底黑字不加粗 */
+table.data thead th.cum-yoy-hd{background:#fff; color:#000; font-weight:400;}
 table.data th.date-col, table.data td.date-col{position:sticky; left:0; z-index:2; background:#eef2f7;
   text-align:center; font-weight:600; color:var(--text); min-width:86px;}
 table.data thead th.date-col{z-index:4;}
@@ -199,6 +201,8 @@ function thCell(i, idx){
   // 折叠分组：父列可点击展开子列，子列默认隐藏
   if(i.grp === "parent") return "<th class='grp-parent' data-grp='"+idx+"' onclick='toggleGrp(this)'>"+i.name+"<span class='grp-tri'>＋</span></th>";
   if(i.grp === "sub")    return "<th class='grp-sub' data-grp='"+idx+"'>"+i.name+"</th>";
+  // 累计同比表头不突出：白底黑字不加粗
+  if(i.cumYoy) return "<th class='cum-yoy-hd'>"+i.name+"</th>";
   return "<th>"+i.name+"</th>";
 }
 function tdCell(v, i, idx){
