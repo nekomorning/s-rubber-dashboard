@@ -197,7 +197,9 @@ function renderMonthly(){
   head += "</tr></thead>";
   var body = "<tbody>";
   months().forEach(function(mo){
-    body += "<tr><td class='date-col'>"+mo.date+"</td>";
+    // 每年 12 月行加黑色实线下框线，区分各年
+    var yrBorder = (mo.m === 12) ? " style='border-bottom:2px solid #000'" : "";
+    body += "<tr"+yrBorder+"><td class='date-col'>"+mo.date+"</td>";
     mo.v.forEach(function(v, idx){
       var s = fmt(v, ind[idx]);
       var cls = (s==="") ? " class='val-null'" : "";
