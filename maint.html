@@ -137,14 +137,14 @@ var MONTH_TICKS = [0,31,60,91,121,152,182,213,244,274,305,335];  // 各月首日
 var allYears = ((D && D.years) || []).filter(function(y){ return y >= 2022 && y <= 2026; });  // 2022-2026（2027 预测已剔除；最新年黑线=2026，前一年红线=2025）
 var yearVisible = {};
 var charts = [];
-var PALETTE = ['#2980B9','#8E44AD','#16A085','#D4AC0D','#E67E22','#2E86DE','#1ABC9C','#C0392B','#7F8C8D','#F39C12'];
-function yearColor(y){
-  var n = allYears.length;
-  var idx = allYears.indexOf(y);
-  if(idx === n-1) return '#1A1A1A';   // 最新年黑
-  if(idx === n-2) return '#d92626';   // 前一年红
-  return PALETTE[idx % PALETTE.length];
-}
+var YEAR_COLORS={
+  "2022":"#8B5CF6",  // 紫
+  "2023":"#1E6FFF",  // 蓝
+  "2024":"#F59A23",  // 橙
+  "2025":"#E60000",  // 红
+  "2026":"#1A1A1A"   // 黑（最新年锚定，线宽加粗、层级置顶）
+};
+function yearColor(y){ return YEAR_COLORS[String(y)] || "#888888"; }
 function latestV(seq){
   var ys = Object.keys(seq).sort();
   for(var i=ys.length-1;i>=0;i--){
@@ -228,7 +228,7 @@ function makeCard(dim, v){
       });
       return s;
     }},
-    xAxis:{type:'category', data:dayLabels, axisLabel:{fontSize:10,color:'#8a93a3', formatter:function(v,i){ return xTickLabel(i); }}, axisTick:{show:false}, axisLine:{lineStyle:{color:'#dde3ec'}}},
+    xAxis:{type:'category', data:dayLabels, axisLabel:{interval:0, fontSize:10, color:'#8a93a3', formatter:function(v,i){ return xTickLabel(i); }}, axisTick:{show:false}, axisLine:{lineStyle:{color:'#dde3ec'}}},
     yAxis:{type:'value', scale:true, axisLabel:{fontSize:10,color:'#8a93a3', formatter:'{value}%'}, splitLine:{lineStyle:{color:'#eef1f6'}}},
     series:seriesArr
   };
