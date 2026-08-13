@@ -76,16 +76,23 @@ body{font-family:"Microsoft YaHei",system-ui,sans-serif;background:var(--bg);col
 .ybtn{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border:1px solid var(--border);border-radius:12px;background:#fff;font-size:12px;color:var(--sub);cursor:pointer;}
 .ybtn .dot{width:9px;height:9px;border-radius:50%;display:inline-block;}
 .ybtn.off{opacity:.35;}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;}
-.card{background:#fff;border:1px solid var(--border);border-radius:6px;padding:10px 12px;}
+.grid{display:grid;gap:14px;}
+.grid.g1{grid-template-columns:repeat(1,1fr);}
+.grid.g2{grid-template-columns:repeat(2,1fr);}
+.grid.g3{grid-template-columns:repeat(3,1fr);}
+.grid.g4{grid-template-columns:repeat(4,1fr);}
+.grid.g5{grid-template-columns:repeat(5,1fr);}
+@media (max-width:1200px){ .grid.g3,.grid.g4,.grid.g5{grid-template-columns:repeat(2,1fr);} }
+@media (max-width:720px){ .grid.g1,.grid.g2,.grid.g3,.grid.g4,.grid.g5{grid-template-columns:1fr;} }
+.card{background:#fff;border:1px solid var(--border);border-radius:6px;padding:10px 12px;min-width:0;}
 .card .ttl{font-size:13px;color:#1f2733;font-weight:700;margin-bottom:4px;}
 .card .meta{font-size:12px;color:var(--sub);margin-bottom:6px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
 .card .meta .val{font-size:15px;font-weight:700;color:#1f2733;}
 .card .meta .val.up{color:#d92626;}
 .card .meta .val.down{color:#0a9a5c;}
 .card .chart{width:100%;height:200px;}
-.dim-sec{display:block;background:#fbfcfe;border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:18px;}
-.dim-sec-title{font-size:14px;color:var(--accent);font-weight:700;margin-bottom:10px;padding-left:8px;border-left:3px solid var(--accent);}
+.dim-sec{margin-bottom:22px;}
+.dim-sec-title{font-size:17px;color:var(--accent);font-weight:700;margin:4px 0 12px;}
 .note{font-size:12px;color:var(--sub);margin-top:14px;line-height:1.7;}
 </style>
 </head>
@@ -231,6 +238,7 @@ function makeCard(dim, v){
   allYears.forEach(function(y){ if(!yearVisible[y]) c.dispatchAction({type:'legendToggleSelect', name:String(y)}); });
   return card;
 }
+function gridCls(n){ return n<=1?'g1': n===2?'g2': n===3?'g3': n===4?'g4':'g5'; }
 function renderGrid(){
   disposeAll();
   var root = document.getElementById('opsGrid');
@@ -238,7 +246,7 @@ function renderGrid(){
   selDims.forEach(function(dim){
     var sec = document.createElement('div');
     sec.className = 'dim-sec';
-    sec.innerHTML = '<div class="dim-sec-title">'+dim+'</div><div class="grid"></div>';
+    sec.innerHTML = '<div class="dim-sec-title">'+dim+'</div><div class="grid '+gridCls((values[dim]||[]).length)+'"></div>';
     root.appendChild(sec);
     var grid = sec.querySelector('.grid');
     (values[dim] || []).forEach(function(v){
