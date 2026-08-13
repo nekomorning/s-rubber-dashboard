@@ -1454,7 +1454,7 @@ function renderChainFilterTable(){
   cols.forEach(function(c){ head+='<th>'+c+'</th>'; });
   head+='</tr></thead>';
   var body='<tbody>';
-  // 3 行：区间累计 / 上年同期累计 / 同比增减%
+  // 4 行：区间累计 / 上年同期累计 / 同比增减值 / 同比增减%
   function row3(label, rangeOrPct){
     body+='<tr><td class="ind-col">'+label+'</td>';
     cols.forEach(function(col){
@@ -1464,6 +1464,12 @@ function renderChainFilterTable(){
         var pct=(cur!==null && prv!==null && prv!==0)?((cur-prv)/Math.abs(prv)*100):null;
         var cls=chgCls(pct);
         body+='<td class="'+cls+'">'+(pct===null?'—':(pct>0?'+':'')+pct.toFixed(1)+'%')+'</td>';
+      } else if(rangeOrPct==='diff'){
+        var cur=rangeSumByCol(col, inRange);
+        var prv=rangeSumByCol(col, inPrev);
+        var d=(cur!==null && prv!==null)?(cur-prv):null;
+        var cls=chgCls(d);
+        body+='<td class="'+cls+'">'+(d===null?'—':(d>0?'+':'')+fmtWan(d))+'</td>';
       } else {
         var v=rangeSumByCol(col, rangeOrPct);
         body+='<td class="'+netCls(v)+'">'+(v===null?'—':fmtWan(v))+'</td>';
@@ -1473,6 +1479,7 @@ function renderChainFilterTable(){
   }
   row3('区间累计', inRange);
   row3('上年同期累计', inPrev);
+  row3('同比增减值', 'diff');
   row3('同比增减%', 'pct');
   body+='</tbody>';
   var t=document.getElementById('chainFilterTable'); if(t) t.innerHTML=head+body;
