@@ -125,6 +125,10 @@ tr.drill-detail td.flat{color:var(--flat);}
 .csub{display:inline-block;padding:4px 14px;margin-right:8px;border:1px solid var(--border);border-radius:14px;cursor:pointer;font-size:13px;background:#fff;color:var(--sub);user-select:none;}
 .csub:hover{border-color:var(--accent);color:var(--accent);}
 .csub.active{background:var(--accent);color:#fff;font-weight:600;border-color:var(--accent);}
+.chain-filter-bar{display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin:6px 0 12px; padding:10px 14px; background:#fafbfc; border:1px solid var(--border); border-radius:6px;}
+.chain-filter-bar .lbl{color:var(--sub); font-size:13px; margin:0 4px;}
+.chain-filter-bar .sep{color:var(--sub); font-size:13px; margin:0 8px; font-weight:600;}
+.chain-filter-bar select{padding:4px 8px; border:1px solid var(--border); border-radius:4px; background:#fff; font-size:13px; color:#1f2733; cursor:pointer;}
 table.chain-tbl{width:100%;border-collapse:collapse;font-size:12px;background:#fff;}
 table.chain-tbl th{position:sticky;top:0;z-index:3;background:var(--accent);color:#fff;font-weight:600;padding:5px 8px;border:1px solid #dfe5ef;white-space:nowrap;}
 table.chain-tbl td{padding:4px 8px;border:1px solid #e8ecf3;text-align:right;white-space:nowrap;}
@@ -171,6 +175,18 @@ table.chain-tbl td.chain-total{font-weight:700;}
     <div class="tablecard">
       <h2>月度净出口（2016.1 - 最新月，单位：吨）<span style="font-size:12px;color:var(--sub);font-weight:400">（向上滚动查看历史月份）</span></h2>
       <div class="tbl-scroll" id="chainMonthlyScroll" style="max-height:340px;overflow-y:auto;"><table class="chain-tbl" id="chainMonthlyTable"></table></div>
+    </div>
+    <div class="tablecard" id="chainFilterCard">
+      <h2>区间筛选（同比对照）<span style="font-size:12px;color:var(--sub);font-weight:400">（选定起止月份，对照上年同期；7 主体并列，值=区间累计净出口吨；同比增减% 红涨绿跌）</span></h2>
+      <div class="chain-filter-bar" id="chainFilterBar">
+        <span class="lbl">从</span>
+        <select id="chainFrmY"></select><span class="lbl">年</span>
+        <select id="chainFrmM"></select><span class="lbl">月</span>
+        <span class="sep">→ 到</span>
+        <select id="chainToY"></select><span class="lbl">年</span>
+        <select id="chainToM"></select><span class="lbl">月</span>
+      </div>
+      <div class="tbl-scroll" style="max-height:300px;overflow-y:auto;"><table class="chain-tbl" id="chainFilterTable"></table></div>
     </div>
     <div class="tablecard">
       <h2>年度累计净出口（单位：万吨）<span style="font-size:12px;color:var(--sub);font-weight:400">（* 为未满 12 个月的年份，按截至最新月累计）</span></h2>
@@ -1286,7 +1302,7 @@ function renderChainSubjects(){
     return '<span class="csub'+(s===chainSubject?' active':'')+'" onclick="chainSwitchSubject(\''+s+'\')">'+s+'</span>';
   }).join('');
 }
-function chainSwitchSubject(s){ chainSubject=s; renderChainSubjects(); renderChainMonthly(); renderChainAnnual(); renderChainChart(); renderChainSeasonal(); }
+function chainSwitchSubject(s){ chainSubject=s; renderChainSubjects(); renderChainMonthly(); renderChainAnnual(); renderChainChart(); renderChainSeasonal(); renderChainFilterTable(); }
 function renderChainMonthly(){
   var cols=chainCols();
   var head='<thead><tr><th class="date-col">日期</th>';
@@ -1340,6 +1356,101 @@ function chainModeSwitch(mode){
     b.classList.toggle('active', b.dataset.mode === mode);
   });
   renderChainChart();
+}
+// ===== 区间筛选（同比对照） =====
+function chainKey(y,m){ return y+'-M'+(m<10?'0':'')+m; }
+function chainRangeMonths(fy,fm,ty,tm){
+  var from=chainKey(fy,fm), to=chainKey(ty,tm);
+  return (CHAIN.months||[]).filter(function(m){ return m>=from && m<=to; });
+}
+function chainSeries(subject, prod){
+  // prod='合计' → CHAIN.total[subject]；否则 CHAIN.net[subject][prod]
+  if(prod==='合计') return CHAIN.total[subject]||{};
+  return ((CHAIN.net[subject]||{})[prod])||{};
+}
+function chainRangeSum(series, months){
+  var s=0, cnt=0;
+  months.forEach(function(m){ var v=series[m]; if(v!==null && v!==undefined){ s+=v; cnt++; } });
+  return cnt===months.length && months.length>0 ? s : null;
+}
+function initChainFilter(){
+  // 默认起止：今年 1 月 ~ 最新月（CHAIN.months 最后一个有值月）
+  var lastM=null;
+  for(var i=CHAIN.months.length-1;i>=0;i--){
+    var v=(CHAIN.total['中国']||{})[CHAIN.months[i]];
+    if(v!==null && v!==undefined){ lastM=CHAIN.months[i]; break; }
+  }
+  if(!lastM) lastM = CHAIN.months[CHAIN.months.length-1];
+  var p=/^(\d{4})-M(\d{2})$/.exec(lastM); var lastY=+p[1], lastMo=+p[2];
+  function fillYear(selId){
+    var sel=document.getElementById(selId); sel.innerHTML='';
+    CHAIN.years.forEach(function(y){ var o=document.createElement('option'); o.value=y; o.text=y; sel.appendChild(o); });
+  }
+  function fillMonth(selId){
+    var sel=document.getElementById(selId); sel.innerHTML='';
+    for(var m=1;m<=12;m++){ var o=document.createElement('option'); o.value=m; o.text=m+'月'; sel.appendChild(o); }
+  }
+  fillYear('chainFrmY'); fillYear('chainToY');
+  fillMonth('chainFrmM'); fillMonth('chainToM');
+  document.getElementById('chainFrmY').value=lastY;
+  document.getElementById('chainFrmM').value=1;
+  document.getElementById('chainToY').value=lastY;
+  document.getElementById('chainToM').value=lastMo;
+  ['chainFrmY','chainFrmM','chainToY','chainToM'].forEach(function(id){
+    document.getElementById(id).onchange=renderChainFilterTable;
+  });
+}
+function renderChainFilterTable(){
+  var fy=+document.getElementById('chainFrmY').value;
+  var fm=+document.getElementById('chainFrmM').value;
+  var ty=+document.getElementById('chainToY').value;
+  var tm=+document.getElementById('chainToM').value;
+  if(chainKey(fy,fm)>chainKey(ty,tm)){ var t=fy; fy=ty; ty=t; t=fm; fm=tm; tm=t; }
+  var inRange=chainRangeMonths(fy,fm,ty,tm);
+  var inPrev=chainRangeMonths(fy-1,fm,ty-1,tm);
+  var subjects=['几国合计','中国','韩国','美国','欧盟','东南亚','日本'];
+  var products=['丁二烯','顺丁橡胶','丁苯橡胶','ABS'];
+  // 几国合计 = 6 国加总（全数有值才返回，否则 null）
+  function sumAll(prod, range){
+    var s=0, cnt=0;
+    subjects.slice(1).forEach(function(sub){
+      var v=chainRangeSum(chainSeries(sub, prod), range);
+      if(v!==null){ s+=v; cnt++; }
+    });
+    return cnt===subjects.length-1 ? s : null;
+  }
+  var head='<thead><tr><th class="ind-col">指标</th>';
+  subjects.forEach(function(s){ head+='<th>'+s+'</th>'; });
+  head+='</tr></thead>';
+  var body='<tbody>';
+  products.forEach(function(prod){
+    // 区间累计
+    body+='<tr><td class="ind-col">'+prod+' 区间累计</td>';
+    subjects.forEach(function(sub){
+      var v=(sub==='几国合计')?sumAll(prod, inRange):chainRangeSum(chainSeries(sub,prod), inRange);
+      body+='<td class="'+netCls(v)+'">'+(v===null?'—':fmtTon(v))+'</td>';
+    });
+    body+='</tr>';
+    // 上年同期累计
+    body+='<tr><td class="ind-col">'+prod+' 上年同期累计</td>';
+    subjects.forEach(function(sub){
+      var v=(sub==='几国合计')?sumAll(prod, inPrev):chainRangeSum(chainSeries(sub,prod), inPrev);
+      body+='<td class="'+netCls(v)+'">'+(v===null?'—':fmtTon(v))+'</td>';
+    });
+    body+='</tr>';
+    // 同比增减%
+    body+='<tr><td class="ind-col">'+prod+' 同比增减%</td>';
+    subjects.forEach(function(sub){
+      var cur=(sub==='几国合计')?sumAll(prod, inRange):chainRangeSum(chainSeries(sub,prod), inRange);
+      var prv=(sub==='几国合计')?sumAll(prod, inPrev):chainRangeSum(chainSeries(sub,prod), inPrev);
+      var pct=(cur!==null && prv!==null && prv!==0)?((cur-prv)/Math.abs(prv)*100):null;
+      var cls=chgCls(pct);
+      body+='<td class="'+cls+'">'+(pct===null?'—':(pct>0?'+':'')+pct.toFixed(1)+'%')+'</td>';
+    });
+    body+='</tr>';
+  });
+  body+='</tbody>';
+  var t=document.getElementById('chainFilterTable'); if(t) t.innerHTML=head+body;
 }
 function renderChainChart(){
   var el=document.getElementById('chainChart'); if(!el) return;
@@ -1463,10 +1574,12 @@ function renderChainSeasonal(){
 function renderChainAll(){
   if(!CHAIN.subjectKeys || !CHAIN.subjectKeys.length) return;
   renderChainSubjects();
+  initChainFilter();
   renderChainMonthly();
   renderChainAnnual();
   renderChainChart();
   renderChainSeasonal();
+  renderChainFilterTable();
 }
 
 function init(){
