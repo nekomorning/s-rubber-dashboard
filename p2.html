@@ -141,6 +141,7 @@ tr.abn td{background:#fff7f0;}
     <a class="tab" href="https://nekomorning.github.io/s-rubber-dashboard/naphtha.html">石脑油周报</a>
     <a class="tab" href="https://nekomorning.github.io/s-rubber-dashboard/balance.html">平衡表</a>
     <a class="tab" href="https://nekomorning.github.io/s-rubber-dashboard/capacity.html">产能投放</a>
+    <a class="tab" href="https://nekomorning.github.io/s-rubber-dashboard/maint.html">装置检修</a>
     <a class="tab" href="https://nekomorning.github.io/s-rubber-dashboard/p3.html">贸易流</a>
   </div>
 
@@ -472,8 +473,8 @@ function makeCard(ch,ticks,grid,row){
       s.markLine = {
         symbol:'none',
         data:[
-          { yAxis:1500, name:'重启', lineStyle:{color:'#2E7D32', width:1.5, type:'dashed'}, label:{formatter:'重启', color:'#2E7D32', position:'insideEndTop', fontSize:10, fontWeight:600} },
-          { yAxis:-1000, name:'亏损停车', lineStyle:{color:'#C62828', width:1.5, type:'dashed'}, label:{formatter:'亏损停车', color:'#C62828', position:'insideEndBottom', fontSize:10, fontWeight:600} }
+          { yAxis:1500, name:'重启', lineStyle:{color:'#2E7D32', width:1.5, type:'dashed'}, label:{formatter:'重启', color:'#2E7D32', position:'insideStartTop', fontSize:10, fontWeight:600, padding:[2,4,2,4]} },
+          { yAxis:-1000, name:'亏损停车', lineStyle:{color:'#C62828', width:1.5, type:'dashed'}, label:{formatter:'亏损停车', color:'#C62828', position:'insideStartBottom', fontSize:10, fontWeight:600, padding:[2,4,2,4]} }
         ]
       };
     }
@@ -588,9 +589,19 @@ function exportOption(D, ch, row, isTs){
     if(!pts||!pts.length) return;
     legend.push(String(y));
     var isLatest=(y===D.years[D.years.length-1]);
-    series.push({name:String(y), type:"line", showSymbol:false, connectNulls:true, data:pts,
+    var s = {name:String(y), type:"line", showSymbol:false, connectNulls:true, data:pts,
       lineStyle:{width:isLatest?2.4:1.4, color:yearColor(y)}, itemStyle:{color:yearColor(y)},
-      emphasis:{focus:"series"}, z:isLatest?10:5});
+      emphasis:{focus:"series"}, z:isLatest?10:5};
+    if(isLatest && ch.key==='丁二烯氧化脱氢利润'){
+      s.markLine = {
+        symbol:'none',
+        data:[
+          { yAxis:1500, name:'重启', lineStyle:{color:'#2E7D32', width:1.5, type:'dashed'}, label:{formatter:'重启', color:'#2E7D32', position:'insideStartTop', fontSize:10, fontWeight:600, padding:[2,4,2,4]} },
+          { yAxis:-1000, name:'亏损停车', lineStyle:{color:'#C62828', width:1.5, type:'dashed'}, label:{formatter:'亏损停车', color:'#C62828', position:'insideStartBottom', fontSize:10, fontWeight:600, padding:[2,4,2,4]} }
+        ]
+      };
+    }
+    series.push(s);
   });
   var valTxt=fmt(st.latest,ind.dec)+" "+ind.unit;
   var chgTxt="";
