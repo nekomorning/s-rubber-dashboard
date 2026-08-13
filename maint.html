@@ -80,7 +80,7 @@ var D = /*DATA*/{"dims": ["企业性质", "原料来源", "原料", "工艺路�
 var dims = (D && D.dims) || [];
 var values = (D && D.values) || {};
 var series = (D && D.series) || {};
-var allYears = (D && D.years) || [];
+var allYears = ((D && D.years) || []).filter(function(y){ return y >= 2022; });  // 仅展示 2022 起（删 2014-2021）
 var yearVisible = {};
 var charts = [];
 var PALETTE = ['#2980B9','#8E44AD','#16A085','#D4AC0D','#E67E22','#2E86DE','#1ABC9C','#C0392B','#7F8C8D','#F39C12'];
@@ -170,7 +170,7 @@ function makeCard(dim, v){
     legend:{show:true, top:0, right:0, itemWidth:12, itemHeight:2, icon:'rect', textStyle:{fontSize:10, color:'#6b7686'}, data:legend},
     tooltip:{trigger:'axis', confine:true, valueFormatter:function(v){ return v===null?'—':v.toFixed(1)+'%'; }},
     xAxis:{type:'category', data:[1,2,3,4,5,6,7,8,9,10,11,12].map(monthLabel), axisLabel:{fontSize:10,color:'#8a93a3'}, axisTick:{show:false}, axisLine:{lineStyle:{color:'#dde3ec'}}},
-    yAxis:{type:'value', axisLabel:{fontSize:10,color:'#8a93a3', formatter:'{value}%'}, splitLine:{lineStyle:{color:'#eef1f6'}}},
+    yAxis:{type:'value', scale:true, axisLabel:{fontSize:10,color:'#8a93a3', formatter:'{value}%'}, splitLine:{lineStyle:{color:'#eef1f6'}}},
     series:seriesArr
   });
   charts.push(c);
