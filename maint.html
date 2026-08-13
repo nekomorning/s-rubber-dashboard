@@ -234,7 +234,7 @@ function makeCard(dim, v){
   };
   return {card:card, opt:opt};
 }
-function gridCls(n){ return n<=1?'g1': n===2?'g2': n===3?'g3': n===4?'g4':'g5'; }
+function gridCls(n){ return n>=5?'g5':'g4'; }   // 取值≥5 用 5 列；否则统一 4 列对齐（与企业性质 4 列同列宽）
 function renderGrid(){
   disposeAll();
   var root = document.getElementById('opsGrid');
