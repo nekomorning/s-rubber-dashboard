@@ -1408,47 +1408,72 @@ function renderChainFilterTable(){
   if(chainKey(fy,fm)>chainKey(ty,tm)){ var t=fy; fy=ty; ty=t; t=fm; fm=tm; tm=t; }
   var inRange=chainRangeMonths(fy,fm,ty,tm);
   var inPrev=chainRangeMonths(fy-1,fm,ty-1,tm);
-  var subjects=['几国合计','中国','韩国','美国','欧盟','东南亚','日本'];
-  var products=['丁二烯','顺丁橡胶','丁苯橡胶','ABS'];
-  // 几国合计 = 6 国加总（全数有值才返回，否则 null）
-  function sumAll(prod, range){
+  // 列结构与月度表完全一致（汇总模式 = 7 主体；普通国家页 = 合计+4 品种）
+  var cols = chainCols();
+  // 各列对应的 series：汇总模式 col 是主体（几国合计=6 国加总），普通模式 col 是品种或'合计'
+  function seriesOfCol(col){
+    if(isAll()){
+      // 汇总模式：col='几国合计' → null（special）；col='中国' 等 → CHAIN.total[col]
+      if(col==='几国合计') return null;
+      return (CHAIN.total[col])||{};
+    } else {
+      // 普通模式：col='合计' → CHAIN.total[chainSubject]；col=品种 → CHAIN.net[chainSubject][col]
+      if(col==='合计') return (CHAIN.total[chainSubject])||{};
+      return (((CHAIN.net[chainSubject])||{})[col])||{};
+    }
+  }
+  // 6 国加总（全数有值才返回，否则 null）—— 汇总模式「几国合计」列专用
+  var subs6 = ['中国','韩国','美国','欧盟','东南亚','日本'];
+  function sumSix(prod, range){
     var s=0, cnt=0;
-    subjects.slice(1).forEach(function(sub){
+    subs6.forEach(function(sub){
       var v=chainRangeSum(chainSeries(sub, prod), range);
       if(v!==null){ s+=v; cnt++; }
     });
-    return cnt===subjects.length-1 ? s : null;
+    return cnt===subs6.length ? s : null;
+  }
+  // 普通模式 col 是品种：返回 chainSeries(chainSubject, col)；col='合计' → CHAIN.total[chainSubject]
+  function rangeSumByCol(col, range){
+    if(isAll()){
+      if(col==='几国合计'){
+        // 几国合计 = 4 品种加权合计之 6 国加总（按 build_chain total 加权）
+        // 简化：用 CHAIN.total['几国合计']? 不存在——用 6 国 CHAIN.total 加总
+        var s=0, cnt=0;
+        subs6.forEach(function(sub){
+          var t=(CHAIN.total[sub])||{};
+          range.forEach(function(m){ var v=t[m]; if(v!==null && v!==undefined){ s+=v; cnt++; } });
+        });
+        return cnt === range.length*subs6.length ? s : null;
+      }
+      return chainRangeSum(seriesOfCol(col), range);
+    } else {
+      return chainRangeSum(seriesOfCol(col), range);
+    }
   }
   var head='<thead><tr><th class="ind-col">指标</th>';
-  subjects.forEach(function(s){ head+='<th>'+s+'</th>'; });
+  cols.forEach(function(c){ head+='<th>'+c+'</th>'; });
   head+='</tr></thead>';
   var body='<tbody>';
-  products.forEach(function(prod){
-    // 区间累计
-    body+='<tr><td class="ind-col">'+prod+' 区间累计</td>';
-    subjects.forEach(function(sub){
-      var v=(sub==='几国合计')?sumAll(prod, inRange):chainRangeSum(chainSeries(sub,prod), inRange);
-      body+='<td class="'+netCls(v)+'">'+(v===null?'—':fmtTon(v))+'</td>';
+  // 3 行：区间累计 / 上年同期累计 / 同比增减%
+  function row3(label, rangeOrPct){
+    body+='<tr><td class="ind-col">'+label+'</td>';
+    cols.forEach(function(col){
+      if(rangeOrPct==='pct'){
+        var cur=rangeSumByCol(col, inRange);
+        var prv=rangeSumByCol(col, inPrev);
+        var pct=(cur!==null && prv!==null && prv!==0)?((cur-prv)/Math.abs(prv)*100):null;
+        var cls=chgCls(pct);
+        body+='<td class="'+cls+'">'+(pct===null?'—':(pct>0?'+':'')+pct.toFixed(1)+'%')+'</td>';
+      } else {
+        var v=rangeSumByCol(col, rangeOrPct);
+        body+='<td class="'+netCls(v)+'">'+(v===null?'—':fmtWan(v))+'</td>';
+      }
     });
     body+='</tr>';
-    // 上年同期累计
-    body+='<tr><td class="ind-col">'+prod+' 上年同期累计</td>';
-    subjects.forEach(function(sub){
-      var v=(sub==='几国合计')?sumAll(prod, inPrev):chainRangeSum(chainSeries(sub,prod), inPrev);
-      body+='<td class="'+netCls(v)+'">'+(v===null?'—':fmtTon(v))+'</td>';
-    });
-    body+='</tr>';
-    // 同比增减%
-    body+='<tr><td class="ind-col">'+prod+' 同比增减%</td>';
-    subjects.forEach(function(sub){
-      var cur=(sub==='几国合计')?sumAll(prod, inRange):chainRangeSum(chainSeries(sub,prod), inRange);
-      var prv=(sub==='几国合计')?sumAll(prod, inPrev):chainRangeSum(chainSeries(sub,prod), inPrev);
-      var pct=(cur!==null && prv!==null && prv!==0)?((cur-prv)/Math.abs(prv)*100):null;
-      var cls=chgCls(pct);
-      body+='<td class="'+cls+'">'+(pct===null?'—':(pct>0?'+':'')+pct.toFixed(1)+'%')+'</td>';
-    });
-    body+='</tr>';
-  });
+  }
+  row3('区间累计', inRange);
+  row3('上年同期累计', inPrev);
+  row3('同比增减%', 'pct');
   body+='</tbody>';
   var t=document.getElementById('chainFilterTable'); if(t) t.innerHTML=head+body;
 }
