@@ -199,7 +199,6 @@ function makeCard(dim, v){
   card.innerHTML =
     '<div class="ttl">丁二烯·'+v+'开工率</div>'+
     '<div class="chart" id="chart_'+(dim+'_'+v).replace(/\W/g,'')+'"></div>';
-  var el = card.querySelector('.chart');
   var seriesArr = [], legend = [];
   allYears.forEach(function(y){
     var arr = seq[String(y)];
@@ -214,8 +213,7 @@ function makeCard(dim, v){
       emphasis:{focus:'series'}, z:isLast?10:5
     });
   });
-  var c = echarts.init(el);
-  c.setOption({
+  var opt = {
     animation:false,
     grid:{left:8, right:14, top:14, bottom:24, containLabel:true},
     legend:{show:true, top:0, right:0, itemWidth:12, itemHeight:2, icon:'rect', textStyle:{fontSize:10, color:'#6b7686'}, data:legend},
@@ -233,10 +231,8 @@ function makeCard(dim, v){
     xAxis:{type:'category', data:dayLabels, axisLabel:{fontSize:10,color:'#8a93a3', formatter:function(v,i){ return xTickLabel(i); }}, axisTick:{show:false}, axisLine:{lineStyle:{color:'#dde3ec'}}},
     yAxis:{type:'value', scale:true, axisLabel:{fontSize:10,color:'#8a93a3', formatter:'{value}%'}, splitLine:{lineStyle:{color:'#eef1f6'}}},
     series:seriesArr
-  });
-  charts.push(c);
-  allYears.forEach(function(y){ if(!yearVisible[y]) c.dispatchAction({type:'legendToggleSelect', name:String(y)}); });
-  return card;
+  };
+  return {card:card, opt:opt};
 }
 function gridCls(n){ return n<=1?'g1': n===2?'g2': n===3?'g3': n===4?'g4':'g5'; }
 function renderGrid(){
@@ -250,7 +246,13 @@ function renderGrid(){
     root.appendChild(sec);
     var grid = sec.querySelector('.grid');
     (values[dim] || []).forEach(function(v){
-      grid.appendChild(makeCard(dim, v));
+      var mk = makeCard(dim, v);
+      grid.appendChild(mk.card);   // 先入 DOM，chart 容器有 clientWidth
+      var el = mk.card.querySelector('.chart');
+      var c = echarts.init(el);    // 此时 el 已在 DOM，尺寸正确
+      c.setOption(mk.opt);
+      charts.push(c);
+      allYears.forEach(function(y){ if(!yearVisible[y]) c.dispatchAction({type:'legendToggleSelect', name:String(y)}); });
     });
   });
 }
