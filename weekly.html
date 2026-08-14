@@ -957,7 +957,7 @@ async function exportPDF(){
     var secEls = document.querySelectorAll('.sec');
     for(var i=0; i<secEls.length; i++){
       doc.addPage();
-      var canvas = await html2canvas(secEls[i], {backgroundColor:'#fff', scale:2, useCORS:true});
+      var canvas = await html2canvas(secEls[i], {backgroundColor:'#fff', scale:1.5, useCORS:true});
       var imgW = pageW - margin*2;
       var imgH = canvas.height * imgW / canvas.width;
       if(imgH > pageH - margin*2){ imgH = pageH - margin*2; imgW = canvas.width * imgH / canvas.height; }
