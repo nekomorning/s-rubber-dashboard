@@ -108,6 +108,7 @@ body{font-family:"Microsoft YaHei",system-ui,sans-serif;background:var(--bg);col
 .maint-tbl tbody tr:hover{background:#f8f9fc;}
 .maint-tbl .ongoing{color:#d92626;font-weight:600;}
 .maint-tbl .loss{color:#d92626;font-weight:700;}
+.maint-tbl .redflag{color:#E67E22;font-weight:600;font-size:11px;border:1px solid #E67E22;border-radius:3px;padding:0 4px;margin-left:4px;}
 </style>
 </head>
 <body>
@@ -290,7 +291,11 @@ function renderMaintTable(){
     var days = op.days === null || op.days === undefined ? '—' : op.days;
     var loss = op.loss === null || op.loss === undefined ? '—' : op.loss;
     var endClass = op.ongoing ? ' class="ongoing"' : '';
-    return '<tr><td>'+op.co+'</td><td>'+op.cap+'</td><td>'+op.start+'</td><td'+endClass+'>'+op.end+'</td><td'+endClass+'>'+days+'</td><td class="loss">'+loss+'</td></tr>';
+    var capCell = op.cap;
+    if(op.lossRate && op.lossRate < 1){
+      capCell += ' <span class="redflag" title="按降负比例折算损失">降负' + Math.round((1-op.lossRate)*100) + '%</span>';
+    }
+    return '<tr><td>'+op.co+'</td><td>'+capCell+'</td><td>'+op.start+'</td><td'+endClass+'>'+op.end+'</td><td'+endClass+'>'+days+'</td><td class="loss">'+loss+'</td></tr>';
   }).join('') + '</tbody>';
   var t = document.getElementById('maintTbl'); if(t) t.innerHTML = head + body;
   // 滚动到底部（显示最新数据）
