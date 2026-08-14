@@ -98,6 +98,7 @@ body{font-family:"Microsoft YaHei",system-ui,sans-serif;background:var(--bg);col
 .maint-left{flex:1;min-width:0;}
 .maint-right{flex:1;min-width:0;}
 .maint-table-wrap{max-height:500px;overflow-y:auto;border:1px solid var(--border);border-radius:6px;background:#fff;}
+.maint-chart-card{background:#fff;border:1px solid var(--border);border-radius:6px;padding:10px;}
 .maint-tbl{width:100%;border-collapse:collapse;font-size:12px;}
 .maint-tbl thead th{position:sticky;top:0;background:#f0f3f8;color:#1f2733;font-weight:700;text-align:right;padding:7px 10px;border-bottom:1px solid var(--border);white-space:nowrap;}
 .maint-tbl thead th:first-child{text-align:left;}
@@ -134,7 +135,7 @@ body{font-family:"Microsoft YaHei",system-ui,sans-serif;background:var(--bg);col
   <div class="section-title">丁二烯装置检修列表<span style="font-size:12px;color:var(--sub);font-weight:400">（停车时间→开车时间算检修天数；损失=年产能×天数/365；截至 2026-08-14）</span></div>
   <div class="maint-section">
     <div class="maint-left"><div class="maint-table-wrap"><table class="maint-tbl" id="maintTbl"></table></div></div>
-    <div class="maint-right"><div class="section-title" style="font-size:14px;margin-top:0">月度合计检修损失（万吨）</div><div class="chart" id="maintLossChart" style="height:500px"></div></div>
+    <div class="maint-right"><div class="section-title" style="font-size:14px;margin-top:0">月度合计检修损失（万吨）</div><div class="maint-chart-card"><div class="chart" id="maintLossChart" style="height:500px"></div></div></div>
   </div>
 
   <div class="section-title">丁二烯开工率季节图<span style="font-size:12px;color:var(--sub);font-weight:400">（日度，%；按维度标签筛选，如「企业性质」→ 中石油/中石化/民营 各一张；多选维度横向并排）</span></div>
@@ -298,10 +299,16 @@ function renderMaintTable(){
 function renderMaintLossChart(){
   var ops = (D && D.maintOps) || [];
   // 按 start 月份 (YYYY-MM) 聚合：loss 合计 + 装置明细列表
+  function monthKey(s){
+    if(!s) return null;
+    var p = s.split('/');
+    return p[0] + '-' + (p[1].length===1 ? '0'+p[1] : p[1]);
+  }
   var monthAgg = {};
   ops.forEach(function(op){
-    if(!op.start || !op.loss) return;
-    var m = op.start.substring(0,7);  // 2026-03
+    if(!op.start || op.loss===null || op.loss===undefined) return;
+    var m = monthKey(op.start);
+    if(!m) return;
     if(!monthAgg[m]) monthAgg[m] = {total:0, units:[]};
     monthAgg[m].total += op.loss;
     monthAgg[m].units.push({co:op.co, cap:op.cap, days:op.days, loss:op.loss, ongoing:!!op.ongoing, end:op.end});
