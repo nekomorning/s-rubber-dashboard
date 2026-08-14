@@ -331,7 +331,7 @@ function renderMaintLossChart(){
   c.setOption({
     animation:false,
     grid:{left:50, right:18, top:18, bottom:36, containLabel:true},
-    tooltip:{trigger:'axis', confine:true, formatter:function(params){
+    tooltip:{trigger:'axis', position:'bottom', formatter:function(params){
       var p = params && params[0]; if(!p) return '';
       var m = p.name;
       var agg = monthAgg[m];
