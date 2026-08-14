@@ -719,7 +719,7 @@ function renderCanvas(){
     if(sec.chart_ids.length===0){
       chartBox.innerHTML = '<div class="empty-tip" style="grid-column:span 4">（该板块无图表）</div>';
     } else {
-      sec.chart_ids.forEach(function(cid){
+      sec.chart_ids.forEach(function(cid, i){
         var c = WEEKLY.charts[cid];
         if(!c) return;
         var card = document.createElement('div');
