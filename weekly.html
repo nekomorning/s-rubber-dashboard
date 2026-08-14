@@ -47,6 +47,8 @@ body{background:var(--bg);color:var(--text);font-family:"Microsoft YaHei",-apple
 .lib-group{font-size:12px;color:var(--accent);font-weight:700;margin:10px 0 4px;display:none;}
 .sec--images{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:10px;}
 .sec--images img{width:100%;border:1px solid var(--border);border-radius:6px;background:#fff;}
+.sec--images.full{grid-template-columns:1fr;width:100%;}
+.sec--images.full img{width:100%;height:auto;display:block;}
 .custom-tip{font-size:12px;color:var(--sub);padding:8px 10px;background:#f4f6fa;border:1px dashed var(--border);border-radius:6px;text-align:center;}
 
 /* 画布板块 */
@@ -97,8 +99,8 @@ body{background:var(--bg);color:var(--text);font-family:"Microsoft YaHei",-apple
     <div class="title">周报</div>
     <span style="font-size:12px;color:var(--sub)">数据截止：<span id="latestDate"></span></span>
     <span style="flex:1"></span>
+    <button class="btn primary" onclick="saveLayout()">💾 保存布局</button>
     <button class="btn primary" onclick="exportPDF()">📄 导出周报 PDF</button>
-    <button class="btn warn" onclick="saveLayoutToGitHub()">⬆ 同步到 GitHub</button>
   </div>
 
   <div class="editor-card">
@@ -125,7 +127,7 @@ body{background:var(--bg);color:var(--text);font-family:"Microsoft YaHei",-apple
     <div id="canvas"></div>
   </div>
 
-  <p class="note">说明：① 点击板块库左侧名称加入画布；点击卡片上的 ▲▼✕ 可调整/删除画布中的对应板块。② 自定义板块可编辑标题、分析文字并粘贴截图（Ctrl+V）。③ 导出 PDF 按屏幕所见 A4 横向排版（一行 4 图）。④ 文字与布局保存于浏览器本地，「同步到 GitHub」后可让其他设备看到。</p>
+  <p class="note">说明：① 点击板块库左侧名称加入画布；点击卡片上的 ▲▼✕ 可调整/删除画布中的对应板块。② 自定义板块可编辑标题、分析文字并粘贴截图（Ctrl+V），截图将铺满卡片宽度。③ 导出 PDF 按屏幕所见 A4 横向排版（一行 4 图）。④ 点击顶部「保存布局」后，板块顺序、标题、分析文字、截图等会保存在浏览器本地，下次打开自动恢复。</p>
 </div>
 
 <script>
@@ -797,6 +799,7 @@ function renderCanvas(){
     }
     // 渲染自定义图片
     var imgBox = div.querySelector('.sec--images');
+    if(String(sec.id).indexOf('custom_')===0) imgBox.classList.add('full');
     if(sec.images && sec.images.length){
       imgBox.style.display = 'grid';
       imgBox.innerHTML = sec.images.map(function(src){ return '<img src="'+esc(src)+'">'; }).join('');
@@ -1011,8 +1014,8 @@ async function exportPDF(){
   }
 }
 
-/* ===== 同步到 GitHub ===== */
-function saveLayoutToGitHub(){
+/* ===== 保存当前布局 ===== */
+function saveLayout(){
   var note = document.getElementById('noteInput').value;
   var payload = {
     note: note,
@@ -1026,8 +1029,13 @@ function saveLayoutToGitHub(){
     }),
     updatedAt: new Date().toISOString(),
   };
-  try{ localStorage.setItem('weekly_payload', JSON.stringify(payload)); }catch(e){}
-  document.getElementById('saveStatus').textContent = '✓ 已暂存本机。请在工作台发送「同步周报」以提交仓库。';
+  try{
+    localStorage.setItem('weekly_payload', JSON.stringify(payload));
+    localStorage.setItem('weekly_note', note);
+    document.getElementById('saveStatus').textContent = '✓ 布局已保存到本地（'+new Date().toLocaleString()+'），下次打开自动恢复';
+  }catch(e){
+    alert('保存失败：'+e.message);
+  }
 }
 
 /* ===== init ===== */
@@ -1060,6 +1068,9 @@ function init(){
                   tables:(s.tables||[]).slice(), charts_rendered:false,
                   title:s.name, analysis:'', images:[]} : null;
     }).filter(Boolean);
+  }
+  if(saved && saved.note !== undefined){
+    document.getElementById('noteInput').value = saved.note;
   }
   loadNote();
   renderLib(); renderCanvas();
