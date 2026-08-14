@@ -749,7 +749,11 @@ function renderCanvas(){
     var chartBox = div.querySelector('.sec--charts');
     if(sec.chart_ids.length===0){
       if(String(sec.id).indexOf('custom_')===0){
-        chartBox.innerHTML = '<div class="custom-tip" style="grid-column:span 4">在此粘贴截图（Ctrl+V），图片将显示在该板块中</div>';
+        if(sec.images && sec.images.length){
+          chartBox.innerHTML = '';
+        } else {
+          chartBox.innerHTML = '<div class="custom-tip" style="grid-column:span 4">在此粘贴截图（Ctrl+V），图片将显示在该板块中</div>';
+        }
       } else {
         chartBox.innerHTML = '<div class="empty-tip" style="grid-column:span 4">（该板块无图表）</div>';
       }
