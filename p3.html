@@ -1669,9 +1669,9 @@ function init(){
 #laserFab:hover{opacity:1;transform:scale(1.1);}
 #laserFab .laser-icon{width:16px;height:16px;border-radius:50%;background:radial-gradient(circle,#fff 0 25%,transparent 26%);box-shadow:inset 0 0 0 4px #d92626;}
 #laserFab.active{background:#7d1010;transform:scale(1.05);}
-#laserDot{position:fixed;left:0;top:0;width:34px;height:34px;margin:-17px 0 0 -17px;border-radius:50%;pointer-events:none;z-index:100000;display:none;}
-#laserDot::before{content:"";position:absolute;inset:0;border-radius:50%;background:radial-gradient(circle,rgba(255,40,40,.98) 0%,rgba(255,40,40,.45) 42%,transparent 72%);}
-#laserDot::after{content:"";position:absolute;left:50%;top:50%;width:140px;height:140px;margin:-70px 0 0 -70px;border-radius:50%;background:radial-gradient(circle,rgba(255,0,0,.16) 0%,transparent 68%);}
+#laserDot{position:fixed;left:0;top:0;width:20px;height:20px;margin:-10px 0 0 -10px;border-radius:50%;pointer-events:none;z-index:100000;display:none;}
+#laserDot::before{content:"";position:absolute;inset:0;border-radius:50%;background:radial-gradient(circle,rgba(255,40,40,1) 0%,rgba(255,40,40,.5) 45%,transparent 75%);}
+#laserDot::after{content:"";position:absolute;left:50%;top:50%;width:70px;height:70px;margin:-35px 0 0 -35px;border-radius:50%;background:radial-gradient(circle,rgba(255,0,0,.18) 0%,transparent 70%);}
 body.laser,body.laser *{cursor:none!important;}
 body.laser #laserDot{display:block;}
 </style>
