@@ -766,7 +766,7 @@ function renderCanvas(){
     }
     // 渲染表格
     var tableBox = div.querySelector('.sec--tables');
-    var tables = WEEKLY['_tables'] ? WEEKLY['_tables'] : {};
+    var tables = (WEEKLY.charts && WEEKLY.charts._tables) ? WEEKLY.charts._tables : {};
     (sec.tables||[]).forEach(function(tid){
       var tbl = tables[tid];
       if(!tbl) return;
