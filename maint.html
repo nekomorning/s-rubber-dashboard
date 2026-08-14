@@ -314,20 +314,17 @@ function renderMaintLossChart(){
       monthAgg[m.monthStr].units.push({co:op.co, cap:op.cap, days:m.days, loss:m.loss, ongoing:!!op.ongoing, isLastMonth:!!m.isLastMonth, end:op.end});
     });
   });
-  // 固定 x 轴：最早 start 月 ~ 2026-12
-  var allMonths = Object.keys(monthAgg).sort();
-  if(allMonths.length){
-    var startM = allMonths[0];
-    var sy = parseInt(startM.substring(0,4)), sm = parseInt(startM.substring(5,7));
-    var months = [];
-    var y = sy, m = sm;
+  // 固定 x 轴：2025-11 ~ 2026-12（14 个月，跳过早期低值月）
+  var months = [];
+  (function(){
+    var y=2025, m=11;
     while(true){
       var lab = y + '-' + (m<10?'0'+m:m);
       months.push(lab);
       if(lab === '2026-12') break;
       m++; if(m>12){ m=1; y++; }
     }
-  }
+  })();
   var data = months.map(function(m){ return monthAgg[m] ? Math.round(monthAgg[m].total*100)/100 : 0; });
   var el = document.getElementById('maintLossChart'); if(!el) return;
   var c = echarts.init(el);
