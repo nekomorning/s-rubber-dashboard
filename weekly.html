@@ -739,12 +739,14 @@ function renderCanvas(){
     div.className = 'sec';
     div.setAttribute('data-idx', idx);
     div.innerHTML =
-      '<div class="sec-hd"><input class="sec--ttl" value="'+esc(sec.title)+'" oninput="sec.title=this.value"></div>'+
-      '<textarea class="sec--desc" placeholder="简要分析文字（可写多行）" oninput="sec.analysis=this.value">'+esc(sec.analysis)+'</textarea>'+
+      '<div class="sec-hd"><input class="sec--ttl" value="'+esc(sec.title)+'"></div>'+
+      '<textarea class="sec--desc" placeholder="简要分析文字（可写多行）">'+esc(sec.analysis)+'</textarea>'+
       '<div class="sec--charts" id="sec_chart_'+idx+'"></div>'+
       '<div class="sec--images" id="sec_img_'+idx+'" style="display:none"></div>'+
       '<div class="sec--tables" id="sec_table_'+idx+'"></div>';
     wrap.appendChild(div);
+    div.querySelector('.sec--ttl').addEventListener('input', function(){ sec.title = this.value; });
+    div.querySelector('.sec--desc').addEventListener('input', function(){ sec.analysis = this.value; });
     // 渲染图表
     var chartBox = div.querySelector('.sec--charts');
     if(sec.chart_ids.length===0){
