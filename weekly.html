@@ -655,33 +655,36 @@ function loadNote(){
 var selected = []; // [{id, name, desc, chart_ids, tables, title, analysis, images }，前端可改 title/desc]
 function renderLib(){
   var g = document.getElementById('libGrid');
-  var html = WEEKLY.sections.map(function(s){
-    var added = selected.some(function(x){return x.id === s.id;});
-    var idx = selected.findIndex(function(x){return x.id === s.id;});
-    var canUp = added && idx > 0;
-    var canDown = added && idx >= 0 && idx < selected.length - 1;
-    return '<div class="lib-item'+(added?' added':'')+'">'+
-      '<div class="txt" onclick="toggleSection(\''+s.id+'\')">'+esc(s.name)+'<span class="pg">'+esc(s.desc)+'</span></div>'+
-      '<div class="lib-ctrl">'+
-      '<button title="上移" '+(canUp?'':'disabled')+' onclick="event.stopPropagation();moveSecById(\''+s.id+'\',-1)">▲</button>'+
-      '<button title="下移" '+(canDown?'':'disabled')+' onclick="event.stopPropagation();moveSecById(\''+s.id+'\',1)">▼</button>'+
-      '<button class="del" title="删除" '+(added?'':'disabled')+' onclick="event.stopPropagation();removeSecById(\''+s.id+'\')">✕</button>'+
-      '</div></div>';
-  }).join('');
-  // 追加自定义板块小卡片，标题与画布实时同步
-  selected.forEach(function(sec){
-    if(String(sec.id).indexOf('custom_') !== 0) return;
-    var idx = selected.findIndex(function(x){return x.id === sec.id;});
+  var html = '';
+  var addedIds = {};
+  // 先按画布顺序渲染已添加板块（预置+自定义）
+  selected.forEach(function(sec, idx){
+    addedIds[sec.id] = true;
+    var isCustom = String(sec.id).indexOf('custom_') === 0;
+    var s = findSec(sec.id);
+    var name = isCustom ? sec.title : (s ? s.name : sec.name);
+    var desc = isCustom ? '自定义板块' : (s ? s.desc : sec.desc);
     var canUp = idx > 0;
-    var canDown = idx >= 0 && idx < selected.length - 1;
+    var canDown = idx < selected.length - 1;
     html += '<div class="lib-item added">'+
-      '<div class="txt" onclick="focusSec(\''+sec.id+'\')">'+esc(sec.title)+'<span class="pg">自定义板块</span></div>'+
+      '<div class="txt" onclick="focusSec(\''+sec.id+'\')">'+esc(name)+'<span class="pg">'+esc(desc)+'</span></div>'+
       '<div class="lib-ctrl">'+
       '<button title="上移" '+(canUp?'':'disabled')+' onclick="event.stopPropagation();moveSecById(\''+sec.id+'\',-1)">▲</button>'+
       '<button title="下移" '+(canDown?'':'disabled')+' onclick="event.stopPropagation();moveSecById(\''+sec.id+'\',1)">▼</button>'+
       '<button class="del" title="删除" onclick="event.stopPropagation();removeSecById(\''+sec.id+'\')">✕</button>'+
       '</div></div>';
   });
+  // 再渲染未添加的预置板块，保持原顺序
+  html += WEEKLY.sections.map(function(s){
+    if(addedIds[s.id]) return '';
+    return '<div class="lib-item">'+
+      '<div class="txt" onclick="toggleSection(\''+s.id+'\')">'+esc(s.name)+'<span class="pg">'+esc(s.desc)+'</span></div>'+
+      '<div class="lib-ctrl">'+
+      '<button title="上移" disabled onclick="event.stopPropagation();">▲</button>'+
+      '<button title="下移" disabled onclick="event.stopPropagation();">▼</button>'+
+      '<button class="del" title="删除" disabled onclick="event.stopPropagation();">✕</button>'+
+      '</div></div>';
+  }).join('');
   g.innerHTML = html;
 }
 
