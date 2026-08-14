@@ -94,7 +94,10 @@ body{font-family:"Microsoft YaHei",system-ui,sans-serif;background:var(--bg);col
 .dim-sec{margin-bottom:22px;}
 .dim-sec-title{font-size:17px;color:var(--accent);font-weight:700;margin:4px 0 12px;}
 .note{font-size:12px;color:var(--sub);margin-top:14px;line-height:1.7;}
-.maint-table-wrap{max-height:300px;overflow-y:auto;border:1px solid var(--border);border-radius:6px;background:#fff;margin-bottom:18px;}
+.maint-section{display:flex;gap:16px;align-items:flex-start;}
+.maint-left{flex:1;min-width:0;}
+.maint-right{flex:1;min-width:0;}
+.maint-table-wrap{max-height:500px;overflow-y:auto;border:1px solid var(--border);border-radius:6px;background:#fff;}
 .maint-tbl{width:100%;border-collapse:collapse;font-size:12px;}
 .maint-tbl thead th{position:sticky;top:0;background:#f0f3f8;color:#1f2733;font-weight:700;text-align:right;padding:7px 10px;border-bottom:1px solid var(--border);white-space:nowrap;}
 .maint-tbl thead th:first-child{text-align:left;}
@@ -129,7 +132,10 @@ body{font-family:"Microsoft YaHei",system-ui,sans-serif;background:var(--bg);col
   </div>
 
   <div class="section-title">丁二烯装置检修列表<span style="font-size:12px;color:var(--sub);font-weight:400">（停车时间→开车时间算检修天数；损失=年产能×天数/365；截至 2026-08-14）</span></div>
-  <div class="maint-table-wrap"><table class="maint-tbl" id="maintTbl"></table></div>
+  <div class="maint-section">
+    <div class="maint-left"><div class="maint-table-wrap"><table class="maint-tbl" id="maintTbl"></table></div></div>
+    <div class="maint-right"><div class="section-title" style="font-size:14px;margin-top:0">月度合计检修损失（万吨）</div><div class="chart" id="maintLossChart" style="height:500px"></div></div>
+  </div>
 
   <div class="section-title">丁二烯开工率季节图<span style="font-size:12px;color:var(--sub);font-weight:400">（日度，%；按维度标签筛选，如「企业性质」→ 中石油/中石化/民营 各一张；多选维度横向并排）</span></div>
   <div class="dimbar" id="dimBar"></div>
@@ -273,20 +279,49 @@ function renderGrid(){
 var selDims = ['企业性质', '原料来源', '工艺路线'];
 function renderMaintTable(){
   var ops = (D && D.maintOps) || [];
+  // 按 start 日期升序（最旧在顶，最新在底），用户默认看到最底部最新数据
+  var sorted = ops.slice().sort(function(a,b){
+    return (a.start || '').localeCompare(b.start || '');
+  });
   var head = '<thead><tr><th>生产企业</th><th>检修产能(万吨/年)</th><th>停车时间</th><th>开车时间</th><th>检修天数</th><th>检修损失(万吨)</th></tr></thead>';
-  var body = '<tbody>' + ops.map(function(op){
+  var body = '<tbody>' + sorted.map(function(op){
     var days = op.days === null || op.days === undefined ? '—' : op.days;
     var loss = op.loss === null || op.loss === undefined ? '—' : op.loss;
     var endClass = op.ongoing ? ' class="ongoing"' : '';
     return '<tr><td>'+op.co+'</td><td>'+op.cap+'</td><td>'+op.start+'</td><td'+endClass+'>'+op.end+'</td><td'+endClass+'>'+days+'</td><td class="loss">'+loss+'</td></tr>';
   }).join('') + '</tbody>';
   var t = document.getElementById('maintTbl'); if(t) t.innerHTML = head + body;
+  // 滚动到底部（显示最新数据）
+  var wrap = document.querySelector('.maint-table-wrap');
+  if(wrap) wrap.scrollTop = wrap.scrollHeight;
+}
+function renderMaintLossChart(){
+  var ops = (D && D.maintOps) || [];
+  // 按 start 月份 (YYYY-MM) 汇总 loss
+  var monthMap = {};
+  ops.forEach(function(op){
+    if(!op.start || !op.loss) return;
+    var m = op.start.substring(0,7);  // 2026-03
+    monthMap[m] = (monthMap[m] || 0) + op.loss;
+  });
+  var months = Object.keys(monthMap).sort();
+  var data = months.map(function(m){ return Math.round(monthMap[m]*100)/100; });
+  var el = document.getElementById('maintLossChart'); if(!el) return;
+  var c = echarts.init(el);
+  c.setOption({
+    animation:false,
+    grid:{left:50, right:18, top:18, bottom:36, containLabel:true},
+    tooltip:{trigger:'axis', valueFormatter:function(v){ return v===null?'—':v+' 万吨'; }},
+    xAxis:{type:'category', data:months, axisLabel:{fontSize:10,color:'#8a93a3', rotate:30}, axisLine:{lineStyle:{color:'#dde3ec'}}},
+    yAxis:{type:'value', axisLabel:{fontSize:10,color:'#8a93a3', formatter:'{value}'}, splitLine:{lineStyle:{color:'#eef1f6'}}},
+    series:[{type:'bar', data:data, itemStyle:{color:'#1E6FFF'}, barWidth:'60%'}]
+  });
 }
 function init(){
   var n = allYears.length;
   allYears.forEach(function(y,i){ yearVisible[y] = (i >= n-4); });
   document.getElementById('latestDate').textContent = (D && D.latestDataDate) || '';
-  buildDimBar(); buildYearBar(); renderMaintTable(); renderGrid();
+  buildDimBar(); buildYearBar(); renderMaintTable(); renderMaintLossChart(); renderGrid();
 }
 window.addEventListener('resize', function(){ var t; return function(){ clearTimeout(t); t=setTimeout(function(){ charts.forEach(function(c){ c.resize(); }); },150); }; }());
 init();
