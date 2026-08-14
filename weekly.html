@@ -932,22 +932,22 @@ async function exportPDF(){
     var margin = 8;
 
     // 1) 文字内容（顶部）：标题 + 文字 + 周报画布每个板块作为独立页
-    doc.setFont('helvetica','bold'); doc.setFontSize(16); doc.setText(30,111,255);
+    doc.setFont('helvetica','bold'); doc.setFontSize(16); doc.setTextColor(30,111,255);
     doc.text('Synthetic Rubber Industry Weekly Report', pageW/2, margin+5, {align:'center'});
-    doc.setFontSize(8); doc.setText(107,118,134); doc.setFont('helvetica','normal');
+    doc.setFontSize(8); doc.setTextColor(107,118,134); doc.setFont('helvetica','normal');
     doc.text('Data as of '+WEEKLY.latestDataDate+' / Generated '+new Date().toLocaleString('zh-CN'), pageW/2, margin+11, {align:'center'});
 
     var y = margin + 18;
     var note = document.getElementById('noteInput').value.trim();
     if(note){
-      doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setText(31,39,51);
+      doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(31,39,51);
       doc.text('Key Updates This Week', margin, y); y += 5;
       doc.setFont('helvetica','normal'); doc.setFontSize(9);
       note.split('\n').forEach(function(ln){
         var wrapped = doc.splitTextToSize(ln, pageW - margin*2);
         wrapped.forEach(function(w){
           if(y > pageH - margin){ doc.addPage(); y = margin; }
-          doc.setText(31,39,51); doc.text(w, margin, y); y += 4;
+          doc.setTextColor(31,39,51); doc.text(w, margin, y); y += 4;
         });
       });
       y += 4;
