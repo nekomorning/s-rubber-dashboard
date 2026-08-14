@@ -954,8 +954,7 @@ async function exportPDF(){
     }
 
     // 2) 板块截图（所见即所得）：每个板块整体截成一张图，按高度分页
-    var secEls = document.querySelectorAll('#');
-    secEls = document.querySelectorAll('.sec');
+    var secEls = document.querySelectorAll('.sec');
     for(var i=0; i<secEls.length; i++){
       doc.addPage();
       var canvas = await html2canvas(secEls[i], {backgroundColor:'#fff', scale:2, useCORS:true});
