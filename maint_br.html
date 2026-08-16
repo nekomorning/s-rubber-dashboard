@@ -303,8 +303,14 @@ function renderMaintTable(){
     return;
   }
   // 按 start 日期升序（最旧在顶，最新在底），用户默认看到最底部最新数据
+  function parseStart(s){
+    if(!s || typeof s !== 'string') return Number.MAX_SAFE_INTEGER;
+    var m = s.match(/^(\d{4})\/(\d{1,2})\/(\d{1,2})$/);
+    if(!m) return Number.MAX_SAFE_INTEGER; // 非日期（如"长期停车"）排最后
+    return new Date(parseInt(m[1],10), parseInt(m[2],10)-1, parseInt(m[3],10)).getTime();
+  }
   var sorted = ops.slice().sort(function(a,b){
-    return (a.start || '').localeCompare(b.start || '');
+    return parseStart(a.start) - parseStart(b.start);
   });
   var body = '<tbody>' + sorted.map(function(op){
     var days = op.days === null || op.days === undefined ? '—' : op.days;
