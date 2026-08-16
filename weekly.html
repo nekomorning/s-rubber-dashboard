@@ -979,9 +979,10 @@ function statsHtml(c){
   if(!c.stat) return '<span class="dt">暂无数据</span>';
   var st = c.stat;
   var cls = chgCls(st.weekChg);
+  var pctStr = (st.weekPct===null||st.weekPct===undefined)?'—':(st.weekPct===0?'0.00':(st.weekPct>0?'+':'')+st.weekPct.toFixed(2))+'%';
   return '<span class="val">'+fmt(st.latest,c.dec)+'<span class="unit"> '+esc(c.unit)+'</span></span>'+
     '<span class="chg '+cls+'">'+arrow(st.weekChg)+' '+(st.weekChg>0?'+':'')+fmt(st.weekChg,c.dec)+
-    '（'+(st.weekPct===null||st.weekPct===undefined?'—':(st.weekPct>0?'+':'')+st.weekPct.toFixed(2)+'%')+' 周环比）</span>'+
+    '（'+pctStr+' 周环比）</span>'+
     '<span class="dt">'+(st.latestDate||'')+'</span>';
 }
 
