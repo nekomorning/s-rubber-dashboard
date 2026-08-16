@@ -229,11 +229,21 @@ function disposeAll(){
   charts.forEach(function(c){ try{c.dispose();}catch(e){} });
   charts = [];
 }
+function cardTitle(dim, v){
+  if(v === '总开工率') return PRODUCT + '总开工率';
+  if(dim === '是否配套'){
+    return PRODUCT + '·上游' + (v === '有' ? '有' : '无') + '丁二烯配套开工率';
+  }
+  if(dim === '原料来源'){
+    return PRODUCT + '·丁二烯' + v + '开工率';
+  }
+  return PRODUCT + '·' + v + '开工率';
+}
 function makeCard(dim, v){
   var seq = (series[dim] || {})[v] || {};
   var card = document.createElement('div'); card.className = 'card';
   card.innerHTML =
-    '<div class="ttl">'+PRODUCT+(v==='总开工率'?'总开工率':'·'+v+'开工率')+'</div>'+
+    '<div class="ttl">'+cardTitle(dim, v)+'</div>'+
     '<div class="chart" id="chart_'+(dim+'_'+v).replace(/\W/g,'')+'"></div>';
   var seriesArr = [], legend = [];
   allYears.forEach(function(y){
