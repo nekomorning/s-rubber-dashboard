@@ -1026,6 +1026,7 @@ async function exportPDF(){
     var pageH = doc.internal.pageSize.getHeight();  // 210mm
     var margin = 8;
     var pxPerMm = 3.7795;
+    var titleText = '合成胶行业周报_' + (WEEKLY.latestDataDate || '');
 
     // 1) 封面：用 html2canvas 渲染中文标题 + 本周核心变化（避免 jsPDF 缺中文字体）
     var cover = document.createElement('div');
@@ -1033,7 +1034,7 @@ async function exportPDF(){
     var note = document.getElementById('noteInput').value.trim();
     var noteHtml = note ? fmtNote(note) : '<span style="color:#8a93a3">（未填写本周核心变化）</span>';
     cover.innerHTML =
-      '<div style="text-align:center;font-size:22px;font-weight:700;color:#1e6fff;margin-bottom:18px;">合成胶行业周报</div>'+
+      '<div style="text-align:center;font-size:22px;font-weight:700;color:#1e6fff;margin-bottom:18px;">'+esc(titleText)+'</div>'+
       '<div style="font-size:14px;font-weight:700;color:#1f2733;margin-bottom:8px;">本周核心变化</div>'+
       '<div style="line-height:2;font-size:13px;color:#1f2733;background:#f8fafd;border-radius:6px;padding:10px 12px;">'+noteHtml+'</div>';
     document.body.appendChild(cover);
@@ -1055,7 +1056,7 @@ async function exportPDF(){
       doc.addImage(canvas.toDataURL('image/png'), 'PNG', margin, margin, imgW, imgH);
     }
 
-    doc.save('合成胶行业周报_'+WEEKLY.latestDataDate+'.pdf');
+    doc.save(titleText+'.pdf');
   }catch(e){
     alert('导出失败：'+e.message);
     console.error(e);
