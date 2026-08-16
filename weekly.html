@@ -894,9 +894,13 @@ function renderCanvas(){
           '<div class="chart" id="wchart_'+idx+'_'+mi+'"></div>';
         chartBox.appendChild(card);
         var el = card.querySelector('.chart');
-        var ch = echarts.init(el);
-        ch.setOption(buildOption(c));
-        charts.push(ch);
+        (function(el2, c2){
+          requestAnimationFrame(function(){
+            var ch = echarts.init(el2);
+            ch.setOption(buildOption(c2));
+            charts.push(ch);
+          });
+        })(el, c);
       });
     } else if(sec.rows && sec.rows.length){
       // 普通多行板块：按子行独立换行
@@ -920,9 +924,13 @@ function renderCanvas(){
             '<div class="chart" id="wchart_'+idx+'_'+ri+'_'+cid.replace(/[^a-z0-9]/gi,'_')+'"></div>';
           grid.appendChild(card);
           var el = card.querySelector('.chart');
-          var ch = echarts.init(el);
-          ch.setOption(buildOption(c));
-          charts.push(ch);
+          (function(el2, c2){
+            requestAnimationFrame(function(){
+              var ch = echarts.init(el2);
+              ch.setOption(buildOption(c2));
+              charts.push(ch);
+            });
+          })(el, c);
         });
         chartBox.appendChild(grid);
       });
@@ -939,9 +947,13 @@ function renderCanvas(){
           '<div class="chart" id="wchart_'+idx+'_'+i+'"></div>';
         chartBox.appendChild(card);
         var el = card.querySelector('.chart');
-        var ch = echarts.init(el);
-        ch.setOption(buildOption(c));
-        charts.push(ch);
+        (function(el2, c2){
+          requestAnimationFrame(function(){
+            var ch = echarts.init(el2);
+            ch.setOption(buildOption(c2));
+            charts.push(ch);
+          });
+        })(el, c);
       });
     }
     // 渲染自定义图片
