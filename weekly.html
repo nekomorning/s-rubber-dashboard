@@ -1026,7 +1026,9 @@ async function exportPDF(){
     var pageH = doc.internal.pageSize.getHeight();  // 210mm
     var margin = 8;
     var pxPerMm = 3.7795;
-    var titleText = '合成胶行业周报_' + (WEEKLY.latestDataDate || '');
+    var today = new Date();
+    var exportDate = today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0')+'-'+String(today.getDate()).padStart(2,'0');
+    var titleText = '合成胶行业周报_' + exportDate;
 
     // 1) 封面：用 html2canvas 渲染中文标题 + 本周核心变化（避免 jsPDF 缺中文字体）
     var cover = document.createElement('div');
