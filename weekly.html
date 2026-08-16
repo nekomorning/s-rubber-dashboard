@@ -1025,28 +1025,24 @@ async function exportPDF(){
     var pageW = doc.internal.pageSize.getWidth();   // 297mm A4 横
     var pageH = doc.internal.pageSize.getHeight();  // 210mm
     var margin = 8;
+    var pxPerMm = 3.7795;
 
-    // 1) 文字内容（顶部）：标题 + 文字 + 周报画布每个板块作为独立页
-    doc.setFont('helvetica','bold'); doc.setFontSize(16); doc.setTextColor(30,111,255);
-    doc.text('Synthetic Rubber Industry Weekly Report', pageW/2, margin+5, {align:'center'});
-    doc.setFontSize(8); doc.setTextColor(107,118,134); doc.setFont('helvetica','normal');
-    doc.text('Data as of '+WEEKLY.latestDataDate+' / Generated '+new Date().toLocaleString('zh-CN'), pageW/2, margin+11, {align:'center'});
-
-    var y = margin + 18;
+    // 1) 封面：用 html2canvas 渲染中文标题 + 本周核心变化（避免 jsPDF 缺中文字体）
+    var cover = document.createElement('div');
+    cover.style.cssText = 'position:fixed;left:-9999px;top:0;width:'+((pageW-margin*2)*pxPerMm)+'px;background:#fff;padding:20px;font-family:"Microsoft YaHei",PingFang SC,sans-serif;box-sizing:border-box;';
     var note = document.getElementById('noteInput').value.trim();
-    if(note){
-      doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(31,39,51);
-      doc.text('Key Updates This Week', margin, y); y += 5;
-      doc.setFont('helvetica','normal'); doc.setFontSize(9);
-      note.split('\n').forEach(function(ln){
-        var wrapped = doc.splitTextToSize(ln, pageW - margin*2);
-        wrapped.forEach(function(w){
-          if(y > pageH - margin){ doc.addPage(); y = margin; }
-          doc.setTextColor(31,39,51); doc.text(w, margin, y); y += 4;
-        });
-      });
-      y += 4;
-    }
+    var noteHtml = note ? fmtNote(note) : '<span style="color:#8a93a3">（未填写本周核心变化）</span>';
+    cover.innerHTML =
+      '<div style="text-align:center;font-size:22px;font-weight:700;color:#1e6fff;margin-bottom:18px;">合成胶行业周报</div>'+
+      '<div style="font-size:14px;font-weight:700;color:#1f2733;margin-bottom:8px;">本周核心变化</div>'+
+      '<div style="line-height:2;font-size:13px;color:#1f2733;background:#f8fafd;border-radius:6px;padding:10px 12px;">'+noteHtml+'</div>';
+    document.body.appendChild(cover);
+    var coverCanvas = await html2canvas(cover, {backgroundColor:'#fff', scale:1.5, useCORS:true});
+    document.body.removeChild(cover);
+    var coverW = pageW - margin*2;
+    var coverH = coverCanvas.height * coverW / coverCanvas.width;
+    if(coverH > pageH - margin*2){ coverH = pageH - margin*2; coverW = coverCanvas.width * coverH / coverCanvas.height; }
+    doc.addImage(coverCanvas.toDataURL('image/png'), 'PNG', margin, margin, coverW, coverH);
 
     // 2) 板块截图（所见即所得）：每个板块整体截成一张图，按高度分页
     var secEls = document.querySelectorAll('.sec');
@@ -1059,7 +1055,7 @@ async function exportPDF(){
       doc.addImage(canvas.toDataURL('image/png'), 'PNG', margin, margin, imgW, imgH);
     }
 
-    doc.save('合成胶周报_'+WEEKLY.latestDataDate+'.pdf');
+    doc.save('合成胶行业周报_'+WEEKLY.latestDataDate+'.pdf');
   }catch(e){
     alert('导出失败：'+e.message);
     console.error(e);
