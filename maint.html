@@ -333,7 +333,7 @@ function renderMaintLossChart(){
     ml.forEach(function(m){
       if(!monthAgg[m.monthStr]) monthAgg[m.monthStr] = {total:0, units:[]};
       monthAgg[m.monthStr].total += m.loss;
-      monthAgg[m.monthStr].units.push({co:op.co, cap:op.cap, days:m.days, loss:m.loss, ongoing:!!op.ongoing, isLastMonth:!!m.isLastMonth, lossRate:op.lossRate||1, end:op.end});
+      monthAgg[m.monthStr].units.push({co:op.co, cap:op.cap, days:m.days, loss:m.loss, ongoing:!!op.ongoing, isLastMonth:!!m.isLastMonth, lossRate:op.lossRate||1, end:op.end, reason:op.reason});
     });
   });
   // 固定 x 轴：2025-11 ~ 2026-12（14 个月，跳过早期低值月）
@@ -362,10 +362,12 @@ function renderMaintLossChart(){
       if(!agg || !agg.units.length) return s;
       s += '<br/><span style="color:#999">'+agg.units.length+' 套装置停车：</span>';
       agg.units.forEach(function(u){
+        var isLongStop = (u.end === '长期停车' || u.reason === '长停');
         var tag = '';
-        if(u.isLastMonth) tag = ' <span style="color:#0a9a5c">[当月开车]</span>';
+        if(isLongStop) tag = ' <span style="color:#d92626">[长停]</span>';
+        else if(u.isLastMonth) tag = ' <span style="color:#0a9a5c">[当月开车]</span>';
         else if(u.ongoing) tag = ' <span style="color:#d92626">[在检]</span>';
-        var red = (u.lossRate && u.lossRate < 1) ? ' · <span style="color:#E67E22">降负' + Math.round((1-u.lossRate)*100) + '%</span>' : '';
+        var red = (!isLongStop && u.lossRate && u.lossRate < 1) ? ' · <span style="color:#E67E22">降负' + Math.round((1-u.lossRate)*100) + '%</span>' : '';
         s += '<br/>&nbsp;&nbsp;'+u.co+' · '+u.cap+' 万吨/年 · '+u.days+' 天 · <span style="color:#d92626">'+u.loss+' 万吨</span>'+red+tag;
       });
       return s;
