@@ -72,9 +72,6 @@ body{background:var(--bg);color:var(--text);font-family:"Microsoft YaHei",-apple
 .sec--charts.c3{grid-template-columns:repeat(3,minmax(0,1fr));}
 .sec--charts.c4{grid-template-columns:repeat(4,minmax(0,1fr));}
 .sec--charts.c5{grid-template-columns:repeat(5,minmax(0,1fr));}
-/* 多行/合并板块：外层改为块级，内部每个 sec--charts 仍保持网格 */
-.sec--charts.has-rows{display:block;}
-.sec--charts.has-rows .sec--row-label{display:block;width:100%;}
 .citem{background:#fff;border:1px solid var(--border);border-radius:10px;padding:12px 14px 6px;display:flex;flex-direction:column;min-width:0;}
 .citem .ttl{font-size:14px;font-weight:700;color:#2a3345;}
 .citem .meta{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin:4px 0 2px;}
@@ -85,7 +82,6 @@ body{background:var(--bg);color:var(--text);font-family:"Microsoft YaHei",-apple
 .citem .dt{font-size:11px;color:var(--sub);}
 .citem .chart{width:100%;height:200px;flex:1;min-height:200px;}
 .sec--tables{margin-top:12px;}
-.sec--row-label{font-size:12px;color:var(--accent);font-weight:700;margin:8px 0 4px;padding-left:2px;}
 .sec--tables table{width:100%;border-collapse:collapse;font-size:12px;}
 .sec--tables th,.sec--tables td{padding:6px 8px;border-bottom:1px solid var(--border);text-align:right;}
 .sec--tables th{background:#f0f3f8;color:#44506a;font-weight:600;text-align:center;}
@@ -866,7 +862,6 @@ function renderCanvas(){
     var chartBox = div.querySelector('.sec--charts');
     var isMerge = String(sec.id).indexOf('custom_merge_') === 0;
     var isCustom = String(sec.id).indexOf('custom_') === 0;
-    if(sec.rows && sec.rows.length && !isMerge){ chartBox.classList.add('has-rows'); }
     if(sec.chart_ids.length===0){
       chartBox.classList.add('c'+bestGrid(sec.chart_ids.length));
       if(isCustom){
@@ -903,36 +898,28 @@ function renderCanvas(){
         })(el, c);
       });
     } else if(sec.rows && sec.rows.length){
-      // 普通多行板块：按子行独立换行
-      sec.rows.forEach(function(row, ri){
-        if(row.label){
-          var sub = document.createElement('div');
-          sub.className = 'sec--row-label';
-          sub.textContent = row.label;
-          chartBox.appendChild(sub);
-        }
-        var grid = document.createElement('div');
-        grid.className = 'sec--charts c' + bestGrid(row.chart_ids.length);
-        grid.style.marginTop = '4px';
-        row.chart_ids.forEach(function(cid){
-          var c = WEEKLY.charts[cid];
-          if(!c) return;
-          var card = document.createElement('div');
-          card.className = 'citem';
-          card.innerHTML = '<div class="ttl">'+esc(c.title)+'</div>'+
-            '<div class="meta">'+statsHtml(c)+'</div>'+
-            '<div class="chart" id="wchart_'+idx+'_'+ri+'_'+cid.replace(/[^a-z0-9]/gi,'_')+'"></div>';
-          grid.appendChild(card);
-          var el = card.querySelector('.chart');
-          (function(el2, c2){
-            requestAnimationFrame(function(){
-              var ch = echarts.init(el2);
-              ch.setOption(buildOption(c2));
-              charts.push(ch);
-            });
-          })(el, c);
-        });
-        chartBox.appendChild(grid);
+      // 多行板块：去掉子标题，合并为统一扁平网格，按总图数决定列数
+      var flatIds = [];
+      sec.rows.forEach(function(row){ row.chart_ids.forEach(function(cid){ flatIds.push(cid); }); });
+      var mColCnt = bestGrid(flatIds.length);
+      chartBox.className += ' c' + mColCnt;
+      flatIds.forEach(function(cid, mi){
+        var c = WEEKLY.charts[cid];
+        if(!c) return;
+        var card = document.createElement('div');
+        card.className = 'citem';
+        card.innerHTML = '<div class="ttl">'+esc(c.title)+'</div>'+
+          '<div class="meta">'+statsHtml(c)+'</div>'+
+          '<div class="chart" id="wchart_'+idx+'_'+mi+'"></div>';
+        chartBox.appendChild(card);
+        var el = card.querySelector('.chart');
+        (function(el2, c2){
+          requestAnimationFrame(function(){
+            var ch = echarts.init(el2);
+            ch.setOption(buildOption(c2));
+            charts.push(ch);
+          });
+        })(el, c);
       });
     } else {
       var flatCnt = bestGrid(sec.chart_ids.length);
