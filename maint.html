@@ -297,8 +297,14 @@ var selDims = ['企业性质', '是否外销', '原料来源', '工艺路线'];
 function renderMaintTable(){
   var ops = (D && D.maintOps) || [];
   // 按 start 日期升序（最旧在顶，最新在底），用户默认看到最底部最新数据
+  function parseStart(s){
+    if(!s || typeof s !== 'string') return Number.MAX_SAFE_INTEGER;
+    var m = s.match(/^(\d{4})\/(\d{1,2})\/(\d{1,2})$/);
+    if(!m) return Number.MAX_SAFE_INTEGER; // 非日期（如"长期停车"）排最后
+    return new Date(parseInt(m[1],10), parseInt(m[2],10)-1, parseInt(m[3],10)).getTime();
+  }
   var sorted = ops.slice().sort(function(a,b){
-    return (a.start || '').localeCompare(b.start || '');
+    return parseStart(a.start) - parseStart(b.start);
   });
   var head = '<thead><tr><th>生产企业</th><th>检修产能(万吨/年)</th><th>停车时间</th><th>开车时间</th><th>检修天数</th><th>检修损失(万吨)</th><th>原因备注</th></tr></thead>';
   var body = '<tbody>' + sorted.map(function(op){
