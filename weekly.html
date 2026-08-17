@@ -1318,7 +1318,7 @@ function idbTx(mode, fn){
     return new Promise(function(res,rej){
       var tx=db.transaction(IDB_STORE, mode), st=tx.objectStore(IDB_STORE), out=null;
       var req=fn(st);
-      if(req && req.onsuccess) req.onsuccess=function(e){ out=e.target.result; };
+      if(req){ req.onsuccess=function(e){ out=e.target.result; }; }
       tx.oncomplete=function(){ res(out); };
       tx.onerror=function(e){ rej(e.target.error || new Error('tx error')); };
       tx.onabort=function(e){ rej(e.target.error || new Error('tx abort')); };
