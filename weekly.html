@@ -136,7 +136,7 @@ body{background:var(--bg);color:var(--text);font-family:"Microsoft YaHei",-apple
     <div id="canvas"></div>
   </div>
 
-  <p class="note">说明：① 点击板块库左侧名称加入画布；勾选多个板块后点「合并选中板块」可把它们合并为一张卡片（含全部图表、保留原板块分组），再点卡片上的 ▲▼✕ 可调整/删除。② 自定义板块可编辑标题、分析文字并粘贴截图（Ctrl+V），截图将铺满卡片宽度。③ 导出 PDF 按屏幕所见 A4 横向排版（一行 4 图）。④ 点击顶部「保存布局」后，板块顺序、标题、分析文字、截图、合并板块等会保存在浏览器本地，下次打开自动恢复。</p>
+  <p class="note">说明：① 点击板块库左侧名称加入画布；勾选多个板块后点「合并选中板块」可把它们合并为一张卡片（含全部图表、保留原板块分组），再点卡片上的 ▲▼✕ 可调整/删除。② 自定义板块可编辑标题、分析文字并粘贴截图（Ctrl+V），截图将铺满卡片宽度。③ 导出 PDF：每个板块独占一页（A4 横向、满宽铺满；板块过高时仅压缩高度，不拆页、不锁宽高比）。④ 点击顶部「保存布局」后，板块顺序、标题、分析文字、截图、合并板块等会保存在浏览器本地，下次打开自动恢复。</p>
 </div>
 
 <script>
@@ -1128,6 +1128,24 @@ function buildOption(c){
   };
 }
 
+/* 导出前临时把 textarea 版分析文字换成 div，避免 html2canvas 对 textarea 换行/高度支持不稳定 */
+function replaceDescForExport(container){
+  var tas = container.querySelectorAll ? container.querySelectorAll('textarea.sec--desc') : [];
+  var backups = [];
+  tas.forEach(function(ta){
+    var div = document.createElement('div');
+    div.className = 'sec--desc';
+    div.textContent = ta.value;
+    var style = window.getComputedStyle(ta);
+    div.style.cssText = 'width:'+ta.offsetWidth+'px;min-height:'+ta.offsetHeight+'px;height:auto;white-space:pre-wrap;word-break:break-word;line-height:'+style.lineHeight+';font-size:'+style.fontSize+';font-family:'+style.fontFamily+';padding:'+style.padding+';border:'+style.border+';border-radius:'+style.borderRadius+';background:'+style.background+';color:'+style.color+';box-sizing:'+style.boxSizing+';';
+    ta.parentNode.replaceChild(div, ta);
+    backups.push({div:div, ta:ta, parent:div.parentNode});
+  });
+  return function restore(){
+    backups.forEach(function(b){ b.parent.replaceChild(b.ta, b.div); });
+  };
+}
+
 /* ===== PDF 导出：所见即所得（html2canvas 截图 + jsPDF A4 横向排版） ===== */
 async function exportPDF(){
   var btn = event && event.target ? event.target : null;
@@ -1156,20 +1174,33 @@ async function exportPDF(){
     document.body.appendChild(cover);
     var coverCanvas = await html2canvas(cover, {backgroundColor:'#fff', scale:1.5, useCORS:true});
     document.body.removeChild(cover);
-    var coverW = pageW - margin*2;
-    var coverH = coverCanvas.height * coverW / coverCanvas.width;
-    if(coverH > pageH - margin*2){ coverH = pageH - margin*2; coverW = coverCanvas.width * coverH / coverCanvas.height; }
-    doc.addImage(coverCanvas.toDataURL('image/png'), 'PNG', margin, margin, coverW, coverH);
+    /* 一个板块就放在一页里：不拆页。内容能放下则按自然比例；放不下就把高度压低、宽度仍撑满整页 */
+    var availH = pageH - margin*2;
+    function placeImage(canvas, firstPage){
+      var w = pageW - margin*2;
+      var h = canvas.height * w / canvas.width;
+      if(!firstPage) doc.addPage();
+      if(h > availH + 0.5){ h = availH; }   // 高度压到一页内，宽度不变（不锁定宽高比）
+      doc.addImage(canvas.toDataURL('image/png'), 'PNG', margin, margin, w, h);
+    }
+    placeImage(coverCanvas, true);
 
-    // 2) 板块截图（所见即所得）：每个板块整体截成一张图，按高度分页
+    // 2) 板块截图（所见即所得）：每个板块整体截成一张图，独占一页（满宽；过高则压低高度、不拆页）
     var secEls = document.querySelectorAll('.sec');
+    // 导出前强制所有图表按当前容器尺寸重绘，确保 ECharts canvas 与容器同宽、PDF 不留大片空白
+    charts.forEach(function(ch){ if(ch && ch.resize) ch.resize(); });
+    await new Promise(function(r){ setTimeout(r, 180); });
+    charts.forEach(function(ch){ if(ch && ch.resize) ch.resize(); });
     for(var i=0; i<secEls.length; i++){
-      doc.addPage();
+      // 每页截图前：把该 section 滚到视口里、强制图表按容器尺寸 resize，确保 canvas 与容器同宽
+      try{ secEls[i].scrollIntoView({block:'start'}); }catch(e){}
+      await new Promise(function(r){ setTimeout(r, 120); });
+      charts.forEach(function(ch){ if(ch && ch.resize) ch.resize(); });
+      await new Promise(function(r){ setTimeout(r, 60); });
+      var restore = replaceDescForExport(secEls[i]);
       var canvas = await html2canvas(secEls[i], {backgroundColor:'#fff', scale:1.5, useCORS:true});
-      var imgW = pageW - margin*2;
-      var imgH = canvas.height * imgW / canvas.width;
-      if(imgH > pageH - margin*2){ imgH = pageH - margin*2; imgW = canvas.width * imgH / canvas.height; }
-      doc.addImage(canvas.toDataURL('image/png'), 'PNG', margin, margin, imgW, imgH);
+      restore();
+      placeImage(canvas, false);
     }
 
     doc.save(titleText+'.pdf');
