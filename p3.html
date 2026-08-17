@@ -174,6 +174,9 @@ table.chain-tbl td.chain-total{font-weight:700;}
     <div class="section-title">产业链合计 · 丁二烯元素净出口</div>
     <div class="row-label">丁二烯元素净出口 = 丁二烯净出口×1.00 + 顺丁净出口×1.03 + 丁苯净出口×0.75 + ABS净出口×0.15（各品种净出口 = 出口 − 进口；月度表单位：吨，年度表单位：万吨；表头底色 = 该列最新值，浅绿 = 净出口，浅红 = 净进口）</div>
     <div class="chain-subjects" id="chainSubjects"></div>
+    <div class="section-title">净出口季节图（单位：折丁二烯吨）</div>
+    <div class="row-label">按年份展示各月净出口（品种 × 折算权重：丁二烯×1.0、顺丁×1.03、丁苯×0.75、ABS×0.15；合计 = 四品种加权之和），横轴 1-12 月</div>
+    <div class="grid c4" id="chainSeasonGrid"></div>
     <div class="tablecard">
       <h2>月度净出口（2016.1 - 最新月，单位：吨）<span style="font-size:12px;color:var(--sub);font-weight:400">（向上滚动查看历史月份）</span></h2>
       <div class="tbl-scroll" id="chainMonthlyScroll" style="max-height:340px;overflow-y:auto;"><table class="chain-tbl" id="chainMonthlyTable"></table></div>
@@ -198,9 +201,6 @@ table.chain-tbl td.chain-total{font-weight:700;}
       <div class="ttl"><span id="chainChartModeLabel">月度堆积柱状图</span><span class="seg" id="chainModeSeg"><span class="seg-btn active" data-mode="monthly" onclick="chainModeSwitch('monthly')">月度</span><span class="seg-btn" data-mode="annual" onclick="chainModeSwitch('annual')">年度</span></span><span style="font-size:11px;color:var(--sub);font-weight:400">（万吨）</span></div>
       <div class="chart tall" id="chainChart" style="height:420px;"></div>
     </div>
-    <div class="section-title">净出口季节图（单位：折丁二烯吨）</div>
-    <div class="row-label">按年份展示各月净出口（品种 × 折算权重：丁二烯×1.0、顺丁×1.03、丁苯×0.75、ABS×0.15；合计 = 四品种加权之和），横轴 1-12 月</div>
-    <div class="grid c5" id="chainSeasonGrid"></div>
   </div>
   <div id="regularPanel">
   <div class="summary" id="summary"></div>
@@ -1562,6 +1562,34 @@ function renderChainChart(){
     series:series
   });
 }
+function chainSeasonMetaHtml(col){
+  var ms=CHAIN.months||[];
+  if(!ms.length) return '';
+  var latest=ms[ms.length-1];
+  var v0=chainVal(col, latest);
+  if(v0===null||v0===undefined) return '';
+  var v1=(ms.length>=2)?chainVal(col, ms[ms.length-2]):null;
+  var pct=(v1!==null&&v1!==undefined&&v1!==0)?((v0-v1)/v1*100):null;
+  var yoyPct=null, ytdPct=null;
+  var p=/^(\d{4})-M(\d{2})$/.exec(latest);
+  if(p){
+    var ly=(parseInt(p[1],10)-1)+'-M'+p[2];
+    var lyVal=chainVal(col, ly);
+    if(lyVal!==null&&lyVal!==undefined&&lyVal!==0) yoyPct=(v0-lyVal)/lyVal*100;
+    var curY=p[1], prevY=String(parseInt(p[1],10)-1), curSum=0, prevSum=0, hasCur=false, hasPrev=false;
+    ms.forEach(function(m){
+      var q=/^(\d{4})-M(\d{2})$/.exec(m); if(!q) return;
+      var val=chainVal(col, m); if(val===null||val===undefined) return;
+      if(q[1]===curY){ curSum+=val; hasCur=true; }
+      else if(q[1]===prevY){ prevSum+=val; hasPrev=true; }
+    });
+    if(hasCur&&hasPrev&&prevSum!==0) ytdPct=(curSum-prevSum)/Math.abs(prevSum)*100;
+  }
+  return '<span class="chg flat">最新 '+fmtTon(v0)+' 吨</span>'
+       + pctSpan2('环比', pct)
+       + pctSpan2('同比', yoyPct)
+       + pctSpan2('累计同比', ytdPct);
+}
 function renderChainSeasonal(){
   var grid=document.getElementById('chainSeasonGrid'); if(!grid) return;
   chainSeasonInsts.forEach(function(c){ try{ c.dispose(); }catch(e){} });
@@ -1585,18 +1613,19 @@ function renderChainSeasonal(){
       var w = isAll() ? 1 : ((col==='合计') ? 1 : (W[col]||1));
       by[y][mo-1] = Math.round(v*w);
     });
+    var title = subjLabel+' · '+col+'净出口（折丁二烯吨）';
     var wrap=document.createElement('div'); wrap.className='card';
     var chart=document.createElement('div'); chart.style.height='250px';
-    wrap.innerHTML='<div class="ttl">'+col+'净出口</div>';
+    wrap.innerHTML='<div class="ttl" style="text-align:center">'+title+'</div>'
+                 + '<div class="meta" style="justify-content:center">'+chainSeasonMetaHtml(col)+'</div>';
     wrap.appendChild(chart);
     grid.appendChild(wrap);
     var inst=echarts.init(chart);
     chainSeasonInsts.push(inst);
     inst.setOption({
-      title:{text:subjLabel+' · '+col+'净出口（折丁二烯吨）', left:'center', textStyle:{fontSize:10, color:'#1a1a1a'}},
       tooltip:{trigger:'axis'},
-      legend:{type:'scroll', top:20, textStyle:{fontSize:8}, itemWidth:10, itemHeight:6, itemGap:3},
-      grid:{left:48, right:10, top:46, bottom:22},
+      legend:{type:'scroll', top:18, textStyle:{fontSize:8}, itemWidth:10, itemHeight:6, itemGap:3},
+      grid:{left:48, right:10, top:30, bottom:22},
       xAxis:{type:'category', data:['1','2','3','4','5','6','7','8','9','10','11','12'], axisLabel:{fontSize:9}},
       yAxis:{type:'value', axisLabel:{fontSize:8, formatter:function(v){ return Math.abs(v)>=10000 ? (v/10000)+'万' : v; }}},
       series:YEARS.map(function(y){
