@@ -759,14 +759,13 @@ function renderLib(){
     addedIds[sec.id] = true;
     var isCustom = String(sec.id).indexOf('custom_') === 0;
     var s = findSec(sec.id);
-    var name = isCustom ? sec.title : (s ? s.name : sec.name);
     var desc = isCustom ? '自定义板块' : (s ? s.desc : sec.desc);
     var canUp = idx > 0;
     var canDown = idx < selected.length - 1;
     var chk = checkedIds[sec.id] ? 'checked' : '';
     html += '<div class="lib-item added">'+
       '<label class="chkwrap"><input type="checkbox" class="chk" '+chk+' onchange="toggleCheck(\''+sec.id+'\')"></label>'+
-      '<div class="txt" onclick="focusSec(\''+sec.id+'\')">'+esc(name)+'<span class="pg">'+esc(desc)+'</span></div>'+
+      '<div class="txt" onclick="focusSec(\''+sec.id+'\')">'+esc(sec.title)+'<span class="pg">'+esc(desc)+'</span></div>'+
       '<div class="lib-ctrl">'+
       '<button title="上移" '+(canUp?'':'disabled')+' onclick="event.stopPropagation();moveSecById(\''+sec.id+'\',-1)">▲</button>'+
       '<button title="下移" '+(canDown?'':'disabled')+' onclick="event.stopPropagation();moveSecById(\''+sec.id+'\',1)">▼</button>'+
@@ -943,7 +942,7 @@ function renderCanvas(){
       '<div class="sec--images" id="sec_img_'+idx+'" style="display:none"></div>'+
       '<div class="sec--tables" id="sec_table_'+idx+'"></div>';
     wrap.appendChild(div);
-    div.querySelector('.sec--ttl').addEventListener('input', function(){ sec.title = this.value; if(String(sec.id).indexOf('custom_')===0) renderLib(); });
+    div.querySelector('.sec--ttl').addEventListener('input', function(){ sec.title = this.value; renderLib(); });
     div.querySelector('.sec--desc').addEventListener('input', function(){ sec.analysis = this.value; });
     // 渲染图表
     var chartBox = div.querySelector('.sec--charts');
