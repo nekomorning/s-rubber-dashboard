@@ -1032,6 +1032,7 @@ function renderCanvas(){
     // 渲染自定义图片
     var imgBox = div.querySelector('.sec--images');
     if(String(sec.id).indexOf('custom_')===0) imgBox.classList.add('full');
+    imgBox.innerHTML = '';
     if(sec.images && sec.images.length){
       imgBox.style.display = 'grid';
       imgBox.innerHTML = sec.images.map(function(src){ return '<img src="'+esc(src)+'">'; }).join('');
@@ -1443,20 +1444,23 @@ document.addEventListener('paste', function(e){
   var idx = parseInt(secEl.getAttribute('data-idx'), 10);
   if(isNaN(idx) || !selected[idx] || String(selected[idx].id).indexOf('custom_') !== 0) return;
   var items = e.clipboardData.items;
+  var imageItem = null;
   for(var i=0;i<items.length;i++){
-    if(items[i].type.indexOf('image') !== -1){
-      e.preventDefault();
-      var blob = items[i].getAsFile();
-      var reader = new FileReader();
-      reader.onload = function(ev){
-        // 粘贴即替换为最新截图（覆盖该板块原有截图）
-        selected[idx].images = [ev.target.result];
-        renderCanvas();
-      };
-      reader.readAsDataURL(blob);
-      break;
-    }
+    if(items[i].type.indexOf('image') !== -1){ imageItem = items[i]; break; }
   }
+  if(!imageItem) return;
+  e.preventDefault();
+  // 立即清空旧图，确保用户视觉上只看到一次替换过程
+  selected[idx].images = [];
+  renderCanvas();
+  var blob = imageItem.getAsFile();
+  var reader = new FileReader();
+  reader.onload = function(ev){
+    // 粘贴即替换为最新截图（覆盖该板块原有截图，仅保留一张）
+    selected[idx].images = [ev.target.result];
+    renderCanvas();
+  };
+  reader.readAsDataURL(blob);
 });
 
 init();
