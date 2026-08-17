@@ -648,7 +648,7 @@ var echarts;
 function renderNav(){
   var navs = [
     ['ypt.html','一页通'],['index.html','日度价格'],['p2.html','开工库存表需'],
-    ['maint.html','装置检修'],['naphtha.html','石脑油周报'],['balance.html','平衡表'],
+    ['maint.html','装置检修'],['balance.html','平衡表'],
     ['capacity.html','产能投放'],['p3.html','贸易流'],['weekly.html','周报'],
   ];
   document.getElementById('navTabs').innerHTML = navs.map(function(n){
@@ -1299,7 +1299,36 @@ async function exportPDF(){
   }
 }
 
-/* ===== 保存当前布局 ===== */
+/* ===== 大容量存储：IndexedDB（用于高清截图等 base64 大对象，突破 localStorage 5~10MB 配额） ===== */
+var IDB_NAME='weeklyDB', IDB_STORE='blobs', IDB_KEY='weekly_payload_v2', _idb=null;
+function idbOpen(){
+  return new Promise(function(res,rej){
+    if(_idb){ res(_idb); return; }
+    if(!window.indexedDB){ rej(new Error('浏览器不支持 IndexedDB')); return; }
+    try{
+      var r = indexedDB.open(IDB_NAME, 1);
+      r.onupgradeneeded = function(e){ var db=e.target.result; if(!db.objectStoreNames.contains(IDB_STORE)) db.createObjectStore(IDB_STORE); };
+      r.onsuccess = function(e){ _idb=e.target.result; res(_idb); };
+      r.onerror = function(e){ rej(e.target.error); };
+    }catch(e){ rej(e); }
+  });
+}
+function idbTx(mode, fn){
+  return idbOpen().then(function(db){
+    return new Promise(function(res,rej){
+      var tx=db.transaction(IDB_STORE, mode), st=tx.objectStore(IDB_STORE), out=null;
+      var req=fn(st);
+      if(req && req.onsuccess) req.onsuccess=function(e){ out=e.target.result; };
+      tx.oncomplete=function(){ res(out); };
+      tx.onerror=function(e){ rej(e.target.error || new Error('tx error')); };
+      tx.onabort=function(e){ rej(e.target.error || new Error('tx abort')); };
+    });
+  });
+}
+function idbPut(key,val){ return idbTx('readwrite', function(st){ return st.put(val,key); }); }
+function idbGet(key){ return idbTx('readonly', function(st){ return st.get(key); }); }
+
+/* ===== 保存当前布局（全量写入 IndexedDB，localStorage 仅留极小指针） ===== */
 function saveLayout(){
   var note = document.getElementById('noteInput').value;
   var payload = {
@@ -1315,22 +1344,43 @@ function saveLayout(){
     }),
     updatedAt: new Date().toISOString(),
   };
+  var statusEl = document.getElementById('saveStatus');
+  // 1) 优先存 IndexedDB（容量可达数百 MB，单张高清截图无压力）
+  idbPut(IDB_KEY, payload).then(function(){
+    try{ localStorage.setItem('weekly_payload_meta', JSON.stringify({updatedAt:payload.updatedAt, viaIndexed:true})); }catch(e){}
+    try{ localStorage.removeItem('weekly_payload'); }catch(e){} // 清掉旧的超大 localStorage 数据
+    statusEl.textContent = '✓ 布局已保存到本地（IndexedDB，'+new Date().toLocaleString()+'），下次打开自动恢复';
+  }).catch(function(err){
+    // 2) 回退：直接写 localStorage（小数据可用，大截图仍可能超配额）
+    try{
+      localStorage.setItem('weekly_payload', JSON.stringify(payload));
+      statusEl.textContent = '✓ 布局已保存（仅浏览器本地存储，高清截图可能受容量限制）';
+    }catch(e){
+      alert('保存失败：'+(err&&err.message||e.message||'容量超限'));
+    }
+  });
+}
+
+/* 读取已保存布局：优先 IndexedDB，回退旧 localStorage */
+async function loadSaved(){
   try{
-    localStorage.setItem('weekly_payload', JSON.stringify(payload));
-    localStorage.setItem('weekly_note', note);
-    document.getElementById('saveStatus').textContent = '✓ 布局已保存到本地（'+new Date().toLocaleString()+'），下次打开自动恢复';
-  }catch(e){
-    alert('保存失败：'+e.message);
-  }
+    var p = await idbGet(IDB_KEY);
+    if(p && p.layout && p.layout.length) return p;
+  }catch(e){}
+  try{
+    var s = JSON.parse(localStorage.getItem('weekly_payload')||'null');
+    if(s && s.layout && s.layout.length) return s;
+  }catch(e){}
+  return null;
 }
 
 /* ===== init ===== */
-function init(){
+async function init(){
   if(!WEEKLY || !WEEKLY.sections) return;
   renderNav();
   document.getElementById('latestDate').textContent = WEEKLY.latestDataDate || '';
   var saved = null;
-  try{ saved = JSON.parse(localStorage.getItem('weekly_payload') || 'null'); }catch(e){}
+  try{ saved = await loadSaved(); }catch(e){}
   if(saved && saved.layout && saved.layout.length){
     selected = saved.layout.map(function(x){
       var s = findSec(x.id);
