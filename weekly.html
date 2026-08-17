@@ -1149,7 +1149,7 @@ function yearColor(y){
 }
 function monthTicks(xlabels){
   var idx={};
-  (xlabels||[]).forEach(function(l,i){ if(l.slice(3)==='01') idx[i]=parseInt(l.slice(0,2),10)+'月'; });
+  (xlabels||[]).forEach(function(l,i){ if(l.slice(3)==='01') idx[i]=parseInt(l.slice(0,2),10); });
   return idx;
 }
 function buildOption(c){
