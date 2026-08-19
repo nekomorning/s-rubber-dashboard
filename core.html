@@ -40,6 +40,7 @@ body{background:var(--bg); color:var(--text);
 .topbar .sec-sub{margin:0; flex:1; min-width:260px;}
 .abtn{padding:6px 14px; border:1px solid var(--border); background:#fff; border-radius:8px; cursor:pointer; font-size:13px; color:var(--accent);}
 .abtn:hover{background:#eef3f9;}
+.abtn.saved{color:#0a9a5c; border-color:#0a9a5c; background:#f0faf4;}
 /* 图表栅格（一行四个） */
 .grid{display:grid; gap:14px;}
 .grid.c4{grid-template-columns:repeat(4,1fr);}
@@ -114,6 +115,7 @@ body{background:var(--bg); color:var(--text);
   <div class="topbar">
     <span class="sec-sub">数据来源于各看板页（日度价格 / 开工库存 / 贸易流），跟随每日刷新同步更新 · 点卡片右上角按钮可自定义（✎选择 / ∅清空 / ↑↓排序 / ☆关注蓝框 / ✕删除），卡片可拖拽排序</span>
     <button class="abtn" id="addCard">＋ 新增卡片</button>
+    <button class="abtn" id="saveLayout">💾 保存布局</button>
     <button class="abtn" id="resetLayout">恢复默认</button>
   </div>
   <div class="ybar" id="ybar"></div>
@@ -166,17 +168,22 @@ var SOURCES={
 
 var allYears=[], yearVisible={}, charts=[], layout=[], dragFrom=null, currentPickIdx=null;
 var LS_KEY="coreLayoutV1";
+var LS_SAVED_KEY="coreLayoutV1_saved";
 
 function defaultLayout(){
   return DEFAULT_DAILY.map(function(k){ return {id:uid(), src:"daily", key:k, focus:false}; });
 }
 function save(){ try{ localStorage.setItem(LS_KEY, JSON.stringify(layout)); }catch(e){} }
 function loadLayout(){
-  try{
-    var s=localStorage.getItem(LS_KEY);
-    if(s){ var a=JSON.parse(s); if(Array.isArray(a)){ return a.map(function(it){ return {id:it.id||uid(), src:it.src||"daily", key:it.key||null, focus:!!it.focus}; }); } }
-  }catch(e){}
-  return defaultLayout();
+  function read(k){
+    try{
+      var s=localStorage.getItem(k);
+      if(s){ var a=JSON.parse(s); if(Array.isArray(a)){ return a.map(function(it){ return {id:it.id||uid(), src:it.src||"daily", key:it.key||null, focus:!!it.focus}; }); } }
+    }catch(e){}
+    return null;
+  }
+  // 优先级：用户主动保存的快照 > 自动保存 > 默认
+  return read(LS_SAVED_KEY) || read(LS_KEY) || defaultLayout();
 }
 
 function fetchJson(u){
@@ -548,8 +555,19 @@ function buildYearBar(){
 }
 
 document.getElementById("addCard").onclick=function(){ layout.push({id:uid(), src:"daily", key:null, focus:false}); save(); renderAll(); };
+document.getElementById("saveLayout").onclick=function(){
+  var b=this;
+  try{
+    localStorage.setItem(LS_SAVED_KEY, JSON.stringify(layout));
+    var orig=b.innerHTML;
+    var t=new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'});
+    b.innerHTML="✓ 已保存 "+t;
+    b.classList.add("saved");
+    setTimeout(function(){ b.innerHTML=orig; b.classList.remove("saved"); }, 2500);
+  }catch(e){ alert("保存失败："+e.message); }
+};
 document.getElementById("resetLayout").onclick=function(){
-  if(!confirm("确定要恢复默认布局吗？当前自定义的卡片顺序和内容将被清空。")) return;
+  if(!confirm("确定要恢复默认布局吗？当前自定义的卡片顺序和内容将被清空（不会影响已保存的布局快照）。")) return;
   layout=defaultLayout(); save(); renderAll();
 };
 document.getElementById("modalClose").onclick=closePicker;
