@@ -514,7 +514,10 @@ function buildYearBar(){
 }
 
 document.getElementById("addCard").onclick=function(){ layout.push({id:uid(), src:"daily", key:null, focus:false}); save(); renderAll(); };
-document.getElementById("resetLayout").onclick=function(){ layout=defaultLayout(); save(); renderAll(); };
+document.getElementById("resetLayout").onclick=function(){
+  if(!confirm("确定要恢复默认布局吗？当前自定义的卡片顺序和内容将被清空。")) return;
+  layout=defaultLayout(); save(); renderAll();
+};
 document.getElementById("modalClose").onclick=closePicker;
 document.getElementById("modal").addEventListener("click", function(e){ if(e.target===this) closePicker(); });
 document.getElementById("modalSearch").addEventListener("input", function(e){ renderPickerList(e.target.value); });
