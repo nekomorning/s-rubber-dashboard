@@ -77,6 +77,11 @@ body{background:var(--bg); color:var(--text);
 
 .tablecard{background:var(--card); border:1px solid var(--border); border-radius:10px; padding:14px 16px; margin-bottom:22px; overflow-x:auto;}
 .tablecard h2{font-size:16px; color:var(--accent); margin-bottom:10px;}
+.tcard-head{display:flex; align-items:flex-start; justify-content:space-between; gap:10px; margin-bottom:10px;}
+.tcard-head h2{margin-bottom:0;}
+.tcard-toggle{flex-shrink:0; padding:4px 14px; border:1px solid var(--border); background:#fff; border-radius:6px; cursor:pointer; color:var(--accent); font-size:12px; line-height:1.4; margin-top:2px; white-space:nowrap;}
+.tcard-toggle:hover{background:#eef3f9; border-color:var(--accent);}
+.tablecard.collapsed table{display:none;}
 table{width:100%; border-collapse:collapse; font-size:13px; min-width:1180px;}
 th,td{padding:6px 10px; text-align:right; border-bottom:1px solid #eef1f6; white-space:nowrap;}
 th{background:#f0f4f9; color:#44506a; font-weight:600; position:sticky; top:0;}
@@ -140,8 +145,11 @@ tr.abn td{background:#fff7f0;}
 
   <div class="filterbar" id="filterbar"><span class="lbl">年份筛选（点击显隐，作用于全部季节图）：</span></div>
 
-  <div class="tablecard">
-    <h2>最新数据一览表 <span style="font-size:12px;color:var(--sub);font-weight:400">（日环比 = 最新值相对上一交易日；周环比 = 最新值相对 7 天前最近交易日；|环比%| ≥ 2% 标记为大幅变化，价差/利润类指标不参与标记）</span></h2>
+  <div class="tablecard" id="tableCard">
+    <div class="tcard-head">
+      <h2>最新数据一览表 <span style="font-size:12px;color:var(--sub);font-weight:400">（日环比 = 最新值相对上一交易日；周环比 = 最新值相对 7 天前最近交易日；|环比%| ≥ 2% 标记为大幅变化，价差/利润类指标不参与标记）</span></h2>
+      <button class="tcard-toggle" id="tcardToggle" type="button">展开 ▾</button>
+    </div>
     <table id="dataTable">
       <thead><tr>
         <th>指标</th><th>单位</th><th>最新日期</th><th>最新值</th><th>前值</th><th>日环比增减</th><th>日环比%</th><th>标记</th>
@@ -789,6 +797,22 @@ body.laser #laserDot{display:block;}
   var on=false;
   fab.addEventListener('click',function(ev){ ev.stopPropagation(); on=!on; document.body.classList.toggle('laser',on); fab.classList.toggle('active',on); });
   document.addEventListener('mousemove',function(e){ dot.style.left=e.clientX+'px'; dot.style.top=e.clientY+'px'; });
+})();
+</script>
+<script>
+/* 最新数据一览表：默认折叠，右上角按钮展开/收起 */
+(function(){
+  var tc=document.getElementById('tableCard');
+  var btn=document.getElementById('tcardToggle');
+  if(!tc||!btn) return;
+  var collapsed=true;
+  tc.classList.add('collapsed');
+  btn.textContent='展开 ▾';
+  btn.addEventListener('click',function(){
+    collapsed=!collapsed;
+    tc.classList.toggle('collapsed',collapsed);
+    btn.textContent=collapsed?'展开 ▾':'收起 ▴';
+  });
 })();
 </script>
 
