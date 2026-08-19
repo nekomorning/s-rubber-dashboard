@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>合成胶数据看板 · 核心逻辑</title>
+<style>
+:root{
+  --bg:#f4f6fa; --card:#ffffff; --border:#e5e9f0; --text:#1f2733; --sub:#6b7686;
+  --up:#d92626; --down:#0a9a5c; --flat:#8a93a3; --accent:#0f4c81;
+}
+*{box-sizing:border-box; margin:0; padding:0;}
+body{background:var(--bg); color:var(--text);
+  font-family:"Microsoft YaHei","PingFang SC","Helvetica Neue",Arial,sans-serif; font-size:14px;}
+.wrap{max-width:1560px; margin:0 auto; padding:18px 22px 60px;}
+.header{display:flex; align-items:flex-end; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:14px;}
+.header h1{font-size:24px; color:var(--accent); letter-spacing:1px;}
+.header .date{color:var(--sub); font-size:13px;}
+.tabs{display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap;}
+.tab{padding:7px 20px; border-radius:8px 8px 0 0; border:1px solid var(--border); border-bottom:none;
+  background:#e9edf3; color:var(--sub); cursor:default; font-size:14px; text-decoration:none;}
+.tab.active{background:var(--accent); color:#fff; font-weight:600;}
+.empty{padding:90px 20px; text-align:center; color:var(--sub); font-size:15px;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="header">
+    <h1>合成胶数据看板 · 核心逻辑</h1>
+    <div class="date">内容待搭建</div>
+  </div>
+  <div class="tabs">
+    <a class="tab active" href="https://nekomorning.github.io/s-rubber-dashboard/core.html">核心逻辑</a>
+    <a class="tab" href="https://nekomorning.github.io/s-rubber-dashboard/balance.html">平衡表</a>
+    <a class="tab" href="https://nekomorning.github.io/s-rubber-dashboard/p3.html">贸易流</a>
+    <a class="tab" href="https://nekomorning.github.io/s-rubber-dashboard/capacity.html">产能投放</a>
+    <a class="tab" href="https://nekomorning.github.io/s-rubber-dashboard/maint.html">装置检修</a>
+    <a class="tab" href="https://nekomorning.github.io/s-rubber-dashboard/p2.html">开工库存表需</a>
+    <a class="tab" href="https://nekomorning.github.io/s-rubber-dashboard/index.html">日度价格</a>
+    <a class="tab" href="https://nekomorning.github.io/s-rubber-dashboard/weekly.html">周报</a>
+  </div>
+  <div class="empty">核心逻辑页面 · 内容待搭建</div>
+</div>
+</body>
+</html>
