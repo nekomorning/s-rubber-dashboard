@@ -64,6 +64,8 @@ body{background:var(--bg); color:var(--text);
 .card .chg.up{color:var(--up);} .card .chg.down{color:var(--down);} .card .chg.flat{color:var(--flat);}
 .card .dt{font-size:11px; color:var(--sub);}
 .card .chart{width:100%; height:220px;}
+.card .chart.pe{height:auto; margin-top:2px;}
+.card .chart.pe .pe-img{width:100%; height:auto; display:block; border-radius:6px; border:1px solid var(--border); background:#fff;}
 .card.empty .pick{padding:12px 18px; border:1px dashed var(--border); background:#fafbfd; border-radius:10px; cursor:pointer; color:var(--sub); font-size:14px;}
 .card.empty .pick:hover{color:var(--accent); border-color:var(--accent);}
 .card .err{color:#c0392b; font-size:12px; padding:10px 4px;}
@@ -76,6 +78,7 @@ body{background:var(--bg); color:var(--text);
 .modal-search input{width:100%; padding:8px 10px; border:1px solid var(--border); border-radius:8px; font-size:13px;}
 .modal-list{overflow:auto; padding:8px 10px 16px;}
 .src-group{font-size:12px; color:var(--sub); padding:10px 6px 4px; font-weight:700;}
+.src-sub{font-size:11px; color:var(--sub); padding:8px 6px 2px; font-weight:600;}
 .chart-item{padding:9px 12px; border-radius:8px; cursor:pointer; font-size:13px; border:1px solid transparent; display:flex; justify-content:space-between; gap:10px;}
 .chart-item:hover{background:#f0f3f8; border-color:var(--border);}
 .chart-item .k{color:var(--sub); font-size:11px;}
@@ -157,7 +160,8 @@ function uid(){ return "c"+Date.now().toString(36)+Math.floor(Math.random()*1e4)
 var SOURCES={
   daily:{label:"日度价格", url:"rubber_data_p1.json", indicators:null, xlabels:null, years:null, date:null},
   kai:{label:"开工库存", url:"rubber_data_p2.json", indicators:null, xlabels:null, years:null, date:null},
-  trade:{label:"贸易流（月度季节图）", url:"butadiene_trade.json", indicators:null, trade:null}
+  trade:{label:"贸易流（月度季节图）", url:"butadiene_trade.json", indicators:null, trade:null},
+  pe:{label:"PE日报（图片）", url:"pe_daily.json", indicators:null}
 };
 
 var allYears=[], yearVisible={}, charts=[], layout=[], dragFrom=null, currentPickIdx=null;
@@ -259,11 +263,12 @@ function tradeYears(trade){
 }
 
 function init(){
-  Promise.allSettled([ fetchJson(SOURCES.daily.url), fetchJson(SOURCES.kai.url), fetchJson(SOURCES.trade.url) ])
+  Promise.allSettled([ fetchJson(SOURCES.daily.url), fetchJson(SOURCES.kai.url), fetchJson(SOURCES.trade.url), fetchJson(SOURCES.pe.url) ])
     .then(function(res){
       if(res[0].status==="fulfilled"){ var d=res[0].value; SOURCES.daily.indicators=d.indicators; SOURCES.daily.xlabels=d.xlabels; SOURCES.daily.years=d.years; SOURCES.daily.date=d.latestDataDate; }
       if(res[1].status==="fulfilled"){ var d2=res[1].value; SOURCES.kai.indicators=d2.indicators; SOURCES.kai.xlabels=d2.xlabels; SOURCES.kai.years=d2.years; }
       if(res[2].status==="fulfilled"){ SOURCES.trade.trade=res[2].value; SOURCES.trade.indicators=buildTradeIndicators(res[2].value); }
+      if(res[3].status==="fulfilled"){ var p=res[3].value; SOURCES.pe.indicators=(p&&p.indicators)?p.indicators:{}; }
       // 年份并集
       var ys=new Set();
       [SOURCES.daily.years, SOURCES.kai.years].forEach(function(arr){ (arr||[]).forEach(function(y){ ys.add(String(y)); }); });
@@ -391,31 +396,47 @@ function makeCard(item, idx){
     head.appendChild(ttl); head.appendChild(menuBtn); head.appendChild(menu);
     card.appendChild(head);
 
-    var dec=ind.dec, st, cls, sign, latestTxt, chgTxt, pctTxt, dateTxt;
-    if(srcKey==="trade"){
-      var cs=calcStats(ind.seriesObj); st=cs;
-      latestTxt=fmt(cs?cs.latest:null,dec);
-      cls=chgCls(cs?cs.chg:null); sign=(cs&&cs.chg>0?"+":"");
-      chgTxt=(!cs||cs.chg===null?"":sign+fmt(cs.chg,dec));
-      pctTxt=(!cs||cs.pct===null?"—":sign+cs.pct.toFixed(2)+"%");
-      dateTxt=cs?cs.date:"";
+    var dec=ind.dec, meta, div;
+    if(srcKey==="pe"){
+      /* PE日报：图片卡片（标题 + 最新/环比/更新日期 + 图片） */
+      var latestTxt=ind.latest!==undefined&&ind.latest!==''?String(ind.latest):'';
+      var chgTxt=ind.chg!==undefined&&ind.chg!==''?String(ind.chg):'';
+      var dateTxt=ind.date?('更新 '+ind.date):'';
+      var cls=chgTxt.indexOf('-')===0?'down':(chgTxt?'up':'');
+      meta=document.createElement("div"); meta.className="meta";
+      meta.innerHTML='<span class="val">'+(latestTxt||'—')+'<span class="unit"> '+(ind.unit||'')+'</span></span>'+
+        (chgTxt?'<span class="chg '+cls+'">'+arrow(parseFloat(chgTxt))+' '+chgTxt+'</span>':'')+
+        '<span class="dt">'+dateTxt+'</span>';
+      div=document.createElement("div"); div.className="chart pe";
+      var img=document.createElement("img"); img.className="pe-img"; img.src=ind.file; img.alt=ind.title; img.loading="lazy";
+      div.appendChild(img);
     } else {
-      st=ind.stat||{};
-      latestTxt=fmt(st.latest,dec);
-      cls=chgCls(st.chg); sign=(st.chg>0?"+":"");
-      chgTxt=(st.chg===null?"":sign+fmt(st.chg,dec));
-      pctTxt=(st.pct===null?"—":sign+st.pct.toFixed(2)+"%");
-      dateTxt=st.latestDate||"";
+      var st, cls2, sign, latestTxt2, chgTxt2, pctTxt2, dateTxt2;
+      if(srcKey==="trade"){
+        var cs=calcStats(ind.seriesObj); st=cs;
+        latestTxt2=fmt(cs?cs.latest:null,dec);
+        cls2=chgCls(cs?cs.chg:null); sign=(cs&&cs.chg>0?"+":"");
+        chgTxt2=(!cs||cs.chg===null?"":sign+fmt(cs.chg,dec));
+        pctTxt2=(!cs||cs.pct===null?"—":sign+cs.pct.toFixed(2)+"%");
+        dateTxt2=cs?cs.date:"";
+      } else {
+        st=ind.stat||{};
+        latestTxt2=fmt(st.latest,dec);
+        cls2=chgCls(st.chg); sign=(st.chg>0?"+":"");
+        chgTxt2=(st.chg===null?"":sign+fmt(st.chg,dec));
+        pctTxt2=(st.pct===null?"—":sign+st.pct.toFixed(2)+"%");
+        dateTxt2=st.latestDate||"";
+      }
+      var chgVal = (srcKey==="trade") ? (cs?cs.chg:null) : st.chg;
+      var pctStr = (srcKey==="trade") ? (cs&&cs.pct!==null?cs.pct.toFixed(2)+"%":"—") : pctTxt2;
+      meta=document.createElement("div"); meta.className="meta";
+      meta.innerHTML='<span class="val">'+latestTxt2+'<span class="unit"> '+ind.unit+'</span></span>'+
+        '<span class="chg '+cls2+'">'+arrow(chgVal)+' '+chgTxt2+'（'+pctStr+'）</span>'+
+        '<span class="dt">'+dateTxt2+'</span>';
+      div=document.createElement("div"); div.className="chart";
+      // 延迟到 DOM 挂载后再初始化 ECharts，否则容器尺寸为 0 导致空白
+      div._chart={src:srcKey, ind:ind, xlabels:S.xlabels, years:S.years, dec:dec};
     }
-    var chgVal = (srcKey==="trade") ? (cs?cs.chg:null) : st.chg;
-    var pctStr = (srcKey==="trade") ? (cs&&cs.pct!==null?cs.pct.toFixed(2)+"%":"—") : pctTxt;
-    var meta=document.createElement("div"); meta.className="meta";
-    meta.innerHTML='<span class="val">'+latestTxt+'<span class="unit"> '+ind.unit+'</span></span>'+
-      '<span class="chg '+cls+'">'+arrow(chgVal)+' '+chgTxt+'（'+pctStr+'）</span>'+
-      '<span class="dt">'+dateTxt+'</span>';
-    var div=document.createElement("div"); div.className="chart";
-    // 延迟到 DOM 挂载后再初始化 ECharts，否则容器尺寸为 0 导致空白
-    div._chart={src:srcKey, ind:ind, xlabels:S.xlabels, years:S.years, dec:dec};
     card.appendChild(meta); card.appendChild(div);
 
     menuBtn.addEventListener("click", function(e){
@@ -470,8 +491,19 @@ function renderPickerList(q){
   var groups=[
     {src:"daily", label:"日度价格", inds:SOURCES.daily.indicators},
     {src:"kai", label:"开工库存", inds:SOURCES.kai.indicators},
-    {src:"trade", label:"贸易流（月度季节图）", inds:SOURCES.trade.indicators}
+    {src:"trade", label:"贸易流（月度季节图）", inds:SOURCES.trade.indicators},
+    {src:"pe", label:"PE日报（图片）", inds:SOURCES.pe.indicators}
   ];
+  function addItem(g,k){
+    var ind=g.inds[k];
+    var it=document.createElement("div"); it.className="chart-item";
+    it.innerHTML='<span>'+ind.title+'</span><span class="k">'+k+'</span>';
+    it.onclick=function(){
+      if(currentPickIdx!==null) layout[currentPickIdx]={id:uid(), src:g.src, key:k, focus:false};
+      save(); closePicker(); renderAll();
+    };
+    list.appendChild(it);
+  }
   groups.forEach(function(g){
     if(!g.inds) return;
     var keys=Object.keys(g.inds);
@@ -480,16 +512,18 @@ function renderPickerList(q){
     var gh=document.createElement("div"); gh.className="src-group";
     gh.textContent=g.label+"（"+keys.length+"）";
     list.appendChild(gh);
-    keys.forEach(function(k){
-      var ind=g.inds[k];
-      var it=document.createElement("div"); it.className="chart-item";
-      it.innerHTML='<span>'+ind.title+'</span><span class="k">'+k+'</span>';
-      it.onclick=function(){
-        if(currentPickIdx!==null) layout[currentPickIdx]={id:uid(), src:g.src, key:k, focus:false};
-        save(); closePicker(); renderAll();
-      };
-      list.appendChild(it);
-    });
+    if(g.src==="pe"){
+      // PE 日报按板块子分组
+      var bySec={};
+      keys.forEach(function(k){ var s=g.inds[k].section||"其他"; (bySec[s]=bySec[s]||[]).push(k); });
+      Object.keys(bySec).forEach(function(s){
+        var sh=document.createElement("div"); sh.className="src-sub"; sh.textContent=s+"（"+bySec[s].length+"）";
+        list.appendChild(sh);
+        bySec[s].forEach(function(k){ addItem(g,k); });
+      });
+    } else {
+      keys.forEach(function(k){ addItem(g,k); });
+    }
   });
   if(!list.children.length){
     var empty=document.createElement("div"); empty.className="src-group"; empty.textContent="无匹配 / 数据源未加载";
