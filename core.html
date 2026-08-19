@@ -116,7 +116,6 @@ body{background:var(--bg); color:var(--text);
     <span class="sec-sub">数据来源于各看板页（日度价格 / 开工库存 / 贸易流），跟随每日刷新同步更新 · 点卡片右上角按钮可自定义（✎选择 / ∅清空 / ↑↓排序 / ☆关注蓝框 / ✕删除），卡片可拖拽排序</span>
     <button class="abtn" id="addCard">＋ 新增卡片</button>
     <button class="abtn" id="saveLayout">💾 保存布局</button>
-    <button class="abtn" id="resetLayout">恢复默认</button>
   </div>
   <div class="ybar" id="ybar"></div>
   <div class="grid c4" id="charts"></div>
@@ -565,10 +564,6 @@ document.getElementById("saveLayout").onclick=function(){
     b.classList.add("saved");
     setTimeout(function(){ b.innerHTML=orig; b.classList.remove("saved"); }, 2500);
   }catch(e){ alert("保存失败："+e.message); }
-};
-document.getElementById("resetLayout").onclick=function(){
-  if(!confirm("确定要恢复默认布局吗？当前自定义的卡片顺序和内容将被清空（不会影响已保存的布局快照）。")) return;
-  layout=defaultLayout(); save(); renderAll();
 };
 document.getElementById("modalClose").onclick=closePicker;
 document.getElementById("modal").addEventListener("click", function(e){ if(e.target===this) closePicker(); });
