@@ -62,6 +62,7 @@ body{background:var(--bg); color:var(--text);
 .card .chart{width:100%; height:220px;}
 .card.empty .pick{padding:12px 18px; border:1px dashed var(--border); background:#fafbfd; border-radius:10px; cursor:pointer; color:var(--sub); font-size:14px;}
 .card.empty .pick:hover{color:var(--accent); border-color:var(--accent);}
+.card .err{color:#c0392b; font-size:12px; padding:10px 4px;}
 /* 选择图表 modal */
 .modal{position:fixed; inset:0; background:rgba(20,30,45,.45); display:none; align-items:center; justify-content:center; z-index:50;}
 .modal-box{background:#fff; width:min(660px,92vw); max-height:82vh; border-radius:12px; display:flex; flex-direction:column; overflow:hidden;}
@@ -104,7 +105,7 @@ body{background:var(--bg); color:var(--text);
 
   <h2 class="sec-title">核心数据跟踪图表</h2>
   <div class="topbar">
-    <span class="sec-sub">数据来源于「日度价格」页，跟随每日刷新同步更新 · 点卡片右上角按钮可自定义（✎选择 / ∅清空 / ↑↓排序 / ☆关注蓝框 / ✕删除），卡片可拖拽排序</span>
+    <span class="sec-sub">数据来源于各看板页（日度价格 / 开工库存 / 贸易流），跟随每日刷新同步更新 · 点卡片右上角按钮可自定义（✎选择 / ∅清空 / ↑↓排序 / ☆关注蓝框 / ✕删除），卡片可拖拽排序</span>
     <button class="abtn" id="addCard">＋ 新增卡片</button>
     <button class="abtn" id="resetLayout">恢复默认</button>
   </div>
@@ -139,8 +140,8 @@ body{background:var(--bg); color:var(--text);
   tryNext();
 })();
 
-var DEFAULT_KEYS=["PE-原油价差","PE-石脑油价差","丁二烯-石脑油价差","BR-丁二烯价差"];
-var YEAR_COLORS={ "2021":"#12B5A6","2022":"#8B5CF6","2023":"#1E6FFF","2024":"#F59A23","2025":"#E60000","2026":"#1A1A1A" };
+var DEFAULT_DAILY=["PE-原油价差","PE-石脑油价差","丁二烯-石脑油价差","BR-丁二烯价差"];
+var YEAR_COLORS={ "2016":"#94a3b8","2017":"#60a5fa","2018":"#34d399","2019":"#fbbf24","2020":"#f472b6","2021":"#12B5A6","2022":"#8B5CF6","2023":"#1E6FFF","2024":"#F59A23","2025":"#E60000","2026":"#1A1A1A" };
 function yearColor(y){ return YEAR_COLORS[String(y)] || "#888888"; }
 function fmt(v,dec){ if(v===null||v===undefined) return "—"; return Number(v).toLocaleString("zh-CN",{minimumFractionDigits:dec,maximumFractionDigits:dec}); }
 function chgCls(c){ if(c===null||c===undefined||c===0) return "flat"; return c>0?"up":"down"; }
@@ -148,43 +149,131 @@ function arrow(c){ if(c===null||c===undefined||c===0) return "→"; return c>0?"
 function monthTicks(xlabels){ var idx={}; xlabels.forEach(function(l,i){ if(l.slice(3)==="01") idx[i]=parseInt(l.slice(0,2),10)+"月"; }); return idx; }
 function uid(){ return "c"+Date.now().toString(36)+Math.floor(Math.random()*1e4).toString(36); }
 
-var D=null, yearVisible={}, charts=[], layout=[], dragFrom=null, currentPickIdx=null;
+/* 多数据源 */
+var SOURCES={
+  daily:{label:"日度价格", url:"rubber_data_p1.json", indicators:null, xlabels:null, years:null, date:null},
+  kai:{label:"开工库存", url:"rubber_data_p2.json", indicators:null, xlabels:null, years:null, date:null},
+  trade:{label:"贸易流（月度季节图）", url:"butadiene_trade.json", indicators:null, trade:null}
+};
+
+var allYears=[], yearVisible={}, charts=[], layout=[], dragFrom=null, currentPickIdx=null;
 var LS_KEY="coreLayoutV1";
 
-function defaultLayout(){ return DEFAULT_KEYS.map(function(k){ return {id:uid(), key:k, focus:false}; }); }
+function defaultLayout(){
+  return DEFAULT_DAILY.map(function(k){ return {id:uid(), src:"daily", key:k, focus:false}; });
+}
 function save(){ try{ localStorage.setItem(LS_KEY, JSON.stringify(layout)); }catch(e){} }
 function loadLayout(){
   try{
     var s=localStorage.getItem(LS_KEY);
-    if(s){ var a=JSON.parse(s); if(Array.isArray(a)){ return a.map(function(it){ return {id:it.id||uid(), key:it.key||null, focus:!!it.focus}; }); } }
+    if(s){ var a=JSON.parse(s); if(Array.isArray(a)){ return a.map(function(it){ return {id:it.id||uid(), src:it.src||"daily", key:it.key||null, focus:!!it.focus}; }); } }
   }catch(e){}
   return defaultLayout();
 }
 
+function fetchJson(u){
+  return fetch(u,{cache:"no-store"})
+    .then(function(r){ if(!r.ok) throw new Error("HTTP "+r.status); return r.json(); });
+}
+
+/* ---- 贸易流：从 butadiene_trade.json 构建 indicators（月度季节图，不含桑基/堆积） ---- */
+const monthLabels = ['1月','2月','3月','4月','5月','6月','7月','8月','9月','10月','11月','12月'];
+function parseMonth(m){ var p=m.match(/(\d{4})-M(\d{2})/); return p?p.slice(1):null; }
+function buildSeasonSeries(seriesObj){
+  const byYear={};
+  Object.keys(seriesObj||{}).forEach(function(k){
+    var v=seriesObj[k]; if(v===null||v===undefined) return;
+    var ym=parseMonth(k); if(!ym) return;
+    var y=ym[0], mn=parseInt(ym[1],10);
+    if(!byYear[y]) byYear[y]=[];
+    byYear[y][mn-1]=v;
+  });
+  return Object.keys(byYear).sort().map(function(y){return {name:y, data:byYear[y]};});
+}
+function latestNonNull(seriesObj){
+  const keys=Object.keys(seriesObj||{}).sort();
+  for(var i=keys.length-1;i>=0;i--){ var v=seriesObj[keys[i]]; if(v!==null&&v!==undefined) return {date:keys[i], value:v}; }
+  return null;
+}
+function prevMonth(m){ var p=m.match(/(\d{4})-M(\d{2})/); if(!p) return null; var y=+p[1], mn=+p[2]; if(mn===1){y-=1;mn=12;}else{mn-=1;} return y+"-M"+(mn<10?"0":"")+mn; }
+function sameMonthLastYear(m){ var p=m.match(/(\d{4})-M(\d{2})/); if(!p) return null; return (parseInt(p[1],10)-1)+"-M"+p[2]; }
+function calcStats(seriesObj){
+  var l=latestNonNull(seriesObj); if(!l) return null;
+  var prev=seriesObj[prevMonth(l.date)];
+  var yoy=seriesObj[sameMonthLastYear(l.date)];
+  var chg=(prev===null||prev===undefined)?null:(l.value-prev);
+  var pct=(prev===null||prev===undefined||prev===0)?null:((l.value-prev)/prev*100);
+  var yoyChg=(yoy===null||yoy===undefined)?null:(l.value-yoy);
+  var yoyPct=(yoy===null||yoy===undefined||yoy===0)?null:((l.value-yoy)/yoy*100);
+  return {latest:l.value, date:l.date, chg:chg, pct:pct, yoyChg:yoyChg, yoyPct:yoyPct};
+}
+function buildTradeIndicators(trade){
+  var out={};
+  function addSection(map, prefix){
+    Object.keys(map).forEach(function(k){
+      var rec=map[k]; if(!rec) return;
+      var disp=rec.display||k;
+      ["Export","Import"].forEach(function(fl){
+        var so=rec[fl]&&rec[fl].total;
+        if(so) out[prefix+k+"|"+fl]={ title: disp+(fl==="Export"?"出口量":"进口量"), unit:"吨", dec:0, seriesObj:so, src:"trade" };
+      });
+      var ex=rec.Export&&rec.Export.total, im=rec.Import&&rec.Import.total;
+      if(ex&&im){
+        var net={};
+        Object.keys(ex).forEach(function(m){ net[m]=(ex[m]||0)-(im[m]||0); });
+        out[prefix+k+"|Net"]={ title: disp+"净出口量", unit:"吨", dec:0, seriesObj:net, src:"trade" };
+      }
+    });
+  }
+  addSection(trade.reporters||{}, "");
+  addSection(trade.regions||{}, "");
+  return out;
+}
+function tradeYears(trade){
+  var s=new Set();
+  [trade.reporters, trade.regions].forEach(function(map){
+    if(!map) return;
+    Object.keys(map).forEach(function(k){
+      var rec=map[k]; if(!rec) return;
+      ["Export","Import"].forEach(function(fl){
+        var so=rec[fl]&&rec[fl].total; if(so) Object.keys(so).forEach(function(m){ s.add(m.slice(0,4)); });
+      });
+    });
+  });
+  return Array.from(s).sort();
+}
+
 function init(){
-  fetch("rubber_data_p1.json",{cache:"no-store"})
-    .then(function(r){ if(!r.ok) throw new Error("HTTP "+r.status); return r.json(); })
-    .then(function(data){
-      D=data;
-      document.getElementById("dataDate").textContent = "数据截至 " + (D.latestDataDate||"");
-      var n=D.years.length;
-      D.years.forEach(function(y,i){ yearVisible[y]=(i>=n-4); });
+  Promise.allSettled([ fetchJson(SOURCES.daily.url), fetchJson(SOURCES.kai.url), fetchJson(SOURCES.trade.url) ])
+    .then(function(res){
+      if(res[0].status==="fulfilled"){ var d=res[0].value; SOURCES.daily.indicators=d.indicators; SOURCES.daily.xlabels=d.xlabels; SOURCES.daily.years=d.years; SOURCES.daily.date=d.latestDataDate; }
+      if(res[1].status==="fulfilled"){ var d2=res[1].value; SOURCES.kai.indicators=d2.indicators; SOURCES.kai.xlabels=d2.xlabels; SOURCES.kai.years=d2.years; }
+      if(res[2].status==="fulfilled"){ SOURCES.trade.trade=res[2].value; SOURCES.trade.indicators=buildTradeIndicators(res[2].value); }
+      // 年份并集
+      var ys=new Set();
+      [SOURCES.daily.years, SOURCES.kai.years].forEach(function(arr){ (arr||[]).forEach(function(y){ ys.add(String(y)); }); });
+      if(SOURCES.trade.trade) tradeYears(SOURCES.trade.trade).forEach(function(y){ ys.add(y); });
+      allYears=Array.from(ys).sort();
+      var n=allYears.length;
+      allYears.forEach(function(y,i){ yearVisible[y]=(i>=n-4); });
+      document.getElementById("dataDate").textContent="数据截至 "+(SOURCES.daily.date||"");
       buildYearBar();
       layout=loadLayout();
       renderAll();
     })
-    .catch(function(e){ document.getElementById("charts").innerHTML="<div style='padding:20px;color:#c00'>数据加载失败："+e.message+"</div>"; });
+    .catch(function(e){ document.getElementById("charts").innerHTML="<div style='padding:20px;color:#c00'>初始化失败："+e.message+"</div>"; });
 }
 
-function drawSeason(div, ind){
+/* 日序季节图（日度价格 / 开工库存 复用） */
+function drawSeason(div, ind, xlabels, years){
   var c=echarts.init(div);
-  var ticks=monthTicks(D.xlabels);
-  var n=D.years.length, series=[], legend=[];
-  D.years.forEach(function(y){
+  var ticks=monthTicks(xlabels);
+  var n=years.length, series=[], legend=[];
+  years.forEach(function(y){
     var pts=ind.series[String(y)];
     if(!pts||!pts.length) return;
     legend.push(String(y));
-    var isLatest=(y===D.years[n-1]);
+    var isLatest=(y===years[n-1]);
     series.push({
       name:String(y), type:"line", showSymbol:false, connectNulls:true, data:pts,
       lineStyle:{width:isLatest?2.2:1.4, color:yearColor(y)},
@@ -198,7 +287,7 @@ function drawSeason(div, ind){
     legend:{show:true, top:0, right:0, itemWidth:14, itemHeight:2, icon:"rect", textStyle:{fontSize:11,color:"#6b7686"}, data:legend},
     tooltip:{trigger:"axis", confine:true, formatter:function(ps){
       if(!ps.length) return "";
-      var lab=D.xlabels[ps[0].value[0]];
+      var lab=xlabels[ps[0].value[0]];
       var s=parseInt(lab.slice(0,2),10)+"月"+parseInt(lab.slice(3),10)+"日";
       ps.sort(function(a,b){return Number(b.seriesName)-Number(a.seriesName);});
       ps.forEach(function(p){ s+="<br>"+p.marker+p.seriesName+"年： <b>"+fmt(p.value[1],ind.dec)+"</b>"; });
@@ -209,7 +298,37 @@ function drawSeason(div, ind){
     series:series
   });
   charts.push(c);
-  D.years.forEach(function(y){ if(!yearVisible[y]) c.dispatchAction({type:"legendToggleSelect",name:String(y)}); });
+  years.forEach(function(y){ if(!yearVisible[y]) c.dispatchAction({type:"legendToggleSelect",name:String(y)}); });
+}
+
+/* 月序季节图（贸易流） */
+function drawSeasonMonth(div, seriesObj, dec){
+  var c=echarts.init(div);
+  var series=buildSeasonSeries(seriesObj);
+  var years=series.map(function(s){return s.name;});
+  var sorted=series.slice().sort(function(a,b){return parseInt(a.name)-parseInt(b.name);});
+  var selected={}; years.forEach(function(y){ selected[y]=!!yearVisible[y]; });
+  c.setOption({
+    animation:false,
+    tooltip:{trigger:"axis", confine:true, formatter:function(ps){
+      if(!ps.length) return "";
+      var s=ps[0].axisValue;
+      ps.sort(function(a,b){return Number(b.seriesName)-Number(a.seriesName);});
+      ps.forEach(function(p){ s+="<br>"+p.marker+p.seriesName+"年： <b>"+fmt(p.value,dec)+"</b>"; });
+      return s;
+    }},
+    legend:{data:years, bottom:0, left:"center", textStyle:{fontSize:10}, itemWidth:10, itemHeight:5, itemGap:6, selected:selected},
+    grid:{left:36,right:14,top:14,bottom:42,containLabel:true},
+    xAxis:{type:"category", data:monthLabels, axisLine:{lineStyle:{color:"#ccc"}}, axisLabel:{fontSize:10}},
+    yAxis:{type:"value", axisLine:{show:false}, splitLine:{lineStyle:{color:"#f0f0f0"}}, axisLabel:{fontSize:10, formatter:function(v){return Math.abs(v)>=1000?(v/1000).toFixed(1)+"k":v;}}},
+    series: sorted.map(function(s){
+      var isLast = s.name === years[years.length-1];
+      return {name:s.name, type:"line", smooth:true, symbol:"none", data:s.data, connectNulls:true,
+        lineStyle:{width:isLast?2.2:1.5, color:yearColor(s.name)}, itemStyle:{color:yearColor(s.name)}, z:isLast?10:5};
+    })
+  });
+  charts.push(c);
+  years.forEach(function(y){ if(!yearVisible[y]) c.dispatchAction({type:"legendToggleSelect",name:String(y)}); });
 }
 
 function renderAll(){
@@ -236,18 +355,41 @@ function makeCard(item, idx){
     '<button data-act="del" title="删除">✕</button>';
   card.appendChild(bar);
 
-  if(item.key && D.indicators[item.key]){
-    var ind=D.indicators[item.key];
-    var st=ind.stat||{}, cls=chgCls(st.chg), sign=(st.chg>0?"+":"");
+  var srcKey=item.src||"daily";
+  var S=SOURCES[srcKey];
+  var ind=(S && S.indicators && item.key && S.indicators[item.key]) ? S.indicators[item.key] : null;
+
+  if(ind){
+    var dec=ind.dec, st, cls, sign, latestTxt, chgTxt, pctTxt, dateTxt;
+    if(srcKey==="trade"){
+      var cs=calcStats(ind.seriesObj); st=cs;
+      latestTxt=fmt(cs?cs.latest:null,dec);
+      cls=chgCls(cs?cs.chg:null); sign=(cs&&cs.chg>0?"+":"");
+      chgTxt=(!cs||cs.chg===null?"":sign+fmt(cs.chg,dec));
+      pctTxt=(!cs||cs.pct===null?"—":sign+cs.pct.toFixed(2)+"%");
+      dateTxt=cs?cs.date:"";
+    } else {
+      st=ind.stat||{};
+      latestTxt=fmt(st.latest,dec);
+      cls=chgCls(st.chg); sign=(st.chg>0?"+":"");
+      chgTxt=(st.chg===null?"":sign+fmt(st.chg,dec));
+      pctTxt=(st.pct===null?"—":sign+st.pct.toFixed(2)+"%");
+      dateTxt=st.latestDate||"";
+    }
     var ttl=document.createElement("div"); ttl.className="ttl"; ttl.textContent=ind.title;
+    var chgVal = (srcKey==="trade") ? (cs?cs.chg:null) : st.chg;
+    var pctStr = (srcKey==="trade") ? (cs&&cs.pct!==null?cs.pct.toFixed(2)+"%":"—") : pctTxt;
     var meta=document.createElement("div"); meta.className="meta";
-    meta.innerHTML='<span class="val">'+fmt(st.latest,ind.dec)+'<span class="unit"> '+ind.unit+'</span></span>'+
-      '<span class="chg '+cls+'">'+arrow(st.chg)+' '+(st.chg===null||st.chg===undefined?"":sign+fmt(st.chg,ind.dec))+
-      '（'+(st.pct===null||st.pct===undefined?"—":sign+st.pct.toFixed(2)+"%")+'）</span>'+
-      '<span class="dt">'+(st.latestDate||"")+'</span>';
+    meta.innerHTML='<span class="val">'+latestTxt+'<span class="unit"> '+ind.unit+'</span></span>'+
+      '<span class="chg '+cls+'">'+arrow(chgVal)+' '+chgTxt+'（'+pctStr+'）</span>'+
+      '<span class="dt">'+dateTxt+'</span>';
     var div=document.createElement("div"); div.className="chart";
     card.appendChild(ttl); card.appendChild(meta); card.appendChild(div);
-    drawSeason(div, ind);
+    if(srcKey==="trade") drawSeasonMonth(div, ind.seriesObj, dec);
+    else drawSeason(div, ind, S.xlabels, S.years);
+  } else if(item.key){
+    var err=document.createElement("div"); err.className="err"; err.textContent="（该图表数据源未加载："+srcKey+"）";
+    card.appendChild(err);
   } else {
     var ph=document.createElement("button"); ph.className="pick"; ph.textContent="＋ 点击选择图表";
     ph.onclick=function(){ openPicker(idx); };
@@ -288,32 +430,40 @@ function renderPickerList(q){
   q=(q||"").trim();
   var list=document.getElementById("modalList");
   list.innerHTML="";
-  // MVP：图表目录仅接入「日度价格」页 indicators；后续可扩展其他页 SOURCES（需各自渲染逻辑）
-  var keys=Object.keys(D.indicators);
-  if(q) keys=keys.filter(function(k){ var ind=D.indicators[k]; return (k.indexOf(q)>=0)||(ind.title&&ind.title.indexOf(q)>=0); });
-  var gh=document.createElement("div"); gh.className="src-group";
-  gh.textContent="日度价格（"+keys.length+" 个指标）";
-  list.appendChild(gh);
-  if(!keys.length){
-    var empty=document.createElement("div"); empty.className="src-group"; empty.textContent="无匹配";
-    list.appendChild(empty); return;
-  }
-  keys.forEach(function(k){
-    var ind=D.indicators[k];
-    var it=document.createElement("div"); it.className="chart-item";
-    it.innerHTML='<span>'+ind.title+'</span><span class="k">'+k+'</span>';
-    it.onclick=function(){
-      if(currentPickIdx!==null) layout[currentPickIdx].key=k;
-      save(); closePicker(); renderAll();
-    };
-    list.appendChild(it);
+  var groups=[
+    {src:"daily", label:"日度价格", inds:SOURCES.daily.indicators},
+    {src:"kai", label:"开工库存", inds:SOURCES.kai.indicators},
+    {src:"trade", label:"贸易流（月度季节图）", inds:SOURCES.trade.indicators}
+  ];
+  groups.forEach(function(g){
+    if(!g.inds) return;
+    var keys=Object.keys(g.inds);
+    if(q) keys=keys.filter(function(k){ var ind=g.inds[k]; return (k.indexOf(q)>=0)||(ind.title&&ind.title.indexOf(q)>=0); });
+    if(!keys.length) return;
+    var gh=document.createElement("div"); gh.className="src-group";
+    gh.textContent=g.label+"（"+keys.length+"）";
+    list.appendChild(gh);
+    keys.forEach(function(k){
+      var ind=g.inds[k];
+      var it=document.createElement("div"); it.className="chart-item";
+      it.innerHTML='<span>'+ind.title+'</span><span class="k">'+k+'</span>';
+      it.onclick=function(){
+        if(currentPickIdx!==null) layout[currentPickIdx]={id:uid(), src:g.src, key:k, focus:false};
+        save(); closePicker(); renderAll();
+      };
+      list.appendChild(it);
+    });
   });
+  if(!list.children.length){
+    var empty=document.createElement("div"); empty.className="src-group"; empty.textContent="无匹配 / 数据源未加载";
+    list.appendChild(empty);
+  }
 }
 
 function buildYearBar(){
   var bar=document.getElementById("ybar");
   bar.innerHTML="";
-  D.years.forEach(function(y){
+  allYears.forEach(function(y){
     var b=document.createElement("button");
     b.className="ybtn"+(yearVisible[y]?"":" off");
     b.innerHTML='<span class="dot" style="background:'+yearColor(y)+'"></span>'+y+'年';
@@ -326,7 +476,7 @@ function buildYearBar(){
   });
 }
 
-document.getElementById("addCard").onclick=function(){ layout.push({id:uid(), key:null, focus:false}); save(); renderAll(); };
+document.getElementById("addCard").onclick=function(){ layout.push({id:uid(), src:"daily", key:null, focus:false}); save(); renderAll(); };
 document.getElementById("resetLayout").onclick=function(){ layout=defaultLayout(); save(); renderAll(); };
 document.getElementById("modalClose").onclick=closePicker;
 document.getElementById("modal").addEventListener("click", function(e){ if(e.target===this) closePicker(); });
