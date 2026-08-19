@@ -213,19 +213,30 @@ function calcStats(seriesObj){
 }
 function buildTradeIndicators(trade){
   var out={};
+  // 国名/地区名中英映射（贸易流当前均为丁二烯）
+  var NAME_MAP={
+    "Korea":"韩国", "Korea_Rep":"韩国",
+    "China":"中国",
+    "Taiwan":"中国台湾",
+    "Japan":"日本",
+    "USA":"美国", "United States":"美国",
+    "EU":"欧盟", "European Union":"欧盟",
+    "SEAsia":"东南亚", "Southeast Asia":"东南亚"
+  };
+  function cnName(k, display){ return NAME_MAP[k] || NAME_MAP[display] || display || k; }
   function addSection(map, prefix){
     Object.keys(map).forEach(function(k){
       var rec=map[k]; if(!rec) return;
-      var disp=rec.display||k;
+      var disp=cnName(k, rec.display||k);
       ["Export","Import"].forEach(function(fl){
         var so=rec[fl]&&rec[fl].total;
-        if(so) out[prefix+k+"|"+fl]={ title: disp+(fl==="Export"?"出口量":"进口量"), unit:"吨", dec:0, seriesObj:so, src:"trade" };
+        if(so) out[prefix+k+"|"+fl]={ title: "丁二烯-"+disp+(fl==="Export"?"出口量":"进口量"), unit:"吨", dec:0, seriesObj:so, src:"trade" };
       });
       var ex=rec.Export&&rec.Export.total, im=rec.Import&&rec.Import.total;
       if(ex&&im){
         var net={};
         Object.keys(ex).forEach(function(m){ net[m]=(ex[m]||0)-(im[m]||0); });
-        out[prefix+k+"|Net"]={ title: disp+"净出口量", unit:"吨", dec:0, seriesObj:net, src:"trade" };
+        out[prefix+k+"|Net"]={ title: "丁二烯-"+disp+"净出口量", unit:"吨", dec:0, seriesObj:net, src:"trade" };
       }
     });
   }
