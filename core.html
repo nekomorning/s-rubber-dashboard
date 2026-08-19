@@ -45,14 +45,18 @@ body{background:var(--bg); color:var(--text);
 .grid.c4{grid-template-columns:repeat(4,1fr);}
 @media (max-width:1200px){ .grid.c4{grid-template-columns:repeat(2,1fr);} }
 @media (max-width:720px){ .grid.c4{grid-template-columns:1fr;} .wrap{padding:12px 10px 40px;} }
-.card{background:var(--card); border:1px solid var(--border); border-radius:10px; padding:10px 12px 6px; min-width:0; position:relative;}
+.card{background:var(--card); border:1px solid var(--border); border-radius:10px; padding:8px 12px 6px; min-width:0; position:relative;}
 .card.focus{box-shadow:0 0 0 2px var(--focus); border-color:var(--focus);}
 .card.empty{border-style:dashed; display:flex; align-items:center; justify-content:center; min-height:230px;}
-.card .bar{display:flex; gap:4px; justify-content:flex-end; margin:0 0 6px; cursor:grab;}
-.card .bar button{font-size:11px; line-height:1; padding:3px 7px; border:1px solid var(--border); background:#fff; border-radius:6px; cursor:pointer; color:var(--sub);}
-.card .bar button:hover{background:#f0f3f8; color:var(--accent);}
-.card .bar button.on{background:var(--focus); color:#fff; border-color:var(--focus);}
-.card .ttl{font-size:14px; font-weight:700; color:#2a3345; margin-top:2px;}
+.card-head{display:flex; align-items:center; justify-content:space-between; gap:6px; margin:0 0 4px; cursor:grab; position:relative;}
+.card-head .ttl{font-size:14px; font-weight:700; color:#2a3345; flex:1; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; line-height:1.4;}
+.menu-btn{width:24px; height:22px; display:inline-flex; align-items:center; justify-content:center; padding:0; border:1px solid var(--border); background:#fff; border-radius:6px; cursor:pointer; color:var(--sub); font-size:14px; line-height:1; flex-shrink:0;}
+.menu-btn:hover{background:#f0f3f8; color:var(--accent); border-color:var(--accent);}
+.menu{position:absolute; top:calc(100% + 4px); right:0; background:#fff; border:1px solid var(--border); border-radius:8px; padding:4px; box-shadow:0 4px 12px rgba(0,0,0,.12); display:none; flex-direction:column; gap:2px; z-index:10; min-width:92px;}
+.menu.show{display:flex;}
+.menu button{font-size:12px; line-height:1.2; padding:5px 8px; border:1px solid transparent; background:#fff; border-radius:6px; cursor:pointer; color:var(--sub); text-align:left; white-space:nowrap;}
+.menu button:hover{background:#f0f3f8; color:var(--accent); border-color:var(--border);}
+.menu button.on{background:var(--focus); color:#fff; border-color:var(--focus);}
 .card .meta{display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; margin:4px 0 2px;}
 .card .val{font-size:20px; font-weight:700;}
 .card .unit{font-size:11px; color:var(--sub);}
@@ -270,6 +274,7 @@ function drawSeason(div, ind, xlabels, years){
   var ticks=monthTicks(xlabels);
   var n=years.length, series=[], legend=[];
   years.forEach(function(y){
+    if(!yearVisible[y]) return;  // 只渲染当前选中的年份
     var pts=ind.series[String(y)];
     if(!pts||!pts.length) return;
     legend.push(String(y));
@@ -298,7 +303,6 @@ function drawSeason(div, ind, xlabels, years){
     series:series
   });
   charts.push(c);
-  years.forEach(function(y){ if(!yearVisible[y]) c.dispatchAction({type:"legendToggleSelect",name:String(y)}); });
 }
 
 /* 月序季节图（贸易流） */
@@ -306,8 +310,8 @@ function drawSeasonMonth(div, seriesObj, dec){
   var c=echarts.init(div);
   var series=buildSeasonSeries(seriesObj);
   var years=series.map(function(s){return s.name;});
-  var sorted=series.slice().sort(function(a,b){return parseInt(a.name)-parseInt(b.name);});
-  var selected={}; years.forEach(function(y){ selected[y]=!!yearVisible[y]; });
+  var sorted=series.slice().sort(function(a,b){return parseInt(a.name)-parseInt(b.name);})
+    .filter(function(s){ return !!yearVisible[s.name]; });
   c.setOption({
     animation:false,
     tooltip:{trigger:"axis", confine:true, formatter:function(ps){
@@ -317,7 +321,7 @@ function drawSeasonMonth(div, seriesObj, dec){
       ps.forEach(function(p){ s+="<br>"+p.marker+p.seriesName+"年： <b>"+fmt(p.value,dec)+"</b>"; });
       return s;
     }},
-    legend:{data:years, bottom:0, left:"center", textStyle:{fontSize:10}, itemWidth:10, itemHeight:5, itemGap:6, selected:selected},
+    legend:{data:sorted.map(function(s){return s.name;}), bottom:0, left:"center", textStyle:{fontSize:10}, itemWidth:10, itemHeight:5, itemGap:6},
     grid:{left:36,right:14,top:14,bottom:42,containLabel:true},
     xAxis:{type:"category", data:monthLabels, axisLine:{lineStyle:{color:"#ccc"}}, axisLabel:{fontSize:10}},
     yAxis:{type:"value", axisLine:{show:false}, splitLine:{lineStyle:{color:"#f0f0f0"}}, axisLabel:{fontSize:10, formatter:function(v){return Math.abs(v)>=1000?(v/1000).toFixed(1)+"k":v;}}},
@@ -328,7 +332,6 @@ function drawSeasonMonth(div, seriesObj, dec){
     })
   });
   charts.push(c);
-  years.forEach(function(y){ if(!yearVisible[y]) c.dispatchAction({type:"legendToggleSelect",name:String(y)}); });
 }
 
 function renderAll(){
@@ -341,25 +344,42 @@ function renderAll(){
     return;
   }
   layout.forEach(function(item,idx){ root.appendChild(makeCard(item,idx)); });
+  // 等 DOM 回流完成、容器有尺寸后再初始化图表
+  setTimeout(renderCardCharts, 0);
+}
+
+function renderCardCharts(){
+  document.querySelectorAll(".card .chart").forEach(function(div){
+    var cfg=div._chart; if(!cfg) return;
+    if(cfg.src==="trade") drawSeasonMonth(div, cfg.ind.seriesObj, cfg.dec);
+    else drawSeason(div, cfg.ind, cfg.xlabels, cfg.years);
+    delete div._chart;
+  });
 }
 
 function makeCard(item, idx){
   var card=document.createElement("div");
   card.className="card"+(item.focus?" focus":"")+(item.key?"":" empty");
-  var bar=document.createElement("div"); bar.className="bar"; bar.draggable=true;
-  bar.innerHTML='<button data-act="pick" title="选择图表">✎</button>'+
-    '<button data-act="clear" title="清空为空白">∅</button>'+
-    '<button data-act="up" title="上移">↑</button>'+
-    '<button data-act="down" title="下移">↓</button>'+
-    '<button data-act="focus" title="关注(蓝框)" class="'+(item.focus?"on":"")+'">'+(item.focus?"★":"☆")+'</button>'+
-    '<button data-act="del" title="删除">✕</button>';
-  card.appendChild(bar);
 
   var srcKey=item.src||"daily";
   var S=SOURCES[srcKey];
   var ind=(S && S.indicators && item.key && S.indicators[item.key]) ? S.indicators[item.key] : null;
 
   if(ind){
+    // 卡片头部：标题 + ⋯ 菜单
+    var head=document.createElement("div"); head.className="card-head"; head.draggable=true;
+    var ttl=document.createElement("div"); ttl.className="ttl"; ttl.textContent=ind.title;
+    var menuBtn=document.createElement("button"); menuBtn.className="menu-btn"; menuBtn.title="操作"; menuBtn.innerHTML="⋯";
+    var menu=document.createElement("div"); menu.className="menu";
+    menu.innerHTML='<button data-act="pick" title="选择图表">✎ 选择</button>'+
+      '<button data-act="clear" title="清空为空白">∅ 清空</button>'+
+      '<button data-act="up" title="上移">↑ 上移</button>'+
+      '<button data-act="down" title="下移">↓ 下移</button>'+
+      '<button data-act="focus" title="关注(蓝框)" class="'+(item.focus?"on":"")+'">'+(item.focus?"★ 关注":"☆ 关注")+'</button>'+
+      '<button data-act="del" title="删除">✕ 删除</button>';
+    head.appendChild(ttl); head.appendChild(menuBtn); head.appendChild(menu);
+    card.appendChild(head);
+
     var dec=ind.dec, st, cls, sign, latestTxt, chgTxt, pctTxt, dateTxt;
     if(srcKey==="trade"){
       var cs=calcStats(ind.seriesObj); st=cs;
@@ -376,7 +396,6 @@ function makeCard(item, idx){
       pctTxt=(st.pct===null?"—":sign+st.pct.toFixed(2)+"%");
       dateTxt=st.latestDate||"";
     }
-    var ttl=document.createElement("div"); ttl.className="ttl"; ttl.textContent=ind.title;
     var chgVal = (srcKey==="trade") ? (cs?cs.chg:null) : st.chg;
     var pctStr = (srcKey==="trade") ? (cs&&cs.pct!==null?cs.pct.toFixed(2)+"%":"—") : pctTxt;
     var meta=document.createElement("div"); meta.className="meta";
@@ -384,9 +403,28 @@ function makeCard(item, idx){
       '<span class="chg '+cls+'">'+arrow(chgVal)+' '+chgTxt+'（'+pctStr+'）</span>'+
       '<span class="dt">'+dateTxt+'</span>';
     var div=document.createElement("div"); div.className="chart";
-    card.appendChild(ttl); card.appendChild(meta); card.appendChild(div);
-    if(srcKey==="trade") drawSeasonMonth(div, ind.seriesObj, dec);
-    else drawSeason(div, ind, S.xlabels, S.years);
+    // 延迟到 DOM 挂载后再初始化 ECharts，否则容器尺寸为 0 导致空白
+    div._chart={src:srcKey, ind:ind, xlabels:S.xlabels, years:S.years, dec:dec};
+    card.appendChild(meta); card.appendChild(div);
+
+    menuBtn.addEventListener("click", function(e){
+      e.stopPropagation();
+      // 先关闭其他卡片的菜单
+      document.querySelectorAll(".card .menu.show").forEach(function(m){ if(m!==menu) m.classList.remove("show"); });
+      menu.classList.toggle("show");
+    });
+    menu.addEventListener("click", function(e){
+      e.stopPropagation();
+      var b=e.target.closest("button"); if(!b) return;
+      var act=b.getAttribute("data-act");
+      if(act==="pick") openPicker(idx);
+      else if(act==="clear"){ layout[idx].key=null; save(); renderAll(); }
+      else if(act==="up" && idx>0){ var t=layout[idx-1]; layout[idx-1]=layout[idx]; layout[idx]=t; save(); renderAll(); }
+      else if(act==="down" && idx<layout.length-1){ var t=layout[idx+1]; layout[idx+1]=layout[idx]; layout[idx]=t; save(); renderAll(); }
+      else if(act==="focus"){ layout[idx].focus=!layout[idx].focus; save(); renderAll(); }
+      else if(act==="del"){ layout.splice(idx,1); save(); renderAll(); }
+    });
+    head.addEventListener("dragstart", function(e){ dragFrom=idx; e.dataTransfer.effectAllowed="move"; });
   } else if(item.key){
     var err=document.createElement("div"); err.className="err"; err.textContent="（该图表数据源未加载："+srcKey+"）";
     card.appendChild(err);
@@ -395,18 +433,6 @@ function makeCard(item, idx){
     ph.onclick=function(){ openPicker(idx); };
     card.appendChild(ph);
   }
-
-  bar.addEventListener("click", function(e){
-    var b=e.target.closest("button"); if(!b) return;
-    var act=b.getAttribute("data-act");
-    if(act==="pick") openPicker(idx);
-    else if(act==="clear"){ layout[idx].key=null; save(); renderAll(); }
-    else if(act==="up" && idx>0){ var t=layout[idx-1]; layout[idx-1]=layout[idx]; layout[idx]=t; save(); renderAll(); }
-    else if(act==="down" && idx<layout.length-1){ var t=layout[idx+1]; layout[idx+1]=layout[idx]; layout[idx]=t; save(); renderAll(); }
-    else if(act==="focus"){ layout[idx].focus=!layout[idx].focus; save(); renderAll(); }
-    else if(act==="del"){ layout.splice(idx,1); save(); renderAll(); }
-  });
-  bar.addEventListener("dragstart", function(e){ dragFrom=idx; e.dataTransfer.effectAllowed="move"; });
   card.addEventListener("dragover", function(e){ e.preventDefault(); });
   card.addEventListener("drop", function(e){
     e.preventDefault();
@@ -470,7 +496,7 @@ function buildYearBar(){
     b.onclick=function(){
       yearVisible[y]=!yearVisible[y];
       b.classList.toggle("off",!yearVisible[y]);
-      charts.forEach(function(c){ c.dispatchAction({type:"legendToggleSelect",name:String(y)}); });
+      renderAll();  // 按可见年份重新渲染全部卡片
     };
     bar.appendChild(b);
   });
@@ -482,6 +508,11 @@ document.getElementById("modalClose").onclick=closePicker;
 document.getElementById("modal").addEventListener("click", function(e){ if(e.target===this) closePicker(); });
 document.getElementById("modalSearch").addEventListener("input", function(e){ renderPickerList(e.target.value); });
 window.addEventListener("resize", function(){ charts.forEach(function(c){ try{ c.resize(); }catch(e){} }); });
+// 点击卡片外部关闭操作菜单
+document.addEventListener("click", function(e){
+  if(e.target.closest(".menu-btn")) return;
+  document.querySelectorAll(".card .menu.show").forEach(function(m){ m.classList.remove("show"); });
+});
 </script>
 </body>
 </html>
