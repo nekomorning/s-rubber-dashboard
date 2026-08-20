@@ -45,9 +45,9 @@ body{background:var(--bg); color:var(--text);
 .grid{display:grid; gap:14px;}
 .grid.c4{grid-template-columns:repeat(4,1fr);}
 .crow{display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:18px;}
-.crow .row-note{grid-column:1/-1; font-size:13px; color:var(--sub); background:#f7f9fc; border:1px dashed var(--border); border-radius:8px; padding:7px 12px; min-height:26px; outline:none; cursor:text; line-height:1.6;}
-.crow .row-note:focus{border-color:var(--accent); background:#fff; color:var(--text);}
-.crow .row-note:empty::before{content:attr(data-ph); color:#b3bcc9;}
+.crow .row-note{grid-column:1/-1; font-size:18px; color:var(--accent); font-weight:700; background:transparent; border:none; border-bottom:1px solid var(--border); border-radius:0; padding:8px 4px; min-height:34px; outline:none; cursor:text; line-height:1.5; margin-bottom:4px;}
+.crow .row-note:focus{border-bottom-color:var(--accent); color:var(--accent);}
+.crow .row-note:empty::before{content:attr(data-ph); color:#b3bcc9; font-weight:400;}
 .logic-tools{display:flex; gap:8px; margin:24px 0 6px;}
 @media (max-width:1200px){ .grid.c4{grid-template-columns:repeat(2,1fr);} .crow{grid-template-columns:repeat(2,1fr);} }
 @media (max-width:720px){ .grid.c4{grid-template-columns:1fr;} .crow{grid-template-columns:1fr;} .wrap{padding:12px 10px 40px;} }
