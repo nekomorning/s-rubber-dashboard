@@ -1,6 +1,6 @@
 {
  "source": "PE日报日度季节性图",
- "fetchedAt": "2026-08-19",
+ "fetchedAt": "2026-08-20",
  "count": 13,
  "indicators": {
   "pe_00": {
@@ -8,143 +8,143 @@
    "title": "石脑油现货 · 美元/吨",
    "section": "1. 原料和上游",
    "unit": "美元/吨",
-   "latest": "798.0",
-   "chg": "+9.75",
-   "date": "08/18",
+   "latest": "811.0",
+   "chg": "+13.00",
+   "date": "08/19",
    "file": "pe_daily/pe_00.png",
-   "bytes": 186314
+   "bytes": 186421
   },
   "pe_01": {
    "key": "pe_01",
    "title": "石脑油09合约 · 美元/吨",
    "section": "1. 原料和上游",
    "unit": "美元/吨",
-   "latest": "801.3",
-   "chg": "+13.55",
-   "date": "08/19",
+   "latest": "804.9",
+   "chg": "+3.54",
+   "date": "08/20",
    "file": "pe_daily/pe_01.png",
-   "bytes": 158902
+   "bytes": 158990
   },
   "pe_02": {
    "key": "pe_02",
    "title": "石脑油01合约 · 美元/吨",
    "section": "1. 原料和上游",
    "unit": "美元/吨",
-   "latest": "716.7",
-   "chg": "+7.45",
-   "date": "08/19",
+   "latest": "714.5",
+   "chg": "-2.20",
+   "date": "08/20",
    "file": "pe_daily/pe_02.png",
-   "bytes": 162764
+   "bytes": 162848
   },
   "pe_03": {
    "key": "pe_03",
    "title": "亚洲原油价格 · 美元/桶",
    "section": "1. 原料和上游",
    "unit": "美元/桶",
-   "latest": "90.60",
-   "chg": "+2.23",
-   "date": "08/18",
+   "latest": "93.63",
+   "chg": "+3.03",
+   "date": "08/19",
    "file": "pe_daily/pe_03.png",
-   "bytes": 174443
+   "bytes": 174562
   },
   "pe_04": {
    "key": "pe_04",
    "title": "布伦特主力 · 美元/桶",
    "section": "1. 原料和上游",
    "unit": "美元/桶",
-   "latest": "91.62",
-   "chg": "+0.14",
-   "date": "08/19",
+   "latest": "92.16",
+   "chg": "+0.54",
+   "date": "08/20",
    "file": "pe_daily/pe_04.png",
-   "bytes": 211135
+   "bytes": 211228
   },
   "pe_05": {
    "key": "pe_05",
    "title": "布伦特01 · 美元/桶",
    "section": "1. 原料和上游",
    "unit": "美元/桶",
-   "latest": "86.20",
-   "chg": "+0.70",
-   "date": "08/19",
+   "latest": "85.37",
+   "chg": "-0.83",
+   "date": "08/20",
    "file": "pe_daily/pe_05.png",
-   "bytes": 202074
+   "bytes": 202144
   },
   "pe_06": {
    "key": "pe_06",
    "title": "布伦特05 · 美元/桶",
    "section": "1. 原料和上游",
    "unit": "美元/桶",
-   "latest": "81.28",
-   "chg": "+0.56",
-   "date": "08/19",
+   "latest": "80.30",
+   "chg": "-0.98",
+   "date": "08/20",
    "file": "pe_daily/pe_06.png",
-   "bytes": 187733
+   "bytes": 187724
   },
   "pe_07": {
    "key": "pe_07",
    "title": "布伦特09 · 美元/桶",
    "section": "1. 原料和上游",
    "unit": "美元/桶",
-   "latest": "78.74",
-   "chg": "+0.45",
-   "date": "08/19",
+   "latest": "77.79",
+   "chg": "-0.95",
+   "date": "08/20",
    "file": "pe_daily/pe_07.png",
-   "bytes": 196075
+   "bytes": 196057
   },
   "pe_08": {
    "key": "pe_08",
    "title": "石脑油现货Crk · 美元/吨",
    "section": "2. 裂解价差",
    "unit": "美元/吨",
-   "latest": "139.3",
-   "chg": "-7.24",
-   "date": "08/18",
+   "latest": "151.3",
+   "chg": "+11.99",
+   "date": "08/19",
    "file": "pe_daily/pe_08.png",
-   "bytes": 181359
+   "bytes": 181488
   },
   "pe_09": {
    "key": "pe_09",
    "title": "石脑油01Crk · 美元/吨",
    "section": "2. 裂解价差",
    "unit": "美元/吨",
-   "latest": "96.02",
-   "chg": "+2.41",
-   "date": "08/19",
+   "latest": "99.80",
+   "chg": "+3.78",
+   "date": "08/20",
    "file": "pe_daily/pe_09.png",
-   "bytes": 157172
+   "bytes": 157282
   },
   "pe_10": {
    "key": "pe_10",
    "title": "石脑油05Crk · 美元/吨",
    "section": "2. 裂解价差",
    "unit": "美元/吨",
-   "latest": "76.63",
-   "chg": "-0.42",
-   "date": "08/19",
+   "latest": "81.14",
+   "chg": "+4.51",
+   "date": "08/20",
    "file": "pe_daily/pe_10.png",
-   "bytes": 134701
+   "bytes": 134742
   },
   "pe_11": {
    "key": "pe_11",
    "title": "乙烯东北亚 · 美元/吨",
    "section": "3. 乙烯",
    "unit": "美元/吨",
-   "latest": "981.0",
-   "chg": "+0.00",
+   "latest": "210.0",
+   "chg": "+27.00",
    "date": "08/19",
    "file": "pe_daily/pe_11.png",
-   "bytes": 110495
+   "bytes": 110801
   },
   "pe_12": {
    "key": "pe_12",
    "title": "乙烯-石脑油价差 · 美元/吨",
    "section": "3. 乙烯",
    "unit": "美元/吨",
-   "latest": "183.0",
-   "chg": "-9.75",
-   "date": "08/18",
+   "latest": "210.0",
+   "chg": "+27.00",
+   "date": "08/19",
    "file": "pe_daily/pe_12.png",
-   "bytes": 195140
+   "bytes": 195114
   }
  }
 }
