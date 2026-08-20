@@ -139,7 +139,7 @@ body{background:var(--bg); color:var(--text);
   <div class="modal" id="modalLogic" style="display:none">
     <div class="modal-box">
       <div class="modal-head"><span>编辑定价逻辑</span><button id="logicClose">✕</button></div>
-      <div class="modal-search" style="font-size:12px;color:var(--sub)">每行一条。用 <code>**文字**</code> 标记红色加粗（如 <code>**原料是核心变量（快变量）**</code>）。</div>
+      <div class="modal-search" style="font-size:12px;color:var(--sub)">每行一条。三种加粗标记：<code>**红**</code> 红色加粗 · <code>@@蓝@@</code> 蓝色加粗 · <code>%%绿%%</code> 绿色加粗。行首「供应：/需求：/核心：」自动蓝色加粗。</div>
       <div class="modal-list" style="padding:10px 16px 16px;">
         <textarea id="logicInput" style="width:100%; height:150px; border:1px solid var(--border); border-radius:8px; padding:10px; font-size:14px; line-height:1.7; font-family:inherit; resize:vertical; box-sizing:border-box;"></textarea>
         <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:10px;">
@@ -239,6 +239,8 @@ function logicLineToHtml(line){
   var s=esc(line);
   s=s.replace(/^([供应需求核心价格供需]+\s*[:：])/, '<b>$1</b>');
   s=s.replace(/\*\*([^*]+)\*\*/g, '<span style="color:#e0301e;font-weight:700">$1</span>');
+  s=s.replace(/@@([^@]+)@@/g, '<span style="color:#0f4c81;font-weight:700">$1</span>');
+  s=s.replace(/%%([^%]+)%%/g, '<span style="color:#0a9a5c;font-weight:700">$1</span>');
   return s;
 }
 function renderLogic(){
