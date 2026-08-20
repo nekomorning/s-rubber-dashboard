@@ -41,11 +41,16 @@ body{background:var(--bg); color:var(--text);
 .abtn{padding:6px 14px; border:1px solid var(--border); background:#fff; border-radius:8px; cursor:pointer; font-size:13px; color:var(--accent);}
 .abtn:hover{background:#eef3f9;}
 .abtn.saved{color:#0a9a5c; border-color:#0a9a5c; background:#f0faf4;}
-/* 图表栅格（一行四个） */
+/* 图表栅格（一行四个）+ 行标题 */
 .grid{display:grid; gap:14px;}
 .grid.c4{grid-template-columns:repeat(4,1fr);}
-@media (max-width:1200px){ .grid.c4{grid-template-columns:repeat(2,1fr);} }
-@media (max-width:720px){ .grid.c4{grid-template-columns:1fr;} .wrap{padding:12px 10px 40px;} }
+.crow{display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:18px;}
+.crow .row-note{grid-column:1/-1; font-size:13px; color:var(--sub); background:#f7f9fc; border:1px dashed var(--border); border-radius:8px; padding:7px 12px; min-height:26px; outline:none; cursor:text; line-height:1.6;}
+.crow .row-note:focus{border-color:var(--accent); background:#fff; color:var(--text);}
+.crow .row-note:empty::before{content:attr(data-ph); color:#b3bcc9;}
+.logic-tools{display:flex; gap:8px; margin:24px 0 6px;}
+@media (max-width:1200px){ .grid.c4{grid-template-columns:repeat(2,1fr);} .crow{grid-template-columns:repeat(2,1fr);} }
+@media (max-width:720px){ .grid.c4{grid-template-columns:1fr;} .crow{grid-template-columns:1fr;} .wrap{padding:12px 10px 40px;} }
 .card{background:var(--card); border:1px solid var(--border); border-radius:10px; padding:8px 12px 6px; min-width:0; position:relative;}
 .card.focus{box-shadow:0 0 0 2px var(--focus); border-color:var(--focus);}
 .card.empty{border-style:dashed; display:flex; align-items:center; justify-content:center; min-height:230px;}
@@ -102,13 +107,15 @@ body{background:var(--bg); color:var(--text);
     <a class="tab" href="https://nekomorning.github.io/s-rubber-dashboard/weekly.html">周报</a>
   </div>
 
-  <h2 class="sec-title">定价逻辑</h2>
-  <div class="logic">
-    <ul>
-      <li><b>供应：</b><span style="color:#e0301e;font-weight:700">原料是核心变量（快变量）</span>，丁二烯开工、进出口、合成胶出口都是结果</li>
-      <li><b>需求：</b>下游调节去应对供应（慢变量），来自价差需求（天胶-合成、丁二烯区域价差）</li>
-      <li><b>核心：</b>石脑油（原料缺不缺）、LPG（原料轻质化出率低的影响）</li>
-    </ul>
+  <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
+    <h2 class="sec-title" style="margin:24px 0 6px;">定价逻辑</h2>
+    <div class="logic-tools">
+      <button class="abtn" id="editLogic">✎ 编辑</button>
+      <button class="abtn" id="historyLogic">🕘 历史</button>
+    </div>
+  </div>
+  <div class="logic" id="logicBox">
+    <ul id="logicList"></ul>
   </div>
 
   <h2 class="sec-title">核心数据跟踪图表</h2>
@@ -116,15 +123,37 @@ body{background:var(--bg); color:var(--text);
     <span class="sec-sub">数据来源于各看板页（日度价格 / 开工库存 / 贸易流），跟随每日刷新同步更新 · 点卡片右上角按钮可自定义（✎选择 / ∅清空 / ↑↓排序 / ☆关注蓝框 / ✕删除），卡片可拖拽排序</span>
     <button class="abtn" id="addCard">＋ 新增卡片</button>
     <button class="abtn" id="saveLayout">💾 保存布局</button>
+    <button class="abtn" id="saveContent">💾 保存内容</button>
   </div>
   <div class="ybar" id="ybar"></div>
-  <div class="grid c4" id="charts"></div>
+  <div id="charts"></div>
 
   <div class="modal" id="modal">
     <div class="modal-box">
       <div class="modal-head"><span>选择图表</span><button id="modalClose">✕</button></div>
       <div class="modal-search"><input id="modalSearch" placeholder="搜索图表名称…"></div>
       <div class="modal-list" id="modalList"></div>
+    </div>
+  </div>
+
+  <div class="modal" id="modalLogic" style="display:none">
+    <div class="modal-box">
+      <div class="modal-head"><span>编辑定价逻辑</span><button id="logicClose">✕</button></div>
+      <div class="modal-search" style="font-size:12px;color:var(--sub)">每行一条。用 <code>**文字**</code> 标记红色加粗（如 <code>**原料是核心变量（快变量）**</code>）。</div>
+      <div class="modal-list" style="padding:10px 16px 16px;">
+        <textarea id="logicInput" style="width:100%; height:150px; border:1px solid var(--border); border-radius:8px; padding:10px; font-size:14px; line-height:1.7; font-family:inherit; resize:vertical; box-sizing:border-box;"></textarea>
+        <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:10px;">
+          <button class="abtn" id="logicSave">保存</button>
+          <button class="abtn" id="logicCancel">取消</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="modalHistory" style="display:none">
+    <div class="modal-box">
+      <div class="modal-head"><span>定价逻辑 · 历史编辑记录</span><button id="historyClose">✕</button></div>
+      <div class="modal-list" id="historyList" style="padding:10px 16px 16px;"></div>
     </div>
   </div>
 </div>
@@ -169,9 +198,22 @@ var SOURCES={
 var allYears=[], yearVisible={}, charts=[], layout=[], dragFrom=null, currentPickIdx=null;
 var LS_KEY="coreLayoutV1";
 var LS_SAVED_KEY="coreLayoutV1_saved";
+var CONTENT_KEY="coreContentV1";
+var CONTENT_SAVED_KEY="coreContentV1_saved";
+
+/* 定价逻辑默认文本（每行一条；**文字** = 红色加粗；行首“供应：/需求：/核心：”自动加粗蓝色） */
+var DEFAULT_LOGIC=[
+  "供应：**原料是核心变量（快变量）**，丁二烯开工、进出口、合成胶出口都是结果",
+  "需求：下游调节去应对供应（慢变量），来自价差需求（天胶-合成、丁二烯区域价差）",
+  "核心：石脑油（原料缺不缺）、LPG（原料轻质化出率低的影响）"
+];
+var logicText=null;    // null=使用默认；保存后为数组
+var rowNotes=[];       // [{cardId, text}] 行标题，按行内第一张卡的 uid 锚定
+var logicHistory=[];   // [{date, text:[]}] 定价逻辑编辑历史（最新在前）
 
 function defaultLayout(){
-  return DEFAULT_DAILY.map(function(k){ return {id:uid(), src:"daily", key:k, focus:false}; });
+  // 默认布局卡片用固定 id（d1~d4），保证行标题锚定稳定（不受每次刷新重新生成随机 id 影响）
+  return DEFAULT_DAILY.map(function(k, i){ return {id:"d"+(i+1), src:"daily", key:k, focus:false}; });
 }
 function save(){ try{ localStorage.setItem(LS_KEY, JSON.stringify(layout)); }catch(e){} }
 function loadLayout(){
@@ -189,6 +231,104 @@ function loadLayout(){
 function fetchJson(u){
   return fetch(u,{cache:"no-store"})
     .then(function(r){ if(!r.ok) throw new Error("HTTP "+r.status); return r.json(); });
+}
+
+/* ---- 定价逻辑 / 行标题 / 保存内容 ---- */
+function esc(s){ var d=document.createElement("div"); d.textContent=(s==null?"":String(s)); return d.innerHTML; }
+function logicLineToHtml(line){
+  var s=esc(line);
+  s=s.replace(/^([供应需求核心价格供需]+\s*[:：])/, '<b>$1</b>');
+  s=s.replace(/\*\*([^*]+)\*\*/g, '<span style="color:#e0301e;font-weight:700">$1</span>');
+  return s;
+}
+function renderLogic(){
+  var list=document.getElementById("logicList");
+  if(!list) return;
+  var lines=logicText||DEFAULT_LOGIC;
+  list.innerHTML="";
+  lines.forEach(function(line){
+    var li=document.createElement("li");
+    li.innerHTML=logicLineToHtml(line);
+    list.appendChild(li);
+  });
+}
+function rowNoteFor(cardId){
+  for(var i=0;i<rowNotes.length;i++){ if(rowNotes[i].cardId===cardId) return rowNotes[i]; }
+  return null;
+}
+function setRowNote(cardId, text){
+  var rn=rowNoteFor(cardId);
+  if(rn){ rn.text=text; } else { rowNotes.push({cardId:cardId, text:text}); }
+  saveContentAuto();
+}
+function contentPayload(){
+  return {logic: logicText||DEFAULT_LOGIC, rowNotes: rowNotes, history: logicHistory,
+          savedAt: new Date().toLocaleString('zh-CN')};
+}
+function saveContentAuto(){ try{ localStorage.setItem(CONTENT_KEY, JSON.stringify(contentPayload())); }catch(e){} }
+function loadContent(){
+  var data=null;
+  try{ var s=localStorage.getItem(CONTENT_SAVED_KEY); if(s) data=JSON.parse(s); }catch(e){}
+  if(!data){ try{ var s2=localStorage.getItem(CONTENT_KEY); if(s2) data=JSON.parse(s2); }catch(e){} }
+  if(data){
+    if(Array.isArray(data.logic)&&data.logic.length) logicText=data.logic;
+    if(Array.isArray(data.rowNotes)) rowNotes=data.rowNotes;
+    if(Array.isArray(data.history)) logicHistory=data.history;
+  }
+  renderLogic();
+}
+function openLogicEdit(){
+  var ta=document.getElementById("logicInput");
+  ta.value=(logicText||DEFAULT_LOGIC).join("\n");
+  document.getElementById("modalLogic").style.display="flex";
+  setTimeout(function(){ ta.focus(); }, 50);
+}
+function closeLogicEdit(){ document.getElementById("modalLogic").style.display="none"; }
+function saveLogicEdit(){
+  var raw=document.getElementById("logicInput").value;
+  var lines=raw.split("\n").map(function(s){return s.trim();}).filter(Boolean);
+  if(!lines.length) return;
+  if(JSON.stringify(lines)!==JSON.stringify(logicText||DEFAULT_LOGIC)){
+    logicHistory.unshift({date:new Date().toLocaleString('zh-CN'), text:lines.slice()});
+    if(logicHistory.length>50) logicHistory.pop();
+  }
+  logicText=lines.slice();
+  saveContentAuto();
+  renderLogic();
+  closeLogicEdit();
+}
+function openLogicHistory(){
+  var list=document.getElementById("historyList");
+  list.innerHTML="";
+  if(!logicHistory.length){
+    list.innerHTML='<div style="padding:20px;color:var(--sub);text-align:center">暂无历史记录（编辑并保存定价逻辑后自动记录）</div>';
+    document.getElementById("modalHistory").style.display="flex";
+    return;
+  }
+  logicHistory.forEach(function(h){
+    var item=document.createElement("div");
+    item.style.cssText='border:1px solid var(--border); border-radius:8px; padding:10px 12px; margin-bottom:10px; background:#fafbfd;';
+    var hd=document.createElement("div");
+    hd.style.cssText='font-size:12px; color:var(--accent); font-weight:700; margin-bottom:6px;';
+    hd.textContent=h.date;
+    item.appendChild(hd);
+    var ul=document.createElement("ul");
+    ul.style.cssText='list-style:none; padding:0; margin:0;';
+    h.text.forEach(function(line){
+      var li=document.createElement("li");
+      li.style.cssText='font-size:13px; color:var(--text); padding-left:14px; position:relative; margin:3px 0;';
+      li.innerHTML='<span style="position:absolute; left:0; color:var(--accent);">●</span>'+logicLineToHtml(line);
+      ul.appendChild(li);
+    });
+    item.appendChild(ul);
+    var rb=document.createElement("button");
+    rb.className="abtn"; rb.textContent="恢复此版本";
+    rb.style.cssText='margin-top:8px; font-size:12px; padding:3px 10px;';
+    rb.onclick=function(){ logicText=h.text.slice(); saveContentAuto(); renderLogic(); openLogicHistory(); };
+    item.appendChild(rb);
+    list.appendChild(item);
+  });
+  document.getElementById("modalHistory").style.display="flex";
 }
 
 /* ---- 贸易流：从 butadiene_trade.json 构建 indicators（月度季节图，不含桑基/堆积） ---- */
@@ -285,6 +425,7 @@ function init(){
       allYears.forEach(function(y,i){ yearVisible[y]=(i>=n-4); });
       document.getElementById("dataDate").textContent="数据截至 "+(SOURCES.daily.date||"");
       buildYearBar();
+      loadContent();
       layout=loadLayout();
       renderAll();
     })
@@ -366,7 +507,25 @@ function renderAll(){
     root.innerHTML='<div style="padding:30px;color:#6b7686">暂无卡片，点击上方「＋ 新增卡片」添加。</div>';
     return;
   }
-  layout.forEach(function(item,idx){ root.appendChild(makeCard(item,idx)); });
+  var GROUP=4;
+  for(var i=0;i<layout.length;i+=GROUP){
+    var group=layout.slice(i,i+GROUP);
+    var row=document.createElement("div"); row.className="crow";
+    // 行标题：可编辑小结（按组首卡片 uid 锚定）
+    var firstId=group[0].id;
+    var note=document.createElement("div");
+    note.className="row-note"; note.contentEditable="true";
+    note.setAttribute("data-ph","本行小结：点击输入总结 / 结论…");
+    var rn=rowNoteFor(firstId);
+    if(rn&&rn.text) note.textContent=rn.text;
+    (function(cid, el){
+      el.addEventListener("input", function(){ setRowNote(cid, el.textContent); });
+      el.addEventListener("keydown", function(e){ if(e.key==="Enter"){ e.preventDefault(); el.blur(); } });
+    })(firstId, note);
+    row.appendChild(note);
+    group.forEach(function(item, gi){ row.appendChild(makeCard(item, i+gi)); });
+    root.appendChild(row);
+  }
   // 等 DOM 回流完成、容器有尺寸后再初始化图表
   setTimeout(renderCardCharts, 0);
 }
@@ -566,6 +725,26 @@ document.getElementById("saveLayout").onclick=function(){
     setTimeout(function(){ b.innerHTML=orig; b.classList.remove("saved"); }, 2500);
   }catch(e){ alert("保存失败："+e.message); }
 };
+document.getElementById("saveContent").onclick=function(){
+  var b=this;
+  try{
+    localStorage.setItem(CONTENT_SAVED_KEY, JSON.stringify(contentPayload()));
+    saveContentAuto();
+    var orig=b.innerHTML;
+    var t=new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'});
+    b.innerHTML="✓ 已保存 "+t;
+    b.classList.add("saved");
+    setTimeout(function(){ b.innerHTML=orig; b.classList.remove("saved"); }, 2500);
+  }catch(e){ alert("保存失败："+e.message); }
+};
+document.getElementById("editLogic").onclick=openLogicEdit;
+document.getElementById("logicClose").onclick=closeLogicEdit;
+document.getElementById("logicCancel").onclick=closeLogicEdit;
+document.getElementById("logicSave").onclick=saveLogicEdit;
+document.getElementById("historyLogic").onclick=openLogicHistory;
+document.getElementById("historyClose").onclick=function(){ document.getElementById("modalHistory").style.display="none"; };
+document.getElementById("modalLogic").addEventListener("click", function(e){ if(e.target===this) closeLogicEdit(); });
+document.getElementById("modalHistory").addEventListener("click", function(e){ if(e.target===this) this.style.display="none"; });
 document.getElementById("modalClose").onclick=closePicker;
 document.getElementById("modal").addEventListener("click", function(e){ if(e.target===this) closePicker(); });
 document.getElementById("modalSearch").addEventListener("input", function(e){ renderPickerList(e.target.value); });
