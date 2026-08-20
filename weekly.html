@@ -649,7 +649,7 @@ function renderNav(){
     var navs = [
     ['core.html','核心逻辑'],['balance.html','平衡表'],['p3.html','贸易流'],
     ['capacity.html','产能投放'],['maint.html','装置检修'],['p2.html','开工库存表需'],
-    ['index.html','日度价格'],['weekly.html','周报'],
+    ['p1.html','日度价格'],['weekly.html','周报'],
   ];
   document.getElementById('navTabs').innerHTML = navs.map(function(n){
     return '<a class="'+(n[0]==='weekly.html'?'active':'')+'" href="https://nekomorning.github.io/s-rubber-dashboard/'+n[0]+'">'+n[1]+'</a>';
