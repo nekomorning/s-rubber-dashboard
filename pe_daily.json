@@ -1,128 +1,128 @@
 {
  "source": "PE日报日度季节性图",
- "fetchedAt": "2026-08-18",
- "count": 45,
+ "fetchedAt": "2026-08-19",
+ "count": 13,
  "indicators": {
   "pe_00": {
    "key": "pe_00",
    "title": "石脑油现货 · 美元/吨",
    "section": "1. 原料和上游",
    "unit": "美元/吨",
-   "latest": "788.2",
-   "chg": "+7.36",
-   "date": "08/17",
+   "latest": "798.0",
+   "chg": "+9.75",
+   "date": "08/18",
    "file": "pe_daily/pe_00.png",
-   "bytes": 186218
+   "bytes": 186314
   },
   "pe_01": {
    "key": "pe_01",
    "title": "石脑油09合约 · 美元/吨",
    "section": "1. 原料和上游",
    "unit": "美元/吨",
-   "latest": "792.7",
-   "chg": "+19.22",
-   "date": "08/18",
+   "latest": "801.3",
+   "chg": "+13.55",
+   "date": "08/19",
    "file": "pe_daily/pe_01.png",
-   "bytes": 158762
+   "bytes": 158902
   },
   "pe_02": {
    "key": "pe_02",
    "title": "石脑油01合约 · 美元/吨",
    "section": "1. 原料和上游",
    "unit": "美元/吨",
-   "latest": "712.8",
-   "chg": "+18.87",
-   "date": "08/18",
+   "latest": "716.7",
+   "chg": "+7.45",
+   "date": "08/19",
    "file": "pe_daily/pe_02.png",
-   "bytes": 162606
+   "bytes": 162764
   },
   "pe_03": {
    "key": "pe_03",
    "title": "亚洲原油价格 · 美元/桶",
    "section": "1. 原料和上游",
    "unit": "美元/桶",
-   "latest": "88.37",
-   "chg": "-0.16",
-   "date": "08/17",
+   "latest": "90.60",
+   "chg": "+2.23",
+   "date": "08/18",
    "file": "pe_daily/pe_03.png",
-   "bytes": 174347
+   "bytes": 174443
   },
   "pe_04": {
    "key": "pe_04",
    "title": "布伦特主力 · 美元/桶",
    "section": "1. 原料和上游",
    "unit": "美元/桶",
-   "latest": "91.48",
-   "chg": "+2.36",
-   "date": "08/18",
+   "latest": "91.62",
+   "chg": "+0.14",
+   "date": "08/19",
    "file": "pe_daily/pe_04.png",
-   "bytes": 211101
+   "bytes": 211135
   },
   "pe_05": {
    "key": "pe_05",
    "title": "布伦特01 · 美元/桶",
    "section": "1. 原料和上游",
    "unit": "美元/桶",
-   "latest": "85.50",
-   "chg": "+3.00",
-   "date": "08/18",
+   "latest": "86.20",
+   "chg": "+0.70",
+   "date": "08/19",
    "file": "pe_daily/pe_05.png",
-   "bytes": 201917
+   "bytes": 202074
   },
   "pe_06": {
    "key": "pe_06",
    "title": "布伦特05 · 美元/桶",
    "section": "1. 原料和上游",
    "unit": "美元/桶",
-   "latest": "80.72",
-   "chg": "+2.25",
-   "date": "08/18",
+   "latest": "81.28",
+   "chg": "+0.56",
+   "date": "08/19",
    "file": "pe_daily/pe_06.png",
-   "bytes": 187685
+   "bytes": 187733
   },
   "pe_07": {
    "key": "pe_07",
    "title": "布伦特09 · 美元/桶",
    "section": "1. 原料和上游",
    "unit": "美元/桶",
-   "latest": "78.29",
-   "chg": "+1.69",
-   "date": "08/18",
+   "latest": "78.74",
+   "chg": "+0.45",
+   "date": "08/19",
    "file": "pe_daily/pe_07.png",
-   "bytes": 195968
+   "bytes": 196075
   },
   "pe_08": {
    "key": "pe_08",
    "title": "石脑油现货Crk · 美元/吨",
    "section": "2. 裂解价差",
    "unit": "美元/吨",
-   "latest": "146.6",
-   "chg": "+4.19",
-   "date": "08/17",
+   "latest": "139.3",
+   "chg": "-7.24",
+   "date": "08/18",
    "file": "pe_daily/pe_08.png",
-   "bytes": 181279
+   "bytes": 181359
   },
   "pe_09": {
    "key": "pe_09",
    "title": "石脑油01Crk · 美元/吨",
    "section": "2. 裂解价差",
    "unit": "美元/吨",
-   "latest": "97.24",
-   "chg": "-2.73",
-   "date": "08/18",
+   "latest": "96.02",
+   "chg": "+2.41",
+   "date": "08/19",
    "file": "pe_daily/pe_09.png",
-   "bytes": 157046
+   "bytes": 157172
   },
   "pe_10": {
    "key": "pe_10",
    "title": "石脑油05Crk · 美元/吨",
    "section": "2. 裂解价差",
    "unit": "美元/吨",
-   "latest": "79.75",
-   "chg": "-1.57",
-   "date": "08/18",
+   "latest": "76.63",
+   "chg": "-0.42",
+   "date": "08/19",
    "file": "pe_daily/pe_10.png",
-   "bytes": 134635
+   "bytes": 134701
   },
   "pe_11": {
    "key": "pe_11",
@@ -131,372 +131,20 @@
    "unit": "美元/吨",
    "latest": "981.0",
    "chg": "+0.00",
-   "date": "08/18",
+   "date": "08/19",
    "file": "pe_daily/pe_11.png",
-   "bytes": 110497
+   "bytes": 110495
   },
   "pe_12": {
    "key": "pe_12",
    "title": "乙烯-石脑油价差 · 美元/吨",
    "section": "3. 乙烯",
    "unit": "美元/吨",
-   "latest": "192.8",
-   "chg": "+7.64",
-   "date": "08/17",
+   "latest": "183.0",
+   "chg": "-9.75",
+   "date": "08/18",
    "file": "pe_daily/pe_12.png",
-   "bytes": 195088
-  },
-  "pe_13": {
-   "key": "pe_13",
-   "title": "LL华北价格 · 元/吨",
-   "section": "4. 现货LL",
-   "unit": "元/吨",
-   "latest": "150.0",
-   "chg": "+100.00",
-   "date": "08/18",
-   "file": "pe_daily/pe_13.png",
-   "bytes": 170790
-  },
-  "pe_14": {
-   "key": "pe_14",
-   "title": "LL华南价格 · 元/吨",
-   "section": "4. 现货LL",
-   "unit": "元/吨",
-   "latest": "150.0",
-   "chg": "+100.00",
-   "date": "08/18",
-   "file": "pe_daily/pe_14.png",
-   "bytes": 158473
-  },
-  "pe_15": {
-   "key": "pe_15",
-   "title": "LL华东价格 · 元/吨",
-   "section": "4. 现货LL",
-   "unit": "元/吨",
-   "latest": "150.0",
-   "chg": "+100.00",
-   "date": "08/18",
-   "file": "pe_daily/pe_15.png",
-   "bytes": 159916
-  },
-  "pe_16": {
-   "key": "pe_16",
-   "title": "HD注塑华北价格 · 元/吨",
-   "section": "4. 现货LL",
-   "unit": "元/吨",
-   "latest": "150.0",
-   "chg": "+100.00",
-   "date": "08/18",
-   "file": "pe_daily/pe_16.png",
-   "bytes": 163537
-  },
-  "pe_17": {
-   "key": "pe_17",
-   "title": "LD华北 · 元/吨",
-   "section": "4. 现货LL",
-   "unit": "元/吨",
-   "latest": "150.0",
-   "chg": "+100.00",
-   "date": "08/18",
-   "file": "pe_daily/pe_17.png",
-   "bytes": 157063
-  },
-  "pe_18": {
-   "key": "pe_18",
-   "title": "LL 价格（今日/一周前/两周前）",
-   "section": "4. 现货LL",
-   "unit": "",
-   "latest": "150.0",
-   "chg": "+100.00",
-   "date": "08/18",
-   "file": "pe_daily/pe_18.png",
-   "bytes": 96633
-  },
-  "pe_19": {
-   "key": "pe_19",
-   "title": "LL华东-华北 · 元/吨",
-   "section": "4. 现货LL",
-   "unit": "元/吨",
-   "latest": "150.0",
-   "chg": "+100.00",
-   "date": "08/18",
-   "file": "pe_daily/pe_19.png",
-   "bytes": 235408
-  },
-  "pe_20": {
-   "key": "pe_20",
-   "title": "LL华南-华北 · 元/吨",
-   "section": "4. 现货LL",
-   "unit": "元/吨",
-   "latest": "350.0",
-   "chg": "+0.00",
-   "date": "08/18",
-   "file": "pe_daily/pe_20.png",
-   "bytes": 216176
-  },
-  "pe_21": {
-   "key": "pe_21",
-   "title": "LL-HD(华北) · 元/吨",
-   "section": "4. 现货LL",
-   "unit": "元/吨",
-   "latest": "-50.00",
-   "chg": "-80.00",
-   "date": "08/18",
-   "file": "pe_daily/pe_21.png",
-   "bytes": 173956
-  },
-  "pe_22": {
-   "key": "pe_22",
-   "title": "LL-LD(华北) · 元/吨",
-   "section": "4. 现货LL",
-   "unit": "元/吨",
-   "latest": "",
-   "chg": "",
-   "date": "",
-   "file": "pe_daily/pe_22.png",
-   "bytes": 181810
-  },
-  "pe_23": {
-   "key": "pe_23",
-   "title": "LL01合约价格 · 元/吨",
-   "section": "5. 盘面",
-   "unit": "元/吨",
-   "latest": "246.0",
-   "chg": "+18.00",
-   "date": "08/18",
-   "file": "pe_daily/pe_23.png",
-   "bytes": 198500
-  },
-  "pe_24": {
-   "key": "pe_24",
-   "title": "LL05合约价格 · 元/吨",
-   "section": "5. 盘面",
-   "unit": "元/吨",
-   "latest": "246.0",
-   "chg": "+18.00",
-   "date": "08/18",
-   "file": "pe_daily/pe_24.png",
-   "bytes": 193023
-  },
-  "pe_25": {
-   "key": "pe_25",
-   "title": "LL09合约价格 · 元/吨",
-   "section": "5. 盘面",
-   "unit": "元/吨",
-   "latest": "246.0",
-   "chg": "+18.00",
-   "date": "08/18",
-   "file": "pe_daily/pe_25.png",
-   "bytes": 200458
-  },
-  "pe_26": {
-   "key": "pe_26",
-   "title": "LL月差01-05 · 元/吨",
-   "section": "5. 盘面",
-   "unit": "元/吨",
-   "latest": "246.0",
-   "chg": "+18.00",
-   "date": "08/18",
-   "file": "pe_daily/pe_26.png",
-   "bytes": 156832
-  },
-  "pe_27": {
-   "key": "pe_27",
-   "title": "LL月差05-09 · 元/吨",
-   "section": "5. 盘面",
-   "unit": "元/吨",
-   "latest": "-637.0",
-   "chg": "+25.00",
-   "date": "08/18",
-   "file": "pe_daily/pe_27.png",
-   "bytes": 172574
-  },
-  "pe_28": {
-   "key": "pe_28",
-   "title": "LL月差09-01 · 元/吨",
-   "section": "5. 盘面",
-   "unit": "元/吨",
-   "latest": "391.0",
-   "chg": "-43.00",
-   "date": "08/18",
-   "file": "pe_daily/pe_28.png",
-   "bytes": 161508
-  },
-  "pe_29": {
-   "key": "pe_29",
-   "title": "LL01合约基差 · 元/吨",
-   "section": "5. 盘面",
-   "unit": "元/吨",
-   "latest": "511.0",
-   "chg": "-82.00",
-   "date": "08/18",
-   "file": "pe_daily/pe_29.png",
-   "bytes": 197242
-  },
-  "pe_30": {
-   "key": "pe_30",
-   "title": "LL05合约基差 · 元/吨",
-   "section": "5. 盘面",
-   "unit": "元/吨",
-   "latest": "757.0",
-   "chg": "-64.00",
-   "date": "08/18",
-   "file": "pe_daily/pe_30.png",
-   "bytes": 196925
-  },
-  "pe_31": {
-   "key": "pe_31",
-   "title": "LL09合约基差 · 元/吨",
-   "section": "5. 盘面",
-   "unit": "元/吨",
-   "latest": "120.0",
-   "chg": "-39.00",
-   "date": "08/18",
-   "file": "pe_daily/pe_31.png",
-   "bytes": 196314
-  },
-  "pe_32": {
-   "key": "pe_32",
-   "title": "塑料进口价格 · 元/吨",
-   "section": "6. 进口利润",
-   "unit": "元/吨",
-   "latest": "955.0",
-   "chg": "+0.00",
-   "date": "08/17",
-   "file": "pe_daily/pe_32.png",
-   "bytes": 91430
-  },
-  "pe_33": {
-   "key": "pe_33",
-   "title": "塑料进口折盘 · 元/吨",
-   "section": "6. 进口利润",
-   "unit": "元/吨",
-   "latest": "-293.6",
-   "chg": "+137.57",
-   "date": "08/17",
-   "file": "pe_daily/pe_33.png",
-   "bytes": 123937
-  },
-  "pe_34": {
-   "key": "pe_34",
-   "title": "01对应塑料进口利润 · 元/吨",
-   "section": "6. 进口利润",
-   "unit": "元/吨",
-   "latest": "-293.6",
-   "chg": "+137.57",
-   "date": "08/17",
-   "file": "pe_daily/pe_34.png",
-   "bytes": 205647
-  },
-  "pe_35": {
-   "key": "pe_35",
-   "title": "05对应塑料进口利润 · 元/吨",
-   "section": "6. 进口利润",
-   "unit": "元/吨",
-   "latest": "-521.6",
-   "chg": "+132.57",
-   "date": "08/17",
-   "file": "pe_daily/pe_35.png",
-   "bytes": 209530
-  },
-  "pe_36": {
-   "key": "pe_36",
-   "title": "09对应塑料进口利润 · 元/吨",
-   "section": "6. 进口利润",
-   "unit": "元/吨",
-   "latest": "140.4",
-   "chg": "+159.57",
-   "date": "08/17",
-   "file": "pe_daily/pe_36.png",
-   "bytes": 202632
-  },
-  "pe_37": {
-   "key": "pe_37",
-   "title": "LL现货外采石脑油利润 · 元/吨",
-   "section": "7. 利润",
-   "unit": "元/吨",
-   "latest": "123.0",
-   "chg": "+42.31",
-   "date": "08/17",
-   "file": "pe_daily/pe_37.png",
-   "bytes": 185276
-  },
-  "pe_38": {
-   "key": "pe_38",
-   "title": "LL09合约外采石脑油利润 · 元/吨",
-   "section": "7. 利润",
-   "unit": "元/吨",
-   "latest": "14.61",
-   "chg": "-65.79",
-   "date": "08/18",
-   "file": "pe_daily/pe_38.png",
-   "bytes": 167327
-  },
-  "pe_39": {
-   "key": "pe_39",
-   "title": "LL01合约外采石脑油利润 · 元/吨",
-   "section": "7. 利润",
-   "unit": "元/吨",
-   "latest": "255.1",
-   "chg": "-19.72",
-   "date": "08/18",
-   "file": "pe_daily/pe_39.png",
-   "bytes": 191884
-  },
-  "pe_40": {
-   "key": "pe_40",
-   "title": "LL现货原油利润 · 元/吨",
-   "section": "7. 利润",
-   "unit": "元/吨",
-   "latest": "-830.9",
-   "chg": "+149.41",
-   "date": "08/17",
-   "file": "pe_daily/pe_40.png",
-   "bytes": 168688
-  },
-  "pe_41": {
-   "key": "pe_41",
-   "title": "LL09合约原油利润 · 元/吨",
-   "section": "7. 利润",
-   "unit": "元/吨",
-   "latest": "-96.94",
-   "chg": "-137.65",
-   "date": "08/18",
-   "file": "pe_daily/pe_41.png",
-   "bytes": 191190
-  },
-  "pe_42": {
-   "key": "pe_42",
-   "title": "LL01合约原油利润 · 元/吨",
-   "section": "7. 利润",
-   "unit": "元/吨",
-   "latest": "-487.9",
-   "chg": "-94.65",
-   "date": "08/18",
-   "file": "pe_daily/pe_42.png",
-   "bytes": 194605
-  },
-  "pe_43": {
-   "key": "pe_43",
-   "title": "LL仓单 · 张",
-   "section": "8. 持仓和仓单",
-   "unit": "张",
-   "latest": "",
-   "chg": "",
-   "date": "",
-   "file": "pe_daily/pe_43.png",
-   "bytes": 123586
-  },
-  "pe_44": {
-   "key": "pe_44",
-   "title": "LL持仓 · 手",
-   "section": "8. 持仓和仓单",
-   "unit": "手",
-   "latest": "",
-   "chg": "",
-   "date": "",
-   "file": "pe_daily/pe_44.png",
-   "bytes": 208968
+   "bytes": 195140
   }
  }
 }
