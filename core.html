@@ -433,27 +433,48 @@ function tradeYears(trade){
   });
   return Array.from(s).sort();
 }
-/* 产业链合计汇总净出口（折丁二烯吨）：每个品种一张 + 加权合计一张，seriesObj 为 {monthKey:val} */
+/* 产业链合计：分国家 / 分品种 / 净出口&出口&进口（折丁二烯吨或吨） */
 function buildChainIndicators(chain){
   var out={};
   var products=chain.products||[], subjectKeys=chain.subjectKeys||[], weights=chain.weights||{};
+  // 辅助：把 {month:val} 复制成 seriesObj（跳过 null/undefined）
+  function copySeries(src){ var o={}; if(!src) return o; Object.keys(src).forEach(function(m){ var v=src[m]; if(v!==null && v!==undefined) o[m]=v; }); return o; }
+  // 1) 各国家：分品种净出口/出口/进口（单位：品种原始吨）
+  subjectKeys.forEach(function(sk){
+    products.forEach(function(p){
+      var netRec=chain.net&&chain.net[sk]&&chain.net[sk][p]?chain.net[sk][p]:{};
+      var expRec=chain.exp&&chain.exp[sk]&&chain.exp[sk][p]?chain.exp[sk][p]:{};
+      var impRec=chain.imp&&chain.imp[sk]&&chain.imp[sk][p]?chain.imp[sk][p]:{};
+      out["chain|"+sk+"|"+p+"|Net"]={ title:sk+"-"+p+"净出口（吨）", unit:"吨", dec:0, seriesObj:copySeries(netRec), src:"chain" };
+      out["chain|"+sk+"|"+p+"|Exp"]={ title:sk+"-"+p+"出口（吨）", unit:"吨", dec:0, seriesObj:copySeries(expRec), src:"chain" };
+      out["chain|"+sk+"|"+p+"|Imp"]={ title:sk+"-"+p+"进口（吨）", unit:"吨", dec:0, seriesObj:copySeries(impRec), src:"chain" };
+    });
+  });
+  // 2) 各国家：产业链合计净出口/出口/进口（折丁二烯吨）
+  subjectKeys.forEach(function(sk){
+    out["chain|"+sk+"|TotalNet"]={ title:sk+"-产业链合计净出口（折丁二烯吨）", unit:"吨", dec:0, seriesObj:copySeries(chain.total&&chain.total[sk]), src:"chain" };
+    out["chain|"+sk+"|TotalExp"]={ title:sk+"-产业链合计出口（折丁二烯吨）", unit:"吨", dec:0, seriesObj:copySeries(chain.totalExp&&chain.totalExp[sk]), src:"chain" };
+    out["chain|"+sk+"|TotalImp"]={ title:sk+"-产业链合计进口（折丁二烯吨）", unit:"吨", dec:0, seriesObj:copySeries(chain.totalImp&&chain.totalImp[sk]), src:"chain" };
+  });
+  // 3) 全球合计：每品种净出口（吨）
   products.forEach(function(p){
     var so={};
     subjectKeys.forEach(function(sk){
-      var rec=chain.net[sk]; if(!rec||!rec[p]) return;
-      Object.keys(rec[p]).forEach(function(mk){ so[mk]=(so[mk]||0)+rec[p][mk]; });
+      var rec=chain.net&&chain.net[sk]&&chain.net[sk][p]?chain.net[sk][p]:{};
+      Object.keys(rec).forEach(function(mk){ var v=rec[mk]; if(v!==null&&v!==undefined) so[mk]=(so[mk]||0)+v; });
     });
-    out["chain|"+p]={ title:p+"净出口（折丁二烯吨）", unit:"吨", dec:0, seriesObj:so, src:"chain" };
+    out["chain|"+p+"|Net"]={ title:p+"净出口（吨）", unit:"吨", dec:0, seriesObj:so, src:"chain" };
   });
+  // 4) 全球合计：产业链合计净出口（折丁二烯吨）
   var total={};
   subjectKeys.forEach(function(sk){
     products.forEach(function(p){
       var w=weights[p]||1;
-      var rec=chain.net[sk]; if(!rec||!rec[p]) return;
-      Object.keys(rec[p]).forEach(function(mk){ total[mk]=(total[mk]||0)+rec[p][mk]*w; });
+      var rec=chain.net&&chain.net[sk]&&chain.net[sk][p]?chain.net[sk][p]:{};
+      Object.keys(rec).forEach(function(mk){ var v=rec[mk]; if(v!==null&&v!==undefined) total[mk]=(total[mk]||0)+v*w; });
     });
   });
-  out["chain|合计"]={ title:"产业链合计净出口（折丁二烯吨）", unit:"吨", dec:0, seriesObj:total, src:"chain" };
+  out["chain|TotalNet"]={ title:"产业链合计净出口（折丁二烯吨）", unit:"吨", dec:0, seriesObj:total, src:"chain" };
   return out;
 }
 function chainYears(chain){
