@@ -204,6 +204,17 @@ var SOURCES={
 function resolveSource(srcKey){
   var parts=(srcKey||"").split(".");
   if(parts.length===2 && SOURCES[parts[0]] && SOURCES[parts[0]][parts[1]]) return SOURCES[parts[0]][parts[1]];
+  if(parts.length===1 && srcKey==="trade"){
+    // 兼容旧保存的 src:"trade" 卡片：在 4 个贸易流子源中查找 key
+    var root=SOURCES.trade;
+    if(root){
+      var keys=["butadiene","pbr","sbr","abs"];
+      for(var i=0;i<keys.length;i++){
+        var sub=root[keys[i]];
+        if(sub && sub.indicators) return sub;
+      }
+    }
+  }
   return SOURCES[srcKey];
 }
 
@@ -376,8 +387,9 @@ function calcStats(seriesObj){
   var yoyPct=(yoy===null||yoy===undefined||yoy===0)?null:((l.value-yoy)/yoy*100);
   return {latest:l.value, date:l.date, chg:chg, pct:pct, yoyChg:yoyChg, yoyPct:yoyPct};
 }
-function buildTradeIndicators(trade, prodName){
+function buildTradeIndicators(trade, prodName, prodKey){
   var out={};
+  var srcKey="trade."+prodKey;
   var NAME_MAP={
     "Korea":"韩国", "Korea_Rep":"韩国",
     "China":"中国",
@@ -394,13 +406,13 @@ function buildTradeIndicators(trade, prodName){
       var disp=cnName(k, rec.display||k);
       ["Export","Import"].forEach(function(fl){
         var so=rec[fl]&&rec[fl].total;
-        if(so) out[prefix+k+"|"+fl]={ title: prodName+"-"+disp+(fl==="Export"?"出口量":"进口量"), unit:"吨", dec:0, seriesObj:so, src:"trade" };
+        if(so) out[prefix+k+"|"+fl]={ title: prodName+"-"+disp+(fl==="Export"?"出口量":"进口量"), unit:"吨", dec:0, seriesObj:so, src:srcKey };
       });
       var ex=rec.Export&&rec.Export.total, im=rec.Import&&rec.Import.total;
       if(ex&&im){
         var net={};
         Object.keys(ex).forEach(function(m){ net[m]=(ex[m]||0)-(im[m]||0); });
-        out[prefix+k+"|Net"]={ title: prodName+"-"+disp+"净出口量", unit:"吨", dec:0, seriesObj:net, src:"trade" };
+        out[prefix+k+"|Net"]={ title: prodName+"-"+disp+"净出口量", unit:"吨", dec:0, seriesObj:net, src:srcKey };
       }
     });
   }
@@ -502,7 +514,7 @@ function init(){
         res[2].value.forEach(function(kv){
           var k=kv[0], v=kv[1];
           SOURCES.trade[k].trade=v;
-          SOURCES.trade[k].indicators=buildTradeIndicators(v, SOURCES.trade[k].label);
+          SOURCES.trade[k].indicators=buildTradeIndicators(v, SOURCES.trade[k].label, k);
         });
       }
       if(res[3].status==="fulfilled"){ SOURCES.chain.chain=res[3].value; SOURCES.chain.indicators=buildChainIndicators(res[3].value); }
@@ -680,7 +692,7 @@ function renderAll(){
 function renderCardCharts(){
   document.querySelectorAll(".card .chart").forEach(function(div){
     var cfg=div._chart; if(!cfg) return;
-    if(cfg.ind && (cfg.ind.src==="trade"||cfg.ind.src==="chain")) drawSeasonMonth(div, cfg.ind.seriesObj, cfg.dec);
+    if(cfg.ind && ((cfg.ind.src||"").indexOf("trade")===0||cfg.ind.src==="chain")) drawSeasonMonth(div, cfg.ind.seriesObj, cfg.dec);
     else if(cfg.ts) drawDailyTs(div, cfg.cfg, cfg.dec);
     else drawSeason(div, cfg.ind, cfg.xlabels, cfg.years);
     delete div._chart;
@@ -692,6 +704,16 @@ function makeCard(item, idx){
   card.className="card"+(item.focus?" focus":"")+(item.key?"":" empty");
 
   var srcKey=item.src||"daily";
+  // 兼容旧保存的 src:"trade" 卡片：自动定位到 butadiene/pbr/sbr/abs 子源
+  if(srcKey==="trade" && item.key && SOURCES.trade){
+    var migrated=false;
+    ["butadiene","pbr","sbr","abs"].forEach(function(prod){
+      if(migrated) return;
+      var sub=SOURCES.trade[prod];
+      if(sub && sub.indicators && sub.indicators[item.key]){ item.src="trade."+prod; migrated=true; }
+    });
+    if(migrated){ srcKey=item.src; save(); }
+  }
   var S=resolveSource(srcKey);
   var ind=(S && S.indicators && item.key && S.indicators[item.key]) ? S.indicators[item.key] : null;
 
