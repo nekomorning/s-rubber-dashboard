@@ -109,6 +109,7 @@ tr.abn td{background:#fff7f0;}
 .card{background:var(--card); border:1px solid var(--border); border-radius:10px; padding:12px 14px 6px; min-width:0;}
 .card .ttl{font-size:14px; font-weight:700; color:#2a3345;}
 .card .meta{display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; margin:4px 0 2px;}
+.card.ts .meta{gap:6px 0; margin:2px 0 1px;}
 .card .val{font-size:20px; font-weight:700;}
 .card .unit{font-size:11px; color:var(--sub);}
 .card .chg{font-size:13px; font-weight:600;}
@@ -214,7 +215,7 @@ var YEAR_COLORS={
 };
 
 function yearColor(y){ return YEAR_COLORS[String(y)] || "#888888"; }
-var SHORT_ROWS={"产业链价差":1,"丁二烯国际价格":1};
+var SHORT_ROWS={"产业链价差":1};
 function fmt(v,dec){
   if(v===null||v===undefined||isNaN(v)) return "—";
   return Number(v).toLocaleString("zh-CN",{minimumFractionDigits:dec,maximumFractionDigits:dec});
@@ -447,8 +448,8 @@ function makeTsCard(ch,grid,row){
   var card=document.createElement("div"); card.className="card ts"+(SHORT_ROWS[row.label]?" short":"");
   var parts=cfg.lines.map(function(L){
     var last=L.data.length?L.data[L.data.length-1][1]:null;
-    return '<span style="font-size:12px;color:var(--sub)"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'+L.color+';margin-right:4px"></span>'+L.name+' <b style="color:var(--text);font-size:14px">'+fmt(last,ch.dec)+'</b></span>';
-  }).join("　");
+    return '<span style="font-size:11px;color:var(--sub);white-space:nowrap;line-height:1.25;margin-right:8px"><span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:'+L.color+';margin-right:3px;vertical-align:1px"></span>'+L.name+'<b style="color:var(--text);font-size:12px;margin-left:3px">'+fmt(last,ch.dec)+'</b></span>';
+  }).join("");
   var lastDate=cfg.lines[0].data.length?cfg.lines[0].data[cfg.lines[0].data.length-1][0]:"";
   card.innerHTML=
     '<div class="ttl">'+cfg.title+'<span style="font-weight:400;color:var(--sub);font-size:11px"> （'+ch.unit+'）</span></div>'+
@@ -475,8 +476,8 @@ function makeTsCard(ch,grid,row){
   c.setOption({
     animation:false,
     grid:{left:8,right:14,top:26,bottom:28,containLabel:true},
-    legend:{show:true, top:0, right:0, itemWidth:14, itemHeight:2, icon:"rect",
-      textStyle:{fontSize:11,color:"#6b7686"}},
+    legend:{show:true, top:0, right:0, itemWidth:12, itemHeight:2, icon:"rect", itemGap:4,
+      textStyle:{fontSize:10,color:"#6b7686"}},
     tooltip:{trigger:"axis", confine:true,
       formatter:function(ps){
         if(!ps.length) return "";
