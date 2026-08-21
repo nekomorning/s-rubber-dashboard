@@ -761,7 +761,8 @@ function makeCard(item, idx){
       div._chart={ts:true, cfg:tsCfg, dec:dec};
     } else {
       var st, cls2, sign, latestTxt2, chgTxt2, pctTxt2, dateTxt2;
-      if(ind.src==="trade"||ind.src==="chain"){
+      var isTrade=(ind.src||"").indexOf("trade")===0;
+      if(isTrade||ind.src==="chain"){
         var cs=calcStats(ind.seriesObj); st=cs;
         latestTxt2=fmt(cs?cs.latest:null,dec);
         cls2=chgCls(cs?cs.chg:null); sign=(cs&&cs.chg>0?"+":"");
@@ -776,8 +777,8 @@ function makeCard(item, idx){
         pctTxt2=(st.pct===null?"—":sign+st.pct.toFixed(2)+"%");
         dateTxt2=st.latestDate||"";
       }
-      var chgVal = (ind.src==="trade"||ind.src==="chain") ? (cs?cs.chg:null) : st.chg;
-      var pctStr = (ind.src==="trade"||ind.src==="chain") ? (cs&&cs.pct!==null?cs.pct.toFixed(2)+"%":"—") : pctTxt2;
+      var chgVal = (isTrade||ind.src==="chain") ? (cs?cs.chg:null) : st.chg;
+      var pctStr = (isTrade||ind.src==="chain") ? (cs&&cs.pct!==null?cs.pct.toFixed(2)+"%":"—") : pctTxt2;
       meta=document.createElement("div"); meta.className="meta";
       meta.innerHTML='<span class="val">'+latestTxt2+'<span class="unit"> '+ind.unit+'</span></span>'+
         '<span class="chg '+cls2+'">'+arrow(chgVal)+' '+chgTxt2+'（'+pctStr+'）</span>'+
