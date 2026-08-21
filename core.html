@@ -69,6 +69,10 @@ body{background:var(--bg); color:var(--text);
 .card .chg{font-size:13px; font-weight:600;}
 .card .chg.up{color:var(--up);} .card .chg.down{color:var(--down);} .card .chg.flat{color:var(--flat);}
 .card .dt{font-size:11px; color:var(--sub);}
+.card .stat{font-size:12px; color:var(--sub); white-space:nowrap; margin-right:2px;}
+.card .stat b{font-weight:600; color:var(--text); margin-right:3px;}
+.card .stat i{font-style:normal; font-weight:600;}
+.card .stat i.up{color:var(--up);} .card .stat i.down{color:var(--down);} .card .stat i.flat{color:var(--flat);}
 .card .chart{width:100%; height:220px;}
 .card .chart.pe{height:auto; margin-top:2px;}
 .card .chart.pe .pe-img{width:100%; height:auto; display:block; border-radius:6px; border:1px solid var(--border); background:#fff;}
@@ -385,7 +389,20 @@ function calcStats(seriesObj){
   var pct=(prev===null||prev===undefined||prev===0)?null:((l.value-prev)/prev*100);
   var yoyChg=(yoy===null||yoy===undefined)?null:(l.value-yoy);
   var yoyPct=(yoy===null||yoy===undefined||yoy===0)?null:((l.value-yoy)/yoy*100);
-  return {latest:l.value, date:l.date, chg:chg, pct:pct, yoyChg:yoyChg, yoyPct:yoyPct};
+  // 累计同比%：本年至最新月累计值 vs 上年同期累计值
+  var cumYoYPct=null;
+  var pm=l.date.match(/(\d{4})-M(\d{2})/);
+  if(pm){
+    var y=parseInt(pm[1],10), mn=parseInt(pm[2],10), cumThis=0, cumLast=0, hasLast=false;
+    for(var m=1;m<=mn;m++){
+      var mk=y+"-M"+(m<10?"0":"")+m, v=seriesObj[mk];
+      if(v!==null&&v!==undefined) cumThis+=v;
+      var lmk=(y-1)+"-M"+(m<10?"0":"")+m, lv=seriesObj[lmk];
+      if(lv!==null&&lv!==undefined){ cumLast+=lv; hasLast=true; }
+    }
+    if(hasLast&&cumLast!==0) cumYoYPct=(cumThis-cumLast)/cumLast*100;
+  }
+  return {latest:l.value, date:l.date, chg:chg, pct:pct, yoyChg:yoyChg, yoyPct:yoyPct, cumYoYPct:cumYoYPct};
 }
 function buildTradeIndicators(trade, prodName, prodKey){
   var out={};
@@ -406,13 +423,13 @@ function buildTradeIndicators(trade, prodName, prodKey){
       var disp=cnName(k, rec.display||k);
       ["Export","Import"].forEach(function(fl){
         var so=rec[fl]&&rec[fl].total;
-        if(so) out[prefix+k+"|"+fl]={ title: prodName+"-"+disp+(fl==="Export"?"出口量":"进口量"), unit:"吨", dec:0, seriesObj:so, src:srcKey };
+        if(so) out[prefix+k+"|"+fl]={ title: prodName+"-"+disp+(fl==="Export"?"出口量（万吨）":"进口量（万吨）"), unit:"万吨", dec:0, seriesObj:so, src:srcKey };
       });
       var ex=rec.Export&&rec.Export.total, im=rec.Import&&rec.Import.total;
       if(ex&&im){
         var net={};
         Object.keys(ex).forEach(function(m){ net[m]=(ex[m]||0)-(im[m]||0); });
-        out[prefix+k+"|Net"]={ title: prodName+"-"+disp+"净出口量", unit:"吨", dec:0, seriesObj:net, src:srcKey };
+        out[prefix+k+"|Net"]={ title: prodName+"-"+disp+"净出口量（万吨）", unit:"万吨", dec:0, seriesObj:net, src:srcKey };
       }
     });
   }
@@ -445,16 +462,16 @@ function buildChainIndicators(chain){
       var netRec=chain.net&&chain.net[sk]&&chain.net[sk][p]?chain.net[sk][p]:{};
       var expRec=chain.exp&&chain.exp[sk]&&chain.exp[sk][p]?chain.exp[sk][p]:{};
       var impRec=chain.imp&&chain.imp[sk]&&chain.imp[sk][p]?chain.imp[sk][p]:{};
-      out["chain|"+sk+"|"+p+"|Net"]={ title:sk+"-"+p+"净出口（吨）", unit:"吨", dec:0, seriesObj:copySeries(netRec), src:"chain" };
-      out["chain|"+sk+"|"+p+"|Exp"]={ title:sk+"-"+p+"出口（吨）", unit:"吨", dec:0, seriesObj:copySeries(expRec), src:"chain" };
-      out["chain|"+sk+"|"+p+"|Imp"]={ title:sk+"-"+p+"进口（吨）", unit:"吨", dec:0, seriesObj:copySeries(impRec), src:"chain" };
+      out["chain|"+sk+"|"+p+"|Net"]={ title:sk+"-"+p+"净出口（万吨）", unit:"万吨", dec:0, seriesObj:copySeries(netRec), src:"chain" };
+      out["chain|"+sk+"|"+p+"|Exp"]={ title:sk+"-"+p+"出口（万吨）", unit:"万吨", dec:0, seriesObj:copySeries(expRec), src:"chain" };
+      out["chain|"+sk+"|"+p+"|Imp"]={ title:sk+"-"+p+"进口（万吨）", unit:"万吨", dec:0, seriesObj:copySeries(impRec), src:"chain" };
     });
   });
   // 2) 各国家：产业链合计净出口/出口/进口（折丁二烯吨）
   subjectKeys.forEach(function(sk){
-    out["chain|"+sk+"|TotalNet"]={ title:sk+"-产业链合计净出口（折丁二烯吨）", unit:"吨", dec:0, seriesObj:copySeries(chain.total&&chain.total[sk]), src:"chain" };
-    out["chain|"+sk+"|TotalExp"]={ title:sk+"-产业链合计出口（折丁二烯吨）", unit:"吨", dec:0, seriesObj:copySeries(chain.totalExp&&chain.totalExp[sk]), src:"chain" };
-    out["chain|"+sk+"|TotalImp"]={ title:sk+"-产业链合计进口（折丁二烯吨）", unit:"吨", dec:0, seriesObj:copySeries(chain.totalImp&&chain.totalImp[sk]), src:"chain" };
+    out["chain|"+sk+"|TotalNet"]={ title:sk+"-产业链合计净出口（折丁二烯万吨）", unit:"万吨", dec:0, seriesObj:copySeries(chain.total&&chain.total[sk]), src:"chain" };
+    out["chain|"+sk+"|TotalExp"]={ title:sk+"-产业链合计出口（折丁二烯万吨）", unit:"万吨", dec:0, seriesObj:copySeries(chain.totalExp&&chain.totalExp[sk]), src:"chain" };
+    out["chain|"+sk+"|TotalImp"]={ title:sk+"-产业链合计进口（折丁二烯万吨）", unit:"万吨", dec:0, seriesObj:copySeries(chain.totalImp&&chain.totalImp[sk]), src:"chain" };
   });
   // 3) 全球合计：每品种净出口（吨）
   products.forEach(function(p){
@@ -463,7 +480,7 @@ function buildChainIndicators(chain){
       var rec=chain.net&&chain.net[sk]&&chain.net[sk][p]?chain.net[sk][p]:{};
       Object.keys(rec).forEach(function(mk){ var v=rec[mk]; if(v!==null&&v!==undefined) so[mk]=(so[mk]||0)+v; });
     });
-    out["chain|"+p+"|Net"]={ title:p+"净出口（吨）", unit:"吨", dec:0, seriesObj:so, src:"chain" };
+    out["chain|"+p+"|Net"]={ title:p+"净出口（万吨）", unit:"万吨", dec:0, seriesObj:so, src:"chain" };
   });
   // 4) 全球合计：产业链合计净出口（折丁二烯吨）
   var total={};
@@ -474,7 +491,7 @@ function buildChainIndicators(chain){
       Object.keys(rec).forEach(function(mk){ var v=rec[mk]; if(v!==null&&v!==undefined) total[mk]=(total[mk]||0)+v*w; });
     });
   });
-  out["chain|TotalNet"]={ title:"产业链合计净出口（折丁二烯吨）", unit:"吨", dec:0, seriesObj:total, src:"chain" };
+  out["chain|TotalNet"]={ title:"产业链合计净出口（折丁二烯万吨）", unit:"万吨", dec:0, seriesObj:total, src:"chain" };
   return out;
 }
 function chainYears(chain){
@@ -609,13 +626,13 @@ function drawSeasonMonth(div, seriesObj, dec){
       if(!ps.length) return "";
       var s=ps[0].axisValue;
       ps.sort(function(a,b){return Number(b.seriesName)-Number(a.seriesName);});
-      ps.forEach(function(p){ s+="<br>"+p.marker+p.seriesName+"年： <b>"+fmt(p.value,dec)+"</b>"; });
+      ps.forEach(function(p){ s+="<br>"+p.marker+p.seriesName+"年： <b>"+fmt(p.value/10000,2)+"</b>"; });
       return s;
     }},
     legend:{data:sorted.map(function(s){return s.name;}), bottom:0, left:"center", textStyle:{fontSize:10}, itemWidth:10, itemHeight:5, itemGap:6},
     grid:{left:8,right:14,top:14,bottom:42,containLabel:true},
     xAxis:{type:"category", data:monthLabels, axisLine:{lineStyle:{color:"#ccc"}}, axisLabel:{fontSize:10}},
-    yAxis:{type:"value", axisLine:{show:false}, splitLine:{lineStyle:{color:"#f0f0f0"}}, axisLabel:{fontSize:10, formatter:function(v){return Math.abs(v)>=1000?(v/1000).toFixed(1)+"k":v;}}},
+    yAxis:{type:"value", name:"万吨", nameTextStyle:{fontSize:10,color:"#999"}, nameGap:6, axisLine:{show:false}, splitLine:{lineStyle:{color:"#f0f0f0"}}, axisLabel:{fontSize:10, formatter:function(v){ var w=v/10000; return Math.abs(w)>=100?w.toFixed(0):w.toFixed(1); }}},
     series: sorted.map(function(s){
       var isLast = s.name === years[years.length-1];
       return {name:s.name, type:"line", smooth:true, symbol:"none", data:s.data, connectNulls:true,
@@ -801,9 +818,24 @@ function makeCard(item, idx){
       var chgVal = (isTrade||ind.src==="chain") ? (cs?cs.chg:null) : st.chg;
       var pctStr = (isTrade||ind.src==="chain") ? (cs&&cs.pct!==null?cs.pct.toFixed(2)+"%":"—") : pctTxt2;
       meta=document.createElement("div"); meta.className="meta";
-      meta.innerHTML='<span class="val">'+latestTxt2+'<span class="unit"> '+ind.unit+'</span></span>'+
-        '<span class="chg '+cls2+'">'+arrow(chgVal)+' '+chgTxt2+'（'+pctStr+'）</span>'+
-        '<span class="dt">'+dateTxt2+'</span>';
+      if(isTrade||ind.src==="chain"){
+        // 贸易流/产业链：最新值（万吨）+ 环比% + 同比% + 累计同比%
+        function pctChip(label, val){
+          if(val===null||val===undefined) return '<span class="stat"><b>'+label+'</b> <i class="flat">—</i></span>';
+          var c=val>0?"up":(val<0?"down":"flat");
+          var s=(val>0?"+":"")+val.toFixed(2)+"%";
+          return '<span class="stat"><b>'+label+'</b> <i class="'+c+'">'+s+'</i></span>';
+        }
+        var latestW = cs ? cs.latest/10000 : null;
+        meta.innerHTML='<span class="val">'+fmt(latestW,2)+'<span class="unit"> 万吨</span></span>'+
+          pctChip('环比', (cs&&cs.pct!==null)?cs.pct:null)+
+          pctChip('同比', (cs&&cs.yoyPct!==null)?cs.yoyPct:null)+
+          pctChip('累计同比', (cs&&cs.cumYoYPct!==null)?cs.cumYoYPct:null);
+      } else {
+        meta.innerHTML='<span class="val">'+latestTxt2+'<span class="unit"> '+ind.unit+'</span></span>'+
+          '<span class="chg '+cls2+'">'+arrow(chgVal)+' '+chgTxt2+'（'+pctStr+'）</span>'+
+          '<span class="dt">'+dateTxt2+'</span>';
+      }
       div=document.createElement("div"); div.className="chart";
       // 延迟到 DOM 挂载后再初始化 ECharts，否则容器尺寸为 0 导致空白
       div._chart={src:srcKey, ind:ind, xlabels:S.xlabels||(ind.dayLabels||null), years:S.years||(ind.years||null), dec:dec};
