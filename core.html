@@ -428,7 +428,10 @@ function buildTradeIndicators(trade, prodName, prodKey){
       var ex=rec.Export&&rec.Export.total, im=rec.Import&&rec.Import.total;
       if(ex&&im){
         var net={};
-        Object.keys(ex).forEach(function(m){ net[m]=(ex[m]||0)-(im[m]||0); });
+        Object.keys(ex).forEach(function(m){
+          var ev=ex[m], iv=im[m];
+          net[m]=(ev===null||ev===undefined||iv===null||iv===undefined)?null:(ev-iv);
+        });
         out[prefix+k+"|Net"]={ title: prodName+"-"+disp+"净出口量（万吨）", unit:"万吨", dec:0, seriesObj:net, src:srcKey };
       }
     });
