@@ -414,7 +414,7 @@ function tradeYears(trade){
 function init(){
   Promise.allSettled([ fetchJson(SOURCES.daily.url), fetchJson(SOURCES.kai.url), fetchJson(SOURCES.trade.url), fetchJson(SOURCES.pe.url) ])
     .then(function(res){
-      if(res[0].status==="fulfilled"){ var d=res[0].value; SOURCES.daily.indicators=d.indicators; SOURCES.daily.xlabels=d.xlabels; SOURCES.daily.years=d.years; SOURCES.daily.date=d.latestDataDate; }
+      if(res[0].status==="fulfilled"){ var d=res[0].value; SOURCES.daily.indicators=d.indicators; SOURCES.daily.xlabels=d.xlabels; SOURCES.daily.years=d.years; SOURCES.daily.date=d.latestDataDate; SOURCES.daily.ts=d.ts||{}; }
       if(res[1].status==="fulfilled"){ var d2=res[1].value; SOURCES.kai.indicators=d2.indicators; SOURCES.kai.xlabels=d2.xlabels; SOURCES.kai.years=d2.years; }
       if(res[2].status==="fulfilled"){ SOURCES.trade.trade=res[2].value; SOURCES.trade.indicators=buildTradeIndicators(res[2].value); }
       if(res[3].status==="fulfilled"){ var p=res[3].value; SOURCES.pe.indicators=(p&&p.indicators)?p.indicators:{}; }
@@ -500,6 +500,59 @@ function drawSeasonMonth(div, seriesObj, dec){
   charts.push(c);
 }
 
+/* 日度价格时序多线图（用于核心逻辑页） */
+function drawDailyTs(div, cfg, dec){
+  var c=echarts.init(div);
+  var series=[], legend=[], allDates=[];
+  (cfg.lines||[]).forEach(function(L){
+    legend.push(L.name);
+    var data=(L.data||[]).map(function(p){ return [p[0], p[1]]; });
+    data.forEach(function(p){ allDates.push(new Date(p[0]).getTime()); });
+    series.push({
+      name:L.name, type:"line", showSymbol:false, connectNulls:true, data:data,
+      lineStyle:{width:1.6,color:L.color}, itemStyle:{color:L.color}, emphasis:{focus:"series"}
+    });
+  });
+  var tsMin=allDates.length?Math.min.apply(null,allDates):null;
+  var tsMax=allDates.length?Math.max.apply(null,allDates):null;
+  var defStart=tsMin?Math.max(tsMin,new Date("2025-01-01").getTime()):null;
+  var pad2=function(n){return ("0"+n).slice(-2);};
+  c.setOption({
+    animation:false,
+    grid:{left:8,right:14,top:26,bottom:28,containLabel:true},
+    legend:{show:true, top:0, right:0, itemWidth:14, itemHeight:2, icon:"rect",
+      textStyle:{fontSize:11,color:"#6b7686"}, data:legend},
+    tooltip:{trigger:"axis", confine:true,
+      formatter:function(ps){
+        if(!ps.length) return "";
+        var s=ps[0].axisValueLabel;
+        ps.forEach(function(p){ s+="<br>"+p.marker+p.seriesName+"： <b>"+fmt(p.value[1],dec)+"</b>"; });
+        return s;
+      }},
+    xAxis:{type:"time",
+      axisLabel:{fontSize:10,color:"#8a93a3",
+        formatter:{year:"{yyyy}",month:"{yyyy}-{MM}",day:"{MM}-{dd}"}},
+      axisTick:{show:false}, axisLine:{lineStyle:{color:"#dde3ec"}},
+      splitLine:{show:false}},
+    yAxis:{type:"value", scale:true,
+      axisLabel:{fontSize:10,color:"#8a93a3",
+        formatter:function(v){ return Math.abs(v)>=10000?(v/10000)+"万":v; }},
+      splitLine:{lineStyle:{color:"#eef1f6"}}},
+    dataZoom:(tsMin&&tsMax)?[
+      {type:"inside", xAxisIndex:0, startValue:defStart, endValue:tsMax, zoomOnMouseWheel:true, moveOnMouseMove:true, moveOnMouseWheel:false},
+      {type:"slider", xAxisIndex:0, startValue:defStart, endValue:tsMax, height:14, bottom:2,
+        borderColor:"#e3e8ef", fillerColor:"rgba(30,111,255,0.10)",
+        handleSize:"120%", handleStyle:{color:"#1E6FFF", borderColor:"#1E6FFF"},
+        dataBackground:{lineStyle:{color:"#c9d3e0"}, areaStyle:{color:"#eef2f8"}},
+        selectedDataBackground:{lineStyle:{color:"#1E6FFF"}, areaStyle:{color:"rgba(30,111,255,0.12)"}},
+        textStyle:{color:"#8a93a3", fontSize:9},
+        labelFormatter:function(v){ var d=new Date(v); return d.getFullYear()+"-"+pad2(d.getMonth()+1)+"-"+pad2(d.getDate()); }}
+    ]:[],
+    series:series
+  });
+  charts.push(c);
+}
+
 function renderAll(){
   charts.forEach(function(c){ try{ c.dispose(); }catch(e){} });
   charts=[];
@@ -536,6 +589,7 @@ function renderCardCharts(){
   document.querySelectorAll(".card .chart").forEach(function(div){
     var cfg=div._chart; if(!cfg) return;
     if(cfg.src==="trade") drawSeasonMonth(div, cfg.ind.seriesObj, cfg.dec);
+    else if(cfg.ts) drawDailyTs(div, cfg.cfg, cfg.dec);
     else drawSeason(div, cfg.ind, cfg.xlabels, cfg.years);
     delete div._chart;
   });
@@ -578,6 +632,19 @@ function makeCard(item, idx){
       div=document.createElement("div"); div.className="chart pe";
       var img=document.createElement("img"); img.className="pe-img"; img.src=ind.file; img.alt=ind.title; img.loading="lazy";
       div.appendChild(img);
+    } else if(srcKey==="daily" && item.key.indexOf("__TS__")===0){
+      /* 日度价格时序多线图卡片 */
+      var tsCfg=SOURCES.daily.ts[item.key];
+      var parts=(tsCfg&&tsCfg.lines?tsCfg.lines:[]).map(function(L){
+        var last=L.data&&L.data.length?L.data[L.data.length-1][1]:null;
+        return '<span style="font-size:12px;color:var(--sub)"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:'+L.color+';margin-right:4px"></span>'+L.name+' <b style="color:var(--text);font-size:14px">'+fmt(last,dec)+'</b></span>';
+      }).join("　");
+      var lastDate=(tsCfg&&tsCfg.lines&&tsCfg.lines[0].data&&tsCfg.lines[0].data.length)?tsCfg.lines[0].data[tsCfg.lines[0].data.length-1][0]:"";
+      head.title="时序图："+ind.title;
+      meta=document.createElement("div"); meta.className="meta";
+      meta.innerHTML='<span style="font-size:12px;color:var(--sub)">'+parts+'<span class="dt">'+lastDate+'</span></span>';
+      div=document.createElement("div"); div.className="chart";
+      div._chart={ts:true, cfg:tsCfg, dec:dec};
     } else {
       var st, cls2, sign, latestTxt2, chgTxt2, pctTxt2, dateTxt2;
       if(srcKey==="trade"){
