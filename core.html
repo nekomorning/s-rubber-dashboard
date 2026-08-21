@@ -191,9 +191,21 @@ function uid(){ return "c"+Date.now().toString(36)+Math.floor(Math.random()*1e4)
 var SOURCES={
   daily:{label:"日度价格", url:"rubber_data_p1.json", indicators:null, xlabels:null, years:null, date:null},
   kai:{label:"开工库存", url:"rubber_data_p2.json", indicators:null, xlabels:null, years:null, date:null},
-  trade:{label:"贸易流（月度季节图）", url:"butadiene_trade.json", indicators:null, trade:null},
+  trade:{
+    butadiene:{label:"丁二烯", url:"butadiene_trade.json", indicators:null, trade:null},
+    pbr:{label:"顺丁橡胶", url:"pbr_trade.json", indicators:null, trade:null},
+    sbr:{label:"丁苯橡胶", url:"sbr_trade.json", indicators:null, trade:null},
+    abs:{label:"ABS", url:"abs_trade.json", indicators:null, trade:null}
+  },
+  chain:{label:"产业链合计", url:"chain_trade.json", indicators:null, chain:null},
+  maint:{label:"装置检修-开工率", url:"bd_ops.json", indicators:null, bdops:null},
   pe:{label:"PE日报（图片）", url:"pe_daily.json", indicators:null}
 };
+function resolveSource(srcKey){
+  var parts=(srcKey||"").split(".");
+  if(parts.length===2 && SOURCES[parts[0]] && SOURCES[parts[0]][parts[1]]) return SOURCES[parts[0]][parts[1]];
+  return SOURCES[srcKey];
+}
 
 var allYears=[], yearVisible={}, charts=[], layout=[], dragFrom=null, currentPickIdx=null;
 var LS_KEY="coreLayoutV1";
@@ -364,9 +376,8 @@ function calcStats(seriesObj){
   var yoyPct=(yoy===null||yoy===undefined||yoy===0)?null:((l.value-yoy)/yoy*100);
   return {latest:l.value, date:l.date, chg:chg, pct:pct, yoyChg:yoyChg, yoyPct:yoyPct};
 }
-function buildTradeIndicators(trade){
+function buildTradeIndicators(trade, prodName){
   var out={};
-  // 国名/地区名中英映射（贸易流当前均为丁二烯）
   var NAME_MAP={
     "Korea":"韩国", "Korea_Rep":"韩国",
     "China":"中国",
@@ -383,13 +394,13 @@ function buildTradeIndicators(trade){
       var disp=cnName(k, rec.display||k);
       ["Export","Import"].forEach(function(fl){
         var so=rec[fl]&&rec[fl].total;
-        if(so) out[prefix+k+"|"+fl]={ title: "丁二烯-"+disp+(fl==="Export"?"出口量":"进口量"), unit:"吨", dec:0, seriesObj:so, src:"trade" };
+        if(so) out[prefix+k+"|"+fl]={ title: prodName+"-"+disp+(fl==="Export"?"出口量":"进口量"), unit:"吨", dec:0, seriesObj:so, src:"trade" };
       });
       var ex=rec.Export&&rec.Export.total, im=rec.Import&&rec.Import.total;
       if(ex&&im){
         var net={};
         Object.keys(ex).forEach(function(m){ net[m]=(ex[m]||0)-(im[m]||0); });
-        out[prefix+k+"|Net"]={ title: "丁二烯-"+disp+"净出口量", unit:"吨", dec:0, seriesObj:net, src:"trade" };
+        out[prefix+k+"|Net"]={ title: prodName+"-"+disp+"净出口量", unit:"吨", dec:0, seriesObj:net, src:"trade" };
       }
     });
   }
@@ -410,18 +421,99 @@ function tradeYears(trade){
   });
   return Array.from(s).sort();
 }
+/* 产业链合计汇总净出口（折丁二烯吨）：每个品种一张 + 加权合计一张，seriesObj 为 {monthKey:val} */
+function buildChainIndicators(chain){
+  var out={};
+  var products=chain.products||[], subjectKeys=chain.subjectKeys||[], weights=chain.weights||{};
+  products.forEach(function(p){
+    var so={};
+    subjectKeys.forEach(function(sk){
+      var rec=chain.net[sk]; if(!rec||!rec[p]) return;
+      Object.keys(rec[p]).forEach(function(mk){ so[mk]=(so[mk]||0)+rec[p][mk]; });
+    });
+    out["chain|"+p]={ title:p+"净出口（折丁二烯吨）", unit:"吨", dec:0, seriesObj:so, src:"chain" };
+  });
+  var total={};
+  subjectKeys.forEach(function(sk){
+    products.forEach(function(p){
+      var w=weights[p]||1;
+      var rec=chain.net[sk]; if(!rec||!rec[p]) return;
+      Object.keys(rec[p]).forEach(function(mk){ total[mk]=(total[mk]||0)+rec[p][mk]*w; });
+    });
+  });
+  out["chain|合计"]={ title:"产业链合计净出口（折丁二烯吨）", unit:"吨", dec:0, seriesObj:total, src:"chain" };
+  return out;
+}
+function chainYears(chain){
+  var s=new Set();
+  (chain.subjectKeys||[]).forEach(function(sk){
+    var rec=chain.net[sk]; if(!rec) return;
+    Object.keys(rec).forEach(function(p){ Object.keys(rec[p]).forEach(function(m){ s.add(m.slice(0,4)); }); });
+  });
+  return Array.from(s).sort();
+}
+/* 装置检修开工率（日度季节图）：series[维度][value][年]=[366值] -> ind.series={年:[[i,val]]} */
+function maintStat(byYear, dayLabels){
+  var years=Object.keys(byYear).sort();
+  if(!years.length) return null;
+  var ly=years[years.length-1], arr=byYear[ly]; if(!arr||!arr.length) return null;
+  var li=-1; for(var i=arr.length-1;i>=0;i--){ if(arr[i]&&arr[i][1]!==null&&arr[i][1]!==undefined){ li=i; break; } }
+  if(li<0) return null;
+  var latest=arr[li][1], di=arr[li][0], prev=null, pi=di-1;
+  if(pi>=0 && arr[pi] && arr[pi][1]!==null && arr[pi][1]!==undefined) prev=arr[pi][1];
+  else { var py=years[years.length-2]; if(py&&byYear[py]){ var pa=byYear[py]; for(var j=pa.length-1;j>=0;j--){ if(pa[j]&&pa[j][1]!==null&&pa[j][1]!==undefined){ prev=pa[j][1]; break; } } } }
+  var date=(dayLabels&&dayLabels[di])||"";
+  return {latest:latest, latestDate:date, chg:(prev===null?null:latest-prev), pct:(prev===null?null:(prev!==0?((latest-prev)/prev*100):null))};
+}
+function buildMainIndicators(bdOps){
+  var out={};
+  var dims=bdOps.dims||[];
+  var dayLabelsMM=(bdOps.dayLabels||[]).map(function(l){
+    var p=(""+l).split("-"); if(p.length<2) return l;
+    var mm=(p[0].length<2?"0"+p[0]:p[0]), dd=(p[1].length<2?"0"+p[1]:p[1]);
+    return mm+"-"+dd;
+  });
+  dims.forEach(function(dim){
+    var vals=bdOps.values[dim]||[], ser=bdOps.series[dim]||{};
+    vals.forEach(function(v){
+      var byYear={};
+      Object.keys(ser[v]||{}).forEach(function(y){
+        var arr=ser[v][y]||[];
+        byYear[y]=arr.map(function(val,i){ return [i,(val===null||val===undefined)?null:val]; });
+      });
+      var st=maintStat(byYear, dayLabelsMM);
+      out["maint|"+dim+"|"+v]={ title:"丁二烯·"+v+"开工率", unit:"%", dec:1, series:byYear, src:"maint",
+        dayLabels:dayLabelsMM, years:bdOps.years, stat:st };
+    });
+  });
+  return out;
+}
 
 function init(){
-  Promise.allSettled([ fetchJson(SOURCES.daily.url), fetchJson(SOURCES.kai.url), fetchJson(SOURCES.trade.url), fetchJson(SOURCES.pe.url) ])
+  var tradeLoads=Object.keys(SOURCES.trade).map(function(k){
+    return fetchJson(SOURCES.trade[k].url).then(function(v){ return [k,v]; });
+  });
+  Promise.allSettled([ fetchJson(SOURCES.daily.url), fetchJson(SOURCES.kai.url), Promise.all(tradeLoads),
+                       fetchJson(SOURCES.chain.url), fetchJson(SOURCES.maint.url), fetchJson(SOURCES.pe.url) ])
     .then(function(res){
       if(res[0].status==="fulfilled"){ var d=res[0].value; SOURCES.daily.indicators=d.indicators; SOURCES.daily.xlabels=d.xlabels; SOURCES.daily.years=d.years; SOURCES.daily.date=d.latestDataDate; SOURCES.daily.ts=d.ts||{}; }
       if(res[1].status==="fulfilled"){ var d2=res[1].value; SOURCES.kai.indicators=d2.indicators; SOURCES.kai.xlabels=d2.xlabels; SOURCES.kai.years=d2.years; }
-      if(res[2].status==="fulfilled"){ SOURCES.trade.trade=res[2].value; SOURCES.trade.indicators=buildTradeIndicators(res[2].value); }
-      if(res[3].status==="fulfilled"){ var p=res[3].value; SOURCES.pe.indicators=(p&&p.indicators)?p.indicators:{}; }
+      if(res[2].status==="fulfilled"){
+        res[2].value.forEach(function(kv){
+          var k=kv[0], v=kv[1];
+          SOURCES.trade[k].trade=v;
+          SOURCES.trade[k].indicators=buildTradeIndicators(v, SOURCES.trade[k].label);
+        });
+      }
+      if(res[3].status==="fulfilled"){ SOURCES.chain.chain=res[3].value; SOURCES.chain.indicators=buildChainIndicators(res[3].value); }
+      if(res[4].status==="fulfilled"){ SOURCES.maint.bdops=res[4].value; SOURCES.maint.indicators=buildMainIndicators(res[4].value); }
+      if(res[5].status==="fulfilled"){ var p=res[5].value; SOURCES.pe.indicators=(p&&p.indicators)?p.indicators:{}; }
       // 年份并集
       var ys=new Set();
       [SOURCES.daily.years, SOURCES.kai.years].forEach(function(arr){ (arr||[]).forEach(function(y){ ys.add(String(y)); }); });
-      if(SOURCES.trade.trade) tradeYears(SOURCES.trade.trade).forEach(function(y){ ys.add(y); });
+      if(SOURCES.trade.butadiene.trade) tradeYears(SOURCES.trade.butadiene.trade).forEach(function(y){ ys.add(y); });
+      if(SOURCES.chain.chain) chainYears(SOURCES.chain.chain).forEach(function(y){ ys.add(y); });
+      if(SOURCES.maint.bdops) (SOURCES.maint.bdops.years||[]).forEach(function(y){ ys.add(String(y)); });
       allYears=Array.from(ys).sort();
       var n=allYears.length;
       allYears.forEach(function(y,i){ yearVisible[y]=(i>=n-4); });
@@ -588,7 +680,7 @@ function renderAll(){
 function renderCardCharts(){
   document.querySelectorAll(".card .chart").forEach(function(div){
     var cfg=div._chart; if(!cfg) return;
-    if(cfg.src==="trade") drawSeasonMonth(div, cfg.ind.seriesObj, cfg.dec);
+    if(cfg.ind && (cfg.ind.src==="trade"||cfg.ind.src==="chain")) drawSeasonMonth(div, cfg.ind.seriesObj, cfg.dec);
     else if(cfg.ts) drawDailyTs(div, cfg.cfg, cfg.dec);
     else drawSeason(div, cfg.ind, cfg.xlabels, cfg.years);
     delete div._chart;
@@ -600,7 +692,7 @@ function makeCard(item, idx){
   card.className="card"+(item.focus?" focus":"")+(item.key?"":" empty");
 
   var srcKey=item.src||"daily";
-  var S=SOURCES[srcKey];
+  var S=resolveSource(srcKey);
   var ind=(S && S.indicators && item.key && S.indicators[item.key]) ? S.indicators[item.key] : null;
 
   if(ind){
@@ -647,7 +739,7 @@ function makeCard(item, idx){
       div._chart={ts:true, cfg:tsCfg, dec:dec};
     } else {
       var st, cls2, sign, latestTxt2, chgTxt2, pctTxt2, dateTxt2;
-      if(srcKey==="trade"){
+      if(ind.src==="trade"||ind.src==="chain"){
         var cs=calcStats(ind.seriesObj); st=cs;
         latestTxt2=fmt(cs?cs.latest:null,dec);
         cls2=chgCls(cs?cs.chg:null); sign=(cs&&cs.chg>0?"+":"");
@@ -662,15 +754,15 @@ function makeCard(item, idx){
         pctTxt2=(st.pct===null?"—":sign+st.pct.toFixed(2)+"%");
         dateTxt2=st.latestDate||"";
       }
-      var chgVal = (srcKey==="trade") ? (cs?cs.chg:null) : st.chg;
-      var pctStr = (srcKey==="trade") ? (cs&&cs.pct!==null?cs.pct.toFixed(2)+"%":"—") : pctTxt2;
+      var chgVal = (ind.src==="trade"||ind.src==="chain") ? (cs?cs.chg:null) : st.chg;
+      var pctStr = (ind.src==="trade"||ind.src==="chain") ? (cs&&cs.pct!==null?cs.pct.toFixed(2)+"%":"—") : pctTxt2;
       meta=document.createElement("div"); meta.className="meta";
       meta.innerHTML='<span class="val">'+latestTxt2+'<span class="unit"> '+ind.unit+'</span></span>'+
         '<span class="chg '+cls2+'">'+arrow(chgVal)+' '+chgTxt2+'（'+pctStr+'）</span>'+
         '<span class="dt">'+dateTxt2+'</span>';
       div=document.createElement("div"); div.className="chart";
       // 延迟到 DOM 挂载后再初始化 ECharts，否则容器尺寸为 0 导致空白
-      div._chart={src:srcKey, ind:ind, xlabels:S.xlabels, years:S.years, dec:dec};
+      div._chart={src:srcKey, ind:ind, xlabels:S.xlabels||(ind.dayLabels||null), years:S.years||(ind.years||null), dec:dec};
     }
     card.appendChild(meta); card.appendChild(div);
 
@@ -726,7 +818,12 @@ function renderPickerList(q){
   var groups=[
     {src:"daily", label:"日度价格", inds:SOURCES.daily.indicators},
     {src:"kai", label:"开工库存", inds:SOURCES.kai.indicators},
-    {src:"trade", label:"贸易流（月度季节图）", inds:SOURCES.trade.indicators},
+    {src:"trade.butadiene", label:"贸易流·丁二烯", inds:SOURCES.trade.butadiene.indicators},
+    {src:"trade.pbr", label:"贸易流·顺丁橡胶", inds:SOURCES.trade.pbr.indicators},
+    {src:"trade.sbr", label:"贸易流·丁苯橡胶", inds:SOURCES.trade.sbr.indicators},
+    {src:"trade.abs", label:"贸易流·ABS", inds:SOURCES.trade.abs.indicators},
+    {src:"chain", label:"产业链合计净出口", inds:SOURCES.chain.indicators},
+    {src:"maint", label:"装置检修·开工率", inds:SOURCES.maint.indicators},
     {src:"pe", label:"PE日报（图片）", inds:SOURCES.pe.indicators}
   ];
   function addItem(g,k){
