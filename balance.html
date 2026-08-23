@@ -113,7 +113,7 @@ table.data td.grp-sub.cum-yoy-hd{background:transparent; font-weight:400;}
     <a class="tab" href="https://nekomorning.github.io/s-rubber-dashboard/capacity.html">产能投放</a>
     <a class="tab" href="https://nekomorning.github.io/s-rubber-dashboard/maint.html">装置检修</a>
     <a class="tab" href="https://nekomorning.github.io/s-rubber-dashboard/p2.html">开工库存表需</a>
-    <a class="tab" href="https://nekomorning.github.io/s-rubber-dashboard/p1.html">日度价格</a>
+    <a class="tab" href="https://nekomorning.github.io/s-rubber-dashboard/index.html">日度价格</a>
     <a class="tab" href="https://nekomorning.github.io/s-rubber-dashboard/weekly.html">周报</a>
   </div>
 
@@ -863,6 +863,10 @@ var YEAR_COLORS = (D && D.yearColors) || {
   "2021":"#12B5A6","2022":"#8B5CF6","2023":"#1E6FFF","2024":"#F59A23","2025":"#E60000","2026":"#1A1A1A"
 };
 function yearColor(y){ return YEAR_COLORS[String(y)] || "#888888"; }
+/* 预测边界：以浏览器的当前年月为准。当前月及之后（含）为预测数据。
+   例：8 月查看时 2026-08~12 为预测；到 9 月，2026-08 转为实际、2026-09~12 为预测。 */
+function nowYM(){ var n=new Date(); return {y:n.getFullYear(), m:n.getMonth()+1}; }
+function isForecast(y,m){ var t=nowYM(); return (y>t.y) || (y===t.y && m>=t.m); }
 
 var state = { country: Object.keys(D.countries)[0] };
 var charts = [];
@@ -958,8 +962,8 @@ function renderMonthly(){
   months().forEach(function(mo){
     // 每年 12 月行加黑色实线下框线，区分各年
     var yrBorder = (mo.m === 12) ? " style='border-bottom:2px solid #000'" : "";
-    // 2026-08 起为预测数据，日期加「预」标记
-    var isFcst = (mo.y === 2026 && mo.m >= 8) || mo.y >= 2027;
+    // 当前月及之后为预测数据，日期加「预」标记
+    var isFcst = isForecast(mo.y, mo.m);
     var dateTxt = mo.date + (isFcst ? " <span class='fcst-tag'>预</span>" : "");
     body += "<tr"+yrBorder+"><td class='date-col'>"+dateTxt+"</td>";
     mo.v.forEach(function(v, idx){
@@ -1179,14 +1183,27 @@ function renderSeasonal(){
       var n = parseInt(y, 10);
       return n >= 2021 && n <= 2027;   // 季节图只展示 2021–2027
     });
-    var series = years.map(function(y){
-      var is2027 = (y === "2027");
-      return { name:y, type:"line", data: se.series[y], showSymbol:false,
-        lineStyle:{ width:1.5, type: is2027 ? "dashed" : "solid" },
-        itemStyle:{ color: is2027 ? "#FF69B4" : yearColor(y) } };
+    var t = nowYM();
+    var series = [];
+    years.forEach(function(y){
+      var yi = parseInt(y, 10);
+      // 预测起始月（1..13，13=全年实线）：过去年=13，当前年=当前月，未来年=1
+      var fcstStart = (yi < t.y) ? 13 : (yi === t.y) ? t.m : 1;
+      var arr = se.series[y] || [];
+      var solid = [], dash = [];
+      for(var mi=1; mi<=12; mi++){
+        var v = arr[mi-1];
+        solid.push(mi < fcstStart ? v : null);
+        dash.push(mi >= fcstStart ? v : null);
+      }
+      var col = yearColor(y);
+      // 实线部分（实际）与虚线部分（预测）共用同一名称/颜色，legend 仅出现一次
+      series.push({ name:y, type:"line", showSymbol:false, data: solid,
+        lineStyle:{ width:1.5, type:"solid" }, itemStyle:{ color: col } });
+      series.push({ name:y, type:"line", showSymbol:false, data: dash,
+        lineStyle:{ width:1.5, type:"dashed" }, itemStyle:{ color: col } });
     });
     chart.setOption({
-      color: years.map(function(y){ return (y==="2027") ? "#FF69B4" : yearColor(y); }),
       tooltip:{ trigger:"axis" },
       legend:{ data:years, type:"plain", top:2, right:0, left:0, textStyle:{fontSize:9}, itemWidth:14, itemHeight:8, itemGap:5 },
       grid:{ left:38, right:12, top:28, bottom:24 },
