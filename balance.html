@@ -1200,6 +1200,19 @@ function renderSeasonal(){
   wrap.innerHTML = "";
   var c = country();
   var t = nowYM();
+  function seasonalTip(params){
+    if(!params || !params.length) return '';
+    var seen={}, rows=[];
+    params.forEach(function(p){
+      if(p.value==null || p.value==='' || (typeof p.value==='number' && isNaN(p.value))) return;
+      if(seen[p.seriesName]) return;
+      seen[p.seriesName]=true;
+      var n=+p.value;
+      var txt = (Number.isInteger(n)) ? String(n) : (Math.round(n*100)/100).toString();
+      rows.push(p.marker + p.seriesName + '：' + txt);
+    });
+    return rows.length ? rows.join('<br>') : '无数据';
+  }
   c.seasonal.forEach(function(se){
     var cell = document.createElement("div");
     cell.className = "chart-cell";
@@ -1235,7 +1248,7 @@ function renderSeasonal(){
       }
     });
     chart.setOption({
-      tooltip:{ trigger:"axis", confine:true },
+      tooltip:{ trigger:"axis", confine:true, formatter:seasonalTip },
       legend:{ data:years, type:"plain", top:2, right:0, left:0, textStyle:{fontSize:9}, itemWidth:14, itemHeight:8, itemGap:5 },
       grid:{ left:38, right:12, top:28, bottom:24 },
       xAxis:{ type:"category", data:["1","2","3","4","5","6","7","8","9","10","11","12"],
