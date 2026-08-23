@@ -102,8 +102,9 @@ tr.drill-detail td.flat{color:var(--flat);}
 .card .chg.up{color:var(--up);} .card .chg.down{color:var(--down);} .card .chg.flat{color:var(--flat);}
 .card .dt{font-size:11px; color:var(--sub);}
 .card .chart{width:100%; height:240px;}
-.chart.tall{height:460px;}
+.chart.tall{height:520px;}
 .chart.sankey{height:520px;}
+#filterCharts .card .chart{height:300px;}
 @media (max-width:720px){ .chart.sankey{height:420px;} }
 
 .togglebar{display:inline-flex; gap:8px; margin-left:10px;}
@@ -1217,7 +1218,7 @@ function renderMultiFilterCard(mount, dirName, cfg){
   var ttl=document.createElement("div"); ttl.className="ttl"; ttl.innerHTML=focusName+" · "+dirName+" · "+cpText+tag;
   card.appendChild(ttl);
   var metaDiv=document.createElement("div"); metaDiv.className="meta"; metaDiv.innerHTML=meta.metaHtml; card.appendChild(metaDiv);
-  var chartDiv=document.createElement("div"); chartDiv.style.width="100%"; chartDiv.style.height="170px"; card.appendChild(chartDiv);
+  var chartDiv=document.createElement("div"); chartDiv.className="chart"; card.appendChild(chartDiv);
   mount.appendChild(card);
   var inst=echarts.init(chartDiv);
   inst.setOption(buildFilterChartOption(ser), true);
