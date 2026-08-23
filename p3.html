@@ -254,7 +254,8 @@ table.chain-tbl td.chain-total{font-weight:700;}
   <div id="filterPanel" class="fpanel">
     <span class="lbl">方向</span><select id="fDir" class="fsel"></select>
     <span class="lbl">国家/地区</span><select id="fFocus" class="fsel"></select>
-    <span class="lbl" id="fCpLbl">对手方</span><select id="fCparty" class="fsel"></select>
+    <span class="lbl">大洲</span><select id="fContinent" class="fsel"></select>
+    <span class="lbl">国家</span><select id="fCountry" class="fsel"></select>
     <span class="hint" id="filterHint">单位：吨</span>
   </div>
   <div class="card" id="filterSingle">
@@ -350,7 +351,7 @@ function switchTab(key){
   reporters = D.reporters || {};
   regions = D.regions || {};
   tableRows = [];
-  gF = {dir:"Export", focus:"Korea_Rep", cparty:"__ALL__"};
+  gF = {dir:"Export", focus:"Korea_Rep", continent:"__ALL__", country:"__ALL__"};
   ['exportTotalGrid','importTotalGrid','netImportGrid','filterSingle','filterCharts'].forEach(function(id){
     var el=document.getElementById(id); if(el) el.innerHTML='';
   });
@@ -430,6 +431,25 @@ var EU_MEMBERS_CN = ["奥地利","比利时","保加利亚","克罗地亚","塞�
 var SEASIA_MEMBERS_CN = ["文莱","柬埔寨","印度尼西亚","老挝","马来西亚","缅甸","菲律宾","新加坡","泰国","越南"];
 EU_MEMBERS_CN.forEach(function(k){ REGION_OF[k]='欧盟'; });
 SEASIA_MEMBERS_CN.forEach(function(k){ REGION_OF[k]='东南亚'; });
+
+// 大洲映射（自定义筛选按大洲聚合用）
+var CONTINENT_OF = {};
+function setContinent(list, cont){ list.forEach(function(k){ CONTINENT_OF[k]=cont; }); }
+setContinent(["China","Korea, Republic of","Japan","Chinese Taipei","India","Singapore","Thailand","Viet Nam","Indonesia","Malaysia","Philippines","Myanmar","Cambodia","Lao People's Democratic Republic","Brunei Darussalam","Hong Kong, China","United Arab Emirates","Saudi Arabia","Iran, Islamic Republic of","Kuwait","Qatar","Oman","Pakistan","Sri Lanka","Israel"], "亚洲");
+setContinent(EU_MEMBERS, "欧洲");
+setContinent(["Russian Federation","Switzerland","United Kingdom","Serbia","Ukraine","Türkiye"], "欧洲");
+setContinent(["United States of America","Canada","Mexico","Dominican Republic","Panama","Costa Rica"], "北美洲");
+setContinent(["Argentina","Brazil","Chile","Colombia","Ecuador","Paraguay"], "南美洲");
+setContinent(["South Africa","Egypt","Kenya","Niger","Tunisia"], "非洲");
+setContinent(["Australia","New Zealand"], "大洋洲");
+var CONTINENTS = ["亚洲","欧洲","北美洲","南美洲","非洲","大洋洲"];
+function continentOf(pKey){
+  if(CONTINENT_OF[pKey]) return CONTINENT_OF[pKey];
+  // 中文伙伴名 → 英文 key → 大洲
+  for(var en in CN){ if(CN[en]===pKey && CONTINENT_OF[en]) return CONTINENT_OF[en]; }
+  return null;
+}
+
 // 中文伙伴显示名微调（与出口国节点一致）
 CN["中国台湾"]="中国台湾省";
 // 主要国家配色（出口国/进口国着色，其余伙伴灰）
@@ -1053,7 +1073,7 @@ var FOCUS_LIST = [
   {key:"EU", name:"欧盟"}, {key:"SEAsia", name:"东南亚"}
 ];
 var FOCUS_NAMES = {}; FOCUS_LIST.forEach(function(f){ FOCUS_NAMES[f.key]=f.name; });
-var gF = {dir:"Export", focus:"Korea_Rep", cparty:"__ALL__"};
+var gF = {dir:"Export", focus:"Korea_Rep", continent:"__ALL__", country:"__ALL__"};
 var filterChartInst = null, filterChartInsts = [];
 
 function disposeFilterInsts(){
@@ -1082,53 +1102,96 @@ function regionAggregate(partners, reg){
   return out;
 }
 function regionName(c){ return (c==='__EU__')?'欧盟':((c==='__SEASIA__')?'东南亚':(CN[c]||c)); }
-function getFilterSeries(dir, focus, cparty){
+function continentAggregate(partners, cont){
+  var out = {};
+  if(!partners) return out;
+  Object.keys(partners).forEach(function(p){
+    if(continentOf(p) !== cont) return;
+    var s = partners[p]; if(!s) return;
+    Object.keys(s).forEach(function(m){
+      var v = s[m];
+      if(v!==null && v!==undefined) out[m] = (out[m]||0) + v;
+    });
+  });
+  return out;
+}
+function makeCpText(dir, continent, country){
+  if(country !== "__ALL__"){
+    var name = CN[country] || country;
+    if(dir==="Export") return "至"+name;
+    if(dir==="Import") return "自"+name+"进口";
+    return "相对"+name;
+  }
+  if(continent !== "__ALL__"){
+    if(dir==="Export") return "至"+continent;
+    if(dir==="Import") return "自"+continent+"进口";
+    return "相对"+continent;
+  }
+  return "全球合计";
+}
+function getFilterSeries(dir, focus, continent, country){
   var rec = (regions[focus] || reporters[focus]);
   if(!rec) return {};
-  var isRegion = (cparty==='__EU__' || cparty==='__SEASIA__');
-  var regName = (cparty==='__EU__') ? '欧盟' : '东南亚';
-  if(dir==="Net"){ // 净序列（imp 品种=进口−出口；exp 品种=出口−进口；全球合计 / 区域聚合 / 特定对手方）
+  if(dir==="Net"){
     if(!rec.Import || !rec.Export) return {};
-    if(cparty==="__ALL__") return netPair(rec.Export.total, rec.Import.total);
+    if(country==="__ALL__" && continent==="__ALL__") return netPair(rec.Export.total, rec.Import.total);
     var impP, expP;
-    if(isRegion){
-      impP = regionAggregate(rec.Import.partners, regName);
-      expP = regionAggregate(rec.Export.partners, regName);
+    if(country==="__ALL__"){
+      impP = continentAggregate(rec.Import.partners, continent);
+      expP = continentAggregate(rec.Export.partners, continent);
     } else {
-      impP = rec.Import.partners && rec.Import.partners[cparty];
-      expP = rec.Export.partners && rec.Export.partners[cparty];
+      impP = rec.Import.partners && rec.Import.partners[country];
+      expP = rec.Export.partners && rec.Export.partners[country];
     }
     return netPair(expP, impP);
   }
   var s = rec[dir];
   if(!s) return {};
-  if(cparty === "__ALL__") return s.total || {};
-  if(isRegion) return regionAggregate(s.partners, regName);
-  return (s.partners && s.partners[cparty]) || {};
+  if(country==="__ALL__" && continent==="__ALL__") return s.total || {};
+  if(country==="__ALL__") return continentAggregate(s.partners, continent);
+  return (s.partners && s.partners[country]) || {};
 }
 
-function topCounterparts(dir, focus){
+function sumLast12(s){
+  var sum=0; if(!s) return sum;
+  Object.keys(s).sort().slice(-12).forEach(function(mm){ var v=s[mm]; if(v!==null && v!==undefined) sum += v; });
+  return sum;
+}
+function topContinents(dir, focus){
   var rec = (regions[focus] || reporters[focus]);
   if(!rec) return [];
   var byC = {};
+  function add(ps, sign){
+    if(!ps) return;
+    Object.keys(ps).forEach(function(c){
+      var cont = continentOf(c); if(!cont) return;
+      byC[cont] = (byC[cont]||0) + sign*sumLast12(ps[c]);
+    });
+  }
   if(dir==="Net"){
     if(!rec.Import || !rec.Export) return [];
-    var imp=rec.Import.partners||{}, exp=rec.Export.partners||{};
-    var keys={}; Object.keys(imp).forEach(function(k){keys[k]=1;}); Object.keys(exp).forEach(function(k){keys[k]=1;});
-    Object.keys(keys).forEach(function(c){
-      if(!imp[c] || !exp[c]) return;
-      var net=netPair(exp[c], imp[c]);
-      var sum=0; Object.keys(net).sort().slice(-12).forEach(function(mm){ var v=net[mm]; if(v!==null && v!==undefined) sum+=v; });
-      byC[c]=Math.abs(sum); // 净序列按绝对量排序
-    });
+    add(rec.Export.partners, 1); add(rec.Import.partners, -1);
   } else {
-    var ps = rec[dir] && rec[dir].partners;
-    if(!ps) return [];
+    add(rec[dir] && rec[dir].partners, 1);
+  }
+  return Object.keys(byC).sort(function(a,b){return Math.abs(byC[b])-Math.abs(byC[a]);}).slice(0,5);
+}
+function topCountries(dir, focus, continent){
+  var rec = (regions[focus] || reporters[focus]);
+  if(!rec) return [];
+  var byC = {};
+  function add(ps, sign){
+    if(!ps) return;
     Object.keys(ps).forEach(function(c){
-      var m = ps[c]; if(!m) return;
-      var sum=0; Object.keys(m).sort().slice(-12).forEach(function(mm){ sum += (m[mm]||0); });
-      byC[c]=sum;
+      if(continentOf(c) !== continent) return;
+      byC[c] = (byC[c]||0) + sign*sumLast12(ps[c]);
     });
+  }
+  if(dir==="Net"){
+    if(!rec.Import || !rec.Export) return [];
+    add(rec.Export.partners, 1); add(rec.Import.partners, -1);
+  } else {
+    add(rec[dir] && rec[dir].partners, 1);
   }
   return Object.keys(byC).sort(function(a,b){return byC[b]-byC[a];}).slice(0,5);
 }
@@ -1189,13 +1252,12 @@ function applyYearVisibility(inst){
 }
 
 function renderSingleFilterChart(cfg){
-  var dir=gF.dir, focus=cfg.focus, cparty=cfg.cparty;
-  var sdict=getFilterSeries(dir, focus, cparty);
+  var dir=gF.dir, focus=cfg.focus, continent=cfg.continent, country=cfg.country;
+  var sdict=getFilterSeries(dir, focus, continent, country);
   var ser=monthDictToSeries(sdict);
   var dirName=(dir==="Net")?netName():((dir==="Export")?"出口":"进口");
   var focusName=FOCUS_NAMES[focus]||focus;
-  var cpText=(cparty==="__ALL__")?"全球合计":((dir==="Net")?("相对"+regionName(cparty)):((dir==="Export")?("至"+regionName(cparty)):("自"+regionName(cparty))));
-  document.getElementById("filterTtl").textContent = focusName+" · "+dirName+" · "+cpText;
+  document.getElementById("filterTtl").textContent = focusName+" · "+dirName+" · "+makeCpText(dir, continent, country);
   var meta=computeFilterMeta(sdict);
   document.getElementById("filterMeta").innerHTML=meta.metaHtml;
   document.getElementById("filterDt").textContent=(meta.last||"");
@@ -1206,13 +1268,13 @@ function renderSingleFilterChart(cfg){
 }
 
 function renderMultiFilterCard(mount, dirName, cfg){
-  var dir=gF.dir, focus=cfg.focus, cparty=cfg.cparty;
-  var sdict=getFilterSeries(dir, focus, cparty);
+  var dir=gF.dir, focus=cfg.focus, continent=cfg.continent, country=cfg.country;
+  var sdict=getFilterSeries(dir, focus, continent, country);
   var ser=monthDictToSeries(sdict);
   var meta=computeFilterMeta(sdict);
   var card=document.createElement("div"); card.className="card";
   var focusName=FOCUS_NAMES[focus]||focus;
-  var cpText=(cparty==="__ALL__")?"全球合计":((dir==="Net")?("相对"+regionName(cparty)):((dir==="Export")?("至"+regionName(cparty)):("自"+regionName(cparty))));
+  var cpText = makeCpText(dir, continent, country);
   var tag = cfg.isGlobal?'<span class="dt" style="float:right;font-size:11px;color:var(--sub);font-weight:400;">全球总计</span>'
                        :'<span class="dt" style="float:right;font-size:11px;color:var(--sub);font-weight:400;">Top'+cfg._idx+'</span>';
   var ttl=document.createElement("div"); ttl.className="ttl"; ttl.innerHTML=focusName+" · "+dirName+" · "+cpText+tag;
@@ -1227,15 +1289,19 @@ function renderMultiFilterCard(mount, dirName, cfg){
 }
 
 function renderFilterChart(){
-  var dir=gF.dir, focus=gF.focus, cparty=gF.cparty;
+  var dir=gF.dir, focus=gF.focus, continent=gF.continent, country=gF.country;
   var dirName=(dir==="Net")?netName():((dir==="Export")?"出口":"进口");
   var chartsCfg=[];
-  if(focus !== "__ALL__" && cparty === "__ALL__"){
-    var top5 = topCounterparts(dir, focus);
-    chartsCfg.push({focus:focus, cparty:"__ALL__", isGlobal:true});
-    top5.forEach(function(c){ chartsCfg.push({focus:focus, cparty:c, isGlobal:false}); });
+  if(country !== "__ALL__"){
+    chartsCfg.push({focus:focus, continent:continent, country:country, isGlobal:false});
+  } else if(continent !== "__ALL__"){
+    chartsCfg.push({focus:focus, continent:continent, country:"__ALL__", isGlobal:false});
+    var top5 = topCountries(dir, focus, continent);
+    top5.forEach(function(c){ chartsCfg.push({focus:focus, continent:continent, country:c, isGlobal:false}); });
   } else {
-    chartsCfg.push({focus:focus, cparty:cparty, isGlobal:(cparty==="__ALL__")});
+    chartsCfg.push({focus:focus, continent:"__ALL__", country:"__ALL__", isGlobal:true});
+    var top5 = topContinents(dir, focus);
+    top5.forEach(function(c){ chartsCfg.push({focus:focus, continent:c, country:"__ALL__", isGlobal:false}); });
   }
   disposeFilterInsts();
   document.getElementById("filterSingle").style.display = (chartsCfg.length===1)?"":"none";
@@ -1248,33 +1314,48 @@ function buildFilterPanel(){
   var sec=document.getElementById("filterSectionTitle"), panel=document.getElementById("filterPanel");
   if(!sec||!panel) return;
   var dirSel=document.getElementById("fDir"), focusSel=document.getElementById("fFocus"),
-      cpSel=document.getElementById("fCparty"), cpLbl=document.getElementById("fCpLbl"),
+      continentSel=document.getElementById("fContinent"), countrySel=document.getElementById("fCountry"),
       hintEl=document.getElementById("filterHint");
   dirSel.innerHTML = '<option value="Export">出口</option><option value="Import">进口</option><option value="Net">'+netName()+'</option>';
   hintEl.textContent = "单位：吨";
   function fillFocus(){ focusSel.innerHTML = FOCUS_LIST.map(function(f){ return '<option value="'+f.key+'">'+f.name+'</option>'; }).join(""); }
-  function fillCparty(){
-    var rec=(regions[gF.focus]||reporters[gF.focus]);
-    var regOpts = '<option value="__EU__">欧盟（聚合）</option><option value="__SEASIA__">东南亚（聚合）</option>';
+  function fillContinent(){
+    continentSel.innerHTML = '<option value="__ALL__">全部大洲</option>' + CONTINENTS.map(function(c){ return '<option value="'+c+'">'+c+'</option>'; }).join("");
+  }
+  function countryTradeVol(c){
+    var rec=(regions[gF.focus]||reporters[gF.focus]); if(!rec) return 0;
+    var m;
     if(gF.dir==="Net"){
-      // 净序列对对手方：imp 品种 = 自其进口 − 出口至其；exp 品种 = 出口至其 − 自其进口；仅列双向都有数据的伙伴
+      var expS=rec.Export.partners[c]||{}, impS=rec.Import.partners[c]||{};
+      m={}; Object.keys(expS).forEach(function(mm){ m[mm]=(expS[mm]||0)-(impS[mm]||0); });
+    } else {
+      m=(rec[gF.dir] && rec[gF.dir].partners[c])||{};
+    }
+    var sum=0; Object.keys(m).sort().slice(-12).forEach(function(mm){ sum += Math.abs(m[mm]||0); });
+    return sum;
+  }
+  function fillCountry(){
+    var rec=(regions[gF.focus]||reporters[gF.focus]);
+    var parts=[];
+    if(gF.dir==="Net"){
       var imp=(rec && rec.Import && rec.Import.partners)?Object.keys(rec.Import.partners):[];
       var exp=(rec && rec.Export && rec.Export.partners)?Object.keys(rec.Export.partners):[];
-      var both=imp.filter(function(k){return exp.indexOf(k)>=0;});
-      var allLbl = (PRODUCTS[CURRENT].netDir==='exp') ? '全球合计（出口−进口）' : '全球合计（进口−出口）';
-      cpSel.innerHTML = '<option value="__ALL__">'+allLbl+'</option>' + regOpts + both.map(function(c){ return '<option value="'+c+'">'+ (CN[c]||c) +'</option>'; }).join("");
-      cpLbl.textContent = "对手方";
-      return;
+      parts = imp.filter(function(k){return exp.indexOf(k)>=0;});
+    } else {
+      parts = (rec && rec[gF.dir] && rec[gF.dir].partners)?Object.keys(rec[gF.dir].partners):[];
     }
-    var side=rec && rec[gF.dir];
-    var parts=(side && side.partners)?Object.keys(side.partners):[];
-    cpSel.innerHTML = '<option value="__ALL__">全球合计</option>' + regOpts + parts.map(function(c){ return '<option value="'+c+'">'+ (CN[c]||c) +'</option>'; }).join("");
-    cpLbl.textContent = (gF.dir==="Import") ? "来源国" : "目的地";
+    if(gF.continent !== "__ALL__"){
+      parts = parts.filter(function(c){ return continentOf(c)===gF.continent; });
+    }
+    parts.sort(function(a,b){ return countryTradeVol(b)-countryTradeVol(a); });
+    var allLbl = (gF.continent==="__ALL__") ? "全部国家" : ("全部"+gF.continent+"国家");
+    countrySel.innerHTML = '<option value="__ALL__">'+allLbl+'</option>' + parts.map(function(c){ return '<option value="'+c+'">'+(CN[c]||c)+'</option>'; }).join("");
   }
-  dirSel.value=gF.dir; fillFocus(); focusSel.value=gF.focus; fillCparty(); cpSel.value=gF.cparty;
-  dirSel.onchange=function(){ gF.dir=this.value; gF.focus="Korea_Rep"; gF.cparty="__ALL__"; fillFocus(); focusSel.value=gF.focus; fillCparty(); cpSel.value=gF.cparty; renderFilterChart(); };
-  focusSel.onchange=function(){ gF.focus=this.value; gF.cparty="__ALL__"; fillCparty(); cpSel.value="__ALL__"; renderFilterChart(); };
-  cpSel.onchange=function(){ gF.cparty=this.value; renderFilterChart(); };
+  dirSel.value=gF.dir; fillFocus(); focusSel.value=gF.focus; fillContinent(); continentSel.value=gF.continent; fillCountry(); countrySel.value=gF.country;
+  dirSel.onchange=function(){ gF.dir=this.value; gF.focus="Korea_Rep"; gF.continent="__ALL__"; gF.country="__ALL__"; fillFocus(); focusSel.value=gF.focus; fillContinent(); continentSel.value="__ALL__"; fillCountry(); countrySel.value="__ALL__"; renderFilterChart(); };
+  focusSel.onchange=function(){ gF.focus=this.value; gF.continent="__ALL__"; gF.country="__ALL__"; fillContinent(); continentSel.value="__ALL__"; fillCountry(); countrySel.value="__ALL__"; renderFilterChart(); };
+  continentSel.onchange=function(){ gF.continent=this.value; gF.country="__ALL__"; fillCountry(); countrySel.value="__ALL__"; renderFilterChart(); };
+  countrySel.onchange=function(){ gF.country=this.value; renderFilterChart(); };
   renderFilterChart();
 }
 
