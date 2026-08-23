@@ -98,6 +98,12 @@ table.data td.grp-sub.cum-yoy-hd{background:transparent; font-weight:400;}
 @media (max-width:680px){ .grid-4{grid-template-columns:1fr;} }
 
 .footer{margin-top:30px; color:var(--sub); font-size:12px; text-align:center;}
+.year-filter{display:flex; flex-wrap:wrap; gap:8px; margin:-6px 0 14px; align-items:center;}
+.year-filter .ylbl{font-size:13px; color:var(--sub); margin-right:4px;}
+.year-filter .ybtn{padding:4px 10px; border-radius:6px; border:1px solid var(--border); background:#fff;
+  font-size:12px; cursor:pointer; font-weight:600; color:var(--text);}
+.year-filter .ybtn:hover{background:#f0f6ff;}
+.year-filter .ybtn.active{background:var(--accent); color:#fff; border-color:var(--accent);}
 </style>
 </head>
 <body>
@@ -151,6 +157,7 @@ table.data td.grp-sub.cum-yoy-hd{background:transparent; font-weight:400;}
   <div class="tbl-scroll" style="max-height:none;" id="annualWrap"></div>
 
   <div class="section-title">季节图<span class="sub-inline">：横轴为月份 1–12，图例为年度，配色参考其他页面；累计同比列不展示</span></div>
+  <div class="year-filter" id="yearFilter"></div>
   <div class="grid-4" id="seasonalWrap"></div>
 
   <div class="footer">合成胶数据看板 · 平衡表 · 数据源自《橡胶各国平衡表》Excel · 该页图表不纳入合成胶导出长图</div>
@@ -871,6 +878,28 @@ function isForecast(y,m){ var t=nowYM(); return (y>t.y) || (y===t.y && m>=t.m); 
 var state = { country: Object.keys(D.countries)[0] };
 var charts = [];
 
+/* ---------- 年份筛选（季节图） ---------- */
+var ALL_YEARS = ["2021","2022","2023","2024","2025","2026","2027"];
+var yearVisibility = (function(){
+  var v={}; ALL_YEARS.forEach(function(y){ v[y]=true; }); return v;
+})();
+function toggleYear(y){
+  yearVisibility[y]=!yearVisibility[y];
+  renderYearFilter();
+  renderSeasonal();
+}
+function renderYearFilter(){
+  var box=document.getElementById("yearFilter");
+  if(!box) return;
+  var html='<span class="ylbl">年份筛选：</span>';
+  ALL_YEARS.forEach(function(y){
+    var active=yearVisibility[y]; var c=yearColor(y);
+    html+='<button class="ybtn '+(active?'active':'')+'" style="'+(active?'background:'+c+';border-color:'+c+';color:#fff;':'')+'" '+
+          'onclick="toggleYear(\''+y+'\')">'+y+'</button>';
+  });
+  box.innerHTML=html;
+}
+
 function country(){ return D.countries[state.country]; }
 function inds(){ return country().indicators; }
 function months(){ return country().months; }   // ascending
@@ -1164,12 +1193,23 @@ function renderAnnual(){
 }
 
 /* ---------- seasonal ---------- */
+function buildPoint(v, m, fcstStart, color){
+  if(v == null) return {value:null};
+  var isFcst = m >= fcstStart;
+  // 单条 series 内部分段：预测段用虚线，实际段用实线；预测起始月本身起虚线，保证实线/虚线连接无断点
+  return {
+    value:v,
+    itemStyle:{opacity:0},
+    lineStyle: isFcst ? {type:"dashed", color:color} : {type:"solid", color:color}
+  };
+}
 function renderSeasonal(){
   charts.forEach(function(c){ try{c.dispose();}catch(e){} });
   charts = [];
   var wrap = document.getElementById("seasonalWrap");
   wrap.innerHTML = "";
   var c = country();
+  var t = nowYM();
   c.seasonal.forEach(function(se){
     var cell = document.createElement("div");
     cell.className = "chart-cell";
@@ -1182,28 +1222,19 @@ function renderSeasonal(){
     var years = Object.keys(se.series).sort().filter(function(y){
       var n = parseInt(y, 10);
       return n >= 2021 && n <= 2027;   // 季节图只展示 2021–2027
-    });
-    var t = nowYM();
-    var series = [];
-    years.forEach(function(y){
-      var yi = parseInt(y, 10);
+    }).filter(function(y){ return yearVisibility[y]; });
+    var series = years.map(function(y){
+      var yNum = parseInt(y, 10);
       // 预测起始月（1..13，13=全年实线）：过去年=13，当前年=当前月，未来年=1
-      var fcstStart = (yi < t.y) ? 13 : (yi === t.y) ? t.m : 1;
-      var arr = se.series[y] || [];
-      var solid = [], dash = [];
-      for(var mi=1; mi<=12; mi++){
-        var v = arr[mi-1];
-        solid.push(mi < fcstStart ? v : null);
-        dash.push(mi >= fcstStart ? v : null);
-      }
-      var col = yearColor(y);
-      // 实线部分（实际）与虚线部分（预测）共用同一名称/颜色，legend 仅出现一次
-      series.push({ name:y, type:"line", showSymbol:false, data: solid,
-        lineStyle:{ width:1.5, type:"solid" }, itemStyle:{ color: col } });
-      series.push({ name:y, type:"line", showSymbol:false, data: dash,
-        lineStyle:{ width:1.5, type:"dashed" }, itemStyle:{ color: col } });
+      var fcstStart = (yNum < t.y) ? 13 : (yNum === t.y ? t.m : 1);
+      var color = (y === "2027") ? "#FF69B4" : yearColor(y);
+      var data = se.series[y].map(function(v, idx){ return buildPoint(v, idx+1, fcstStart, color); });
+      return { name:y, type:"line", data:data, showSymbol:false,
+        lineStyle:{ width:1.5, type:"solid", color:color },
+        itemStyle:{ color:color } };
     });
     chart.setOption({
+      color: years.map(function(y){ return (y==="2027") ? "#FF69B4" : yearColor(y); }),
       tooltip:{ trigger:"axis" },
       legend:{ data:years, type:"plain", top:2, right:0, left:0, textStyle:{fontSize:9}, itemWidth:14, itemHeight:8, itemGap:5 },
       grid:{ left:38, right:12, top:28, bottom:24 },
@@ -1221,7 +1252,7 @@ function renderAll(){
   renderMonthly();
   renderFilterBar();
   renderAnnual();
-  try{ renderSeasonal(); }catch(e){ console.error('seasonal chart error', e); }
+  try{ renderYearFilter(); renderSeasonal(); }catch(e){ console.error('seasonal chart error', e); }
   loadNote();
 }
 /* ---------- 核心结论与假设 笔记（localStorage 按国家隔离 + 历史） ---------- */
