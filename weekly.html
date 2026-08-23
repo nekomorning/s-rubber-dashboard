@@ -1240,7 +1240,7 @@ async function exportPDF(){
   if(btn){ btn.textContent = '生成中...'; btn.disabled = true; }
   try{
     var jsPDF = window.jspdf.jsPDF;
-    var doc = new jsPDF({orientation:'landscape', unit:'mm', format:'a4'});
+    var doc = new jsPDF({orientation:'landscape', unit:'mm', format:'a4', compress:true});
     var pageW = doc.internal.pageSize.getWidth();   // 297mm A4 横
     var pageH = doc.internal.pageSize.getHeight();  // 210mm
     var margin = 8;
@@ -1268,7 +1268,8 @@ async function exportPDF(){
       var h = canvas.height * w / canvas.width;
       if(!firstPage) doc.addPage();
       if(h > availH + 0.5){ h = availH; }   // 高度压到一页内，宽度不变（不锁定宽高比）
-      doc.addImage(canvas.toDataURL('image/png'), 'PNG', margin, margin, w, h);
+      // 导出图统一用 JPEG(0.92)：对图表/截图近乎无损，体积约为 PNG 的 1/6~1/8，显著压缩 PDF
+      doc.addImage(canvas.toDataURL('image/jpeg', 0.92), 'JPEG', margin, margin, w, h);
     }
     placeImage(coverCanvas, true);
 
