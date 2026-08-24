@@ -599,7 +599,7 @@ function drawSeason(div, ind, xlabels, years){
       name:String(y), type:"line", showSymbol:false, connectNulls:true, data:pts,
       lineStyle:{width:isLatest?2.2:1.4, color:yearColor(y)},
       itemStyle:{color:yearColor(y)}, emphasis:{focus:"series"}, z:isLatest?10:5,
-      endLabel:{show:isLatest, fontSize:10, color:yearColor(y), formatter:function(p){ return fmt(p.value[1], ind.dec); }}
+      endLabel:{show:false}
     });
   });
   c.setOption({
