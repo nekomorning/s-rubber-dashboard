@@ -1389,10 +1389,10 @@ function chainLatestVal(col){
   for(var i=ms.length-1;i>=0;i--){ var v=chainVal(col, ms[i]); if(v!==null && v!==undefined) return v; }
   return null;
 }
-var CHAIN_SUBJECTS=['汇总概览','中国','韩国','美国','欧盟','东南亚','日本'];
+var CHAIN_SUBJECTS=['汇总概览','中国','韩国','欧盟','美国','东南亚','日本'];
 function isAll(){ return chainSubject==='汇总概览'; }
 function chainCols(){
-  return isAll() ? ['几国合计','中国','韩国','美国','欧盟','东南亚','日本'] : ['合计','丁二烯','顺丁橡胶','丁苯橡胶','ABS'];
+  return isAll() ? ['几国合计','中国','韩国','欧盟','美国','东南亚','日本'] : ['合计','丁二烯','顺丁橡胶','丁苯橡胶','ABS'];
 }
 function renderChainSubjects(){
   var box=document.getElementById('chainSubjects'); if(!box) return;
