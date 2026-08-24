@@ -832,6 +832,7 @@ function renderCardCharts(){
   document.querySelectorAll(".card .chart").forEach(function(div){
     var cfg=div._chart; if(!cfg) return;
     if(cfg.ind && ((cfg.ind.src||"").indexOf("trade")===0||cfg.ind.src==="chain")) drawSeasonMonth(div, cfg.ind.seriesObj, cfg.dec);
+    else if(cfg.ind && cfg.ind.src==="naphtha") drawSeasonWeek(div, cfg.ind, cfg.dec);
     else if(cfg.ts) drawDailyTs(div, cfg.cfg, cfg.dec);
     else drawSeason(div, cfg.ind, cfg.xlabels, cfg.years);
     delete div._chart;
