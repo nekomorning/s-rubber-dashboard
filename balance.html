@@ -35,6 +35,7 @@ body{background:var(--bg); color:var(--text);
 .tbl-scroll{max-height:520px; overflow:auto; border:1px solid var(--border); border-radius:10px; background:var(--card);}
 table.data{border-collapse:collapse; font-size:12px; white-space:nowrap;}
 table.data th, table.data td{padding:5px 9px; border:1px solid var(--border); text-align:right;}
+table.data tr.year-end td{border-bottom:2px solid #000;}
 table.data thead th{position:sticky; top:0; z-index:3; background:var(--accent); color:#fff; font-weight:600;}
 /* 累计同比表头不突出：白底黑字不加粗 */
 table.data thead th.cum-yoy-hd{background:#fff; color:#000; font-weight:400;}
@@ -990,11 +991,11 @@ function renderMonthly(){
   var body = "<tbody>";
   months().forEach(function(mo){
     // 每年 12 月行加黑色实线下框线，区分各年
-    var yrBorder = (mo.m === 12) ? " style='border-bottom:2px solid #000'" : "";
+    var yrCls = (mo.m === 12) ? " class='year-end'" : "";
     // 当前月及之后为预测数据，日期加「预」标记
     var isFcst = isForecast(mo.y, mo.m);
     var dateTxt = mo.date + (isFcst ? " <span class='fcst-tag'>预</span>" : "");
-    body += "<tr"+yrBorder+"><td class='date-col'>"+dateTxt+"</td>";
+    body += "<tr"+yrCls+"><td class='date-col'>"+dateTxt+"</td>";
     mo.v.forEach(function(v, idx){
       body += tdCell(v, ind[idx], idx);
     });
