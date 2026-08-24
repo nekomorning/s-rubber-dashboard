@@ -45,9 +45,14 @@ body{background:var(--bg); color:var(--text);
 .grid{display:grid; gap:14px;}
 .grid.c4{grid-template-columns:repeat(4,1fr);}
 .crow{display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:18px;}
-.crow .row-note{grid-column:1/-1; font-size:18px; color:var(--accent); font-weight:700; background:transparent; border:none; border-bottom:1px solid var(--border); border-radius:0; padding:8px 4px; min-height:34px; outline:none; cursor:text; line-height:1.5; margin-bottom:4px;}
+.crow .row-header{grid-column:1/-1; display:flex; align-items:center; gap:8px; margin-bottom:4px;}
+.crow .row-note{flex:1; font-size:18px; color:var(--accent); font-weight:700; background:transparent; border:none; border-bottom:1px solid var(--border); border-radius:0; padding:8px 4px; min-height:34px; outline:none; cursor:text; line-height:1.5;}
 .crow .row-note:focus{border-bottom-color:var(--accent); color:var(--accent);}
 .crow .row-note:empty::before{content:attr(data-ph); color:#b3bcc9; font-weight:400;}
+.crow .row-tools{display:flex; align-items:center; gap:6px;}
+.crow .row-tools button{font-size:12px; line-height:1; padding:4px 8px; border:1px solid var(--border); background:#fff; border-radius:6px; cursor:pointer; color:var(--sub);}
+.crow .row-tools button:hover{background:#f0f3f8; color:var(--accent); border-color:var(--accent);}
+.crow .row-tools button:disabled{opacity:.4; cursor:not-allowed;}
 .logic-tools{display:flex; gap:8px; margin:24px 0 6px;}
 @media (max-width:1200px){ .grid.c4{grid-template-columns:repeat(2,1fr);} .crow{grid-template-columns:repeat(2,1fr);} }
 @media (max-width:720px){ .grid.c4{grid-template-columns:1fr;} .crow{grid-template-columns:1fr;} .wrap{padding:12px 10px 40px;} }
@@ -708,11 +713,14 @@ function renderAll(){
     return;
   }
   var GROUP=4;
-  for(var i=0;i<layout.length;i+=GROUP){
-    var group=layout.slice(i,i+GROUP);
+  var rows=[];
+  for(var i=0;i<layout.length;i+=GROUP){ rows.push({start:i, items:layout.slice(i,i+GROUP)}); }
+  rows.forEach(function(r, ri){
+    var group=r.items;
     var row=document.createElement("div"); row.className="crow";
     // 行标题：可编辑小结（按组首卡片 uid 锚定）
     var firstId=group[0].id;
+    var header=document.createElement("div"); header.className="row-header";
     var note=document.createElement("div");
     note.className="row-note"; note.contentEditable="true";
     note.setAttribute("data-ph","本行小结：点击输入总结 / 结论…");
@@ -722,12 +730,47 @@ function renderAll(){
       el.addEventListener("input", function(){ setRowNote(cid, el.textContent); });
       el.addEventListener("keydown", function(e){ if(e.key==="Enter"){ e.preventDefault(); el.blur(); } });
     })(firstId, note);
-    row.appendChild(note);
-    group.forEach(function(item, gi){ row.appendChild(makeCard(item, i+gi)); });
+    var tools=document.createElement("div"); tools.className="row-tools";
+    tools.innerHTML='<button title="整行上移">▲</button><button title="整行下移">▼</button>';
+    var btns=tools.querySelectorAll("button");
+    btns[0].disabled=(ri===0);
+    btns[1].disabled=(ri===rows.length-1);
+    btns.forEach(function(b, bi){
+      b.addEventListener("click", function(e){ e.stopPropagation(); if(bi===0) moveRowUp(ri); else moveRowDown(ri); });
+    });
+    header.appendChild(note); header.appendChild(tools);
+    row.appendChild(header);
+    group.forEach(function(item, gi){ row.appendChild(makeCard(item, r.start+gi)); });
     root.appendChild(row);
-  }
+  });
   // 等 DOM 回流完成、容器有尺寸后再初始化图表
   setTimeout(renderCardCharts, 0);
+}
+
+function getRows(){
+  var GROUP=4, rows=[];
+  for(var i=0;i<layout.length;i+=GROUP){ rows.push(layout.slice(i,i+GROUP)); }
+  return rows;
+}
+function setRows(rows){ layout=[].concat.apply([], rows); }
+function swapRowNotes(aFirst, bFirst){
+  var aRn=rowNoteFor(aFirst), bRn=rowNoteFor(bFirst);
+  if(aRn) aRn.cardId=bFirst;
+  if(bRn) bRn.cardId=aFirst;
+}
+function moveRowUp(rowIdx){
+  if(rowIdx<=0) return;
+  var rows=getRows();
+  swapRowNotes(rows[rowIdx-1][0].id, rows[rowIdx][0].id);
+  var t=rows[rowIdx-1]; rows[rowIdx-1]=rows[rowIdx]; rows[rowIdx]=t;
+  setRows(rows); save(); saveContentAuto(); renderAll();
+}
+function moveRowDown(rowIdx){
+  var rows=getRows();
+  if(rowIdx>=rows.length-1) return;
+  swapRowNotes(rows[rowIdx][0].id, rows[rowIdx+1][0].id);
+  var t=rows[rowIdx+1]; rows[rowIdx+1]=rows[rowIdx]; rows[rowIdx]=t;
+  setRows(rows); save(); saveContentAuto(); renderAll();
 }
 
 function renderCardCharts(){
