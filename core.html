@@ -808,22 +808,15 @@ function getRows(){
   return rows;
 }
 function setRows(rows){ layout=[].concat.apply([], rows); }
-function swapRowNotes(aFirst, bFirst){
-  var aRn=rowNoteFor(aFirst), bRn=rowNoteFor(bFirst);
-  if(aRn) aRn.cardId=bFirst;
-  if(bRn) bRn.cardId=aFirst;
-}
 function moveRowUp(rowIdx){
   if(rowIdx<=0) return;
   var rows=getRows();
-  swapRowNotes(rows[rowIdx-1][0].id, rows[rowIdx][0].id);
   var t=rows[rowIdx-1]; rows[rowIdx-1]=rows[rowIdx]; rows[rowIdx]=t;
   setRows(rows); save(); saveContentAuto(); renderAll();
 }
 function moveRowDown(rowIdx){
   var rows=getRows();
   if(rowIdx>=rows.length-1) return;
-  swapRowNotes(rows[rowIdx][0].id, rows[rowIdx+1][0].id);
   var t=rows[rowIdx+1]; rows[rowIdx+1]=rows[rowIdx]; rows[rowIdx]=t;
   setRows(rows); save(); saveContentAuto(); renderAll();
 }
