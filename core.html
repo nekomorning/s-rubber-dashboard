@@ -148,7 +148,7 @@ body{background:var(--bg); color:var(--text);
   <div class="modal" id="modalLogic" style="display:none">
     <div class="modal-box">
       <div class="modal-head"><span>编辑定价逻辑</span><button id="logicClose">✕</button></div>
-      <div class="modal-search" style="font-size:12px;color:var(--sub)">每行一条。三种加粗标记：<code>**红**</code> 红色加粗 · <code>@@蓝@@</code> 蓝色加粗 · <code>%%绿%%</code> 绿色加粗。行首「供应：/需求：/核心：」自动蓝色加粗。</div>
+      <div class="modal-search" style="font-size:12px;color:var(--sub)">每行一条。三种加粗标记：<code>**红**</code> 红色加粗 · <code>@@蓝@@</code> 蓝色加粗 · <code>%%绿%%</code> 绿色加粗。行首「供应：/需求：/核心：」自动蓝色加粗。按 <code>Tab</code> 缩进、<code>Shift+Tab</code> 取消缩进（每级2空格），保存后渲染层级缩进。</div>
       <div class="modal-list" style="padding:10px 16px 16px;">
         <textarea id="logicInput" style="width:100%; height:150px; border:1px solid var(--border); border-radius:8px; padding:10px; font-size:14px; line-height:1.7; font-family:inherit; resize:vertical; box-sizing:border-box;"></textarea>
         <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:10px;">
@@ -281,13 +281,21 @@ function fetchJson(u){
 
 /* ---- 定价逻辑 / 行标题 / 保存内容 ---- */
 function esc(s){ var d=document.createElement("div"); d.textContent=(s==null?"":String(s)); return d.innerHTML; }
+function parseLogicIndent(line){
+  var raw=String(line==null?"":line);
+  var m=raw.match(/^([\t ]+)(.*)$/);
+  if(!m) return {level:0, text:raw};
+  var spaces=m[1].replace(/\t/g,"  ").length;
+  return {level:Math.min(Math.floor(spaces/2),8), text:m[2]};
+}
 function logicLineToHtml(line){
-  var s=esc(line);
+  var p=parseLogicIndent(line);
+  var s=esc(p.text);
   s=s.replace(/^([供应需求核心价格供需]+\s*[:：])/, '<b>$1</b>');
   s=s.replace(/\*\*([^*]+)\*\*/g, '<span style="color:#e0301e;font-weight:700">$1</span>');
   s=s.replace(/@@([^@]+)@@/g, '<span style="color:#0f4c81;font-weight:700">$1</span>');
   s=s.replace(/%%([^%]+)%%/g, '<span style="color:#0a9a5c;font-weight:700">$1</span>');
-  return s;
+  return {level:p.level, html:s};
 }
 function renderLogic(){
   var list=document.getElementById("logicList");
@@ -295,8 +303,10 @@ function renderLogic(){
   var lines=logicText||DEFAULT_LOGIC;
   list.innerHTML="";
   lines.forEach(function(line){
+    var r=logicLineToHtml(line);
     var li=document.createElement("li");
-    li.innerHTML=logicLineToHtml(line);
+    li.style.paddingLeft=(18+r.level*20)+"px";
+    li.innerHTML=r.html;
     list.appendChild(li);
   });
 }
@@ -334,7 +344,7 @@ function openLogicEdit(){
 function closeLogicEdit(){ document.getElementById("modalLogic").style.display="none"; }
 function saveLogicEdit(){
   var raw=document.getElementById("logicInput").value;
-  var lines=raw.split("\n").map(function(s){return s.trim();}).filter(Boolean);
+  var lines=raw.split("\n").map(function(s){return s.replace(/\r/g,"");}).filter(function(s){return s.trim()!=="";});
   if(!lines.length) return;
   if(JSON.stringify(lines)!==JSON.stringify(logicText||DEFAULT_LOGIC)){
     logicHistory.unshift({date:new Date().toLocaleString('zh-CN'), text:lines.slice()});
@@ -363,9 +373,10 @@ function openLogicHistory(){
     var ul=document.createElement("ul");
     ul.style.cssText='list-style:none; padding:0; margin:0;';
     h.text.forEach(function(line){
+      var r=logicLineToHtml(line);
       var li=document.createElement("li");
-      li.style.cssText='font-size:13px; color:var(--text); padding-left:14px; position:relative; margin:3px 0;';
-      li.innerHTML='<span style="position:absolute; left:0; color:var(--accent);">●</span>'+logicLineToHtml(line);
+      li.style.cssText='font-size:13px; color:var(--text); padding-left:'+(14+r.level*16)+'px; position:relative; margin:3px 0;';
+      li.innerHTML='<span style="position:absolute; left:'+(r.level*16)+'px; color:var(--accent);">●</span>'+r.html;
       ul.appendChild(li);
     });
     item.appendChild(ul);
@@ -377,6 +388,50 @@ function openLogicHistory(){
     list.appendChild(item);
   });
   document.getElementById("modalHistory").style.display="flex";
+}
+function setupLogicIndent(){
+  var ta=document.getElementById("logicInput"); if(!ta) return;
+  ta.addEventListener("keydown", function(e){
+    if(e.key!=="Tab") return;
+    e.preventDefault();
+    var start=this.selectionStart, end=this.selectionEnd, val=this.value;
+    if(start===end && !e.shiftKey){
+      var before=val.slice(0,start), after=val.slice(end);
+      this.value=before+"  "+after;
+      this.selectionStart=this.selectionEnd=start+2;
+      return;
+    }
+    if(start===end && e.shiftKey){
+      var lineStart=val.lastIndexOf("\n", start-1)+1;
+      var line=val.slice(lineStart, end);
+      if(line.indexOf("  ")===0){ this.value=val.slice(0,lineStart)+line.slice(2)+val.slice(end); this.selectionStart=this.selectionEnd=lineStart; }
+      else if(line.indexOf("\t")===0){ this.value=val.slice(0,lineStart)+line.slice(1)+val.slice(end); this.selectionStart=this.selectionEnd=lineStart; }
+      return;
+    }
+    var lineStart=val.lastIndexOf("\n", start-1)+1;
+    var before=val.slice(0,lineStart), after=val.slice(end);
+    var sel=val.slice(lineStart, end);
+    var lines=sel.split("\n");
+    if(e.shiftKey){
+      var changed=false;
+      lines=lines.map(function(ln){
+        if(ln.indexOf("  ")===0){ changed=true; return ln.slice(2); }
+        if(ln.indexOf("\t")===0){ changed=true; return ln.slice(1); }
+        return ln;
+      });
+      if(changed){
+        var newSel=lines.join("\n");
+        this.value=before+newSel+after;
+        this.selectionStart=lineStart;
+        this.selectionEnd=lineStart+newSel.length;
+      }
+    } else {
+      var newSel=lines.map(function(ln){ return "  "+ln; }).join("\n");
+      this.value=before+newSel+after;
+      this.selectionStart=lineStart;
+      this.selectionEnd=lineStart+newSel.length;
+    }
+  });
 }
 
 /* ---- 贸易流：从 butadiene_trade.json 构建 indicators（月度季节图，不含桑基/堆积） ---- */
@@ -595,6 +650,7 @@ function init(){
       document.getElementById("dataDate").textContent="数据截至 "+(SOURCES.daily.date||"");
       buildYearBar();
       loadContent();
+      setupLogicIndent();
       layout=loadLayout();
       renderAll();
     })
