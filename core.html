@@ -776,9 +776,10 @@ function buildBalanceIndicators(data){
     var inds={};
     (countries[c].seasonal||[]).forEach(function(se){
       var so=convertBalanceSeries(se.series);
+      var noPct=/开工|占比|依存度|库消比|库存/.test(se.name);
       inds[String(se.idx)]={
         title:se.name, unit:"", dec:2, src:"balance."+c,
-        seriesObj:so, stat:calcStats(so)
+        seriesObj:so, stat:calcStats(so), noPct:noPct
       };
     });
     out[c]={indicators:inds};
@@ -1084,7 +1085,9 @@ function makeCard(item, ri, ci){
     } else {
       var st, cls2, sign, latestTxt2, chgTxt2, pctTxt2, dateTxt2;
       var isTrade=(ind.src||"").indexOf("trade")===0;
-      if(isTrade||ind.src==="chain"){
+      var isBalance=(ind.src||"").indexOf("balance")===0;
+      var show4=isTrade||ind.src==="chain"||(isBalance && !ind.noPct);
+      if(show4){
         var cs=calcStats(ind.seriesObj); st=cs;
         latestTxt2=fmt(cs?cs.latest:null,dec);
         cls2=chgCls(cs?cs.chg:null); sign=(cs&&cs.chg>0?"+":"");
@@ -1099,19 +1102,20 @@ function makeCard(item, ri, ci){
         pctTxt2=(st.pct===null?"—":sign+st.pct.toFixed(2)+"%");
         dateTxt2=st.latestDate||"";
       }
-      var chgVal = (isTrade||ind.src==="chain") ? (cs?cs.chg:null) : st.chg;
-      var pctStr = (isTrade||ind.src==="chain") ? (cs&&cs.pct!==null?cs.pct.toFixed(2)+"%":"—") : pctTxt2;
+      var chgVal = show4 ? (cs?cs.chg:null) : st.chg;
+      var pctStr = show4 ? (cs&&cs.pct!==null?cs.pct.toFixed(2)+"%":"—") : pctTxt2;
       meta=document.createElement("div"); meta.className="meta";
-      if(isTrade||ind.src==="chain"){
-        // 贸易流/产业链：最新值（万吨）+ 环比% + 同比% + 累计同比%
+      if(show4){
+        // 贸易流/产业链/平衡表（非%非库存）：最新值 + 环比% + 同比% + 累计同比%
         function pctChip(label, val){
           if(val===null||val===undefined) return '<span class="stat"><b>'+label+'</b> <i class="flat">—</i></span>';
           var c=val>0?"up":(val<0?"down":"flat");
           var s=(val>0?"+":"")+val.toFixed(2)+"%";
           return '<span class="stat"><b>'+label+'</b> <i class="'+c+'">'+s+'</i></span>';
         }
-        var latestW = cs ? cs.latest/10000 : null;
-        meta.innerHTML='<span class="val">'+fmt(latestW,2)+'<span class="unit"> 万吨</span></span>'+
+        var latestVal = cs ? cs.latest : null;
+        var unitSpan = isTrade||ind.src==="chain" ? '<span class="unit"> 万吨</span>' : '<span class="unit"> '+ind.unit+'</span>';
+        meta.innerHTML='<span class="val">'+fmt(latestVal,dec)+unitSpan+'</span>'+
           pctChip('环比', (cs&&cs.pct!==null)?cs.pct:null)+
           pctChip('同比', (cs&&cs.yoyPct!==null)?cs.yoyPct:null)+
           pctChip('累计同比', (cs&&cs.cumYoYPct!==null)?cs.cumYoYPct:null);
