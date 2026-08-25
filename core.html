@@ -734,7 +734,7 @@ function drawSeasonWeek(div, ind, dec){
   c.setOption({
     animation:false,
     grid:{left:8,right:14,top:26,bottom:4,containLabel:true},
-    legend:{show:true, top:0, right:0, itemWidth:14, itemHeight:2, icon:"rect", textStyle:{fontSize:11,color:"#6b7686"}, data:sers.map(function(s){return s.name;})},
+    legend:{show:true, top:0, right:0, itemWidth:14, itemHeight:2, icon:"rect", textStyle:{fontSize:11,color:"#6b7686"}, data:sers.map(function(s){return s.name;}), selected:{'2027':false,'2027 预测':false}},
     tooltip:{trigger:"axis", confine:true, formatter:function(ps){
       if(!ps.length) return "";
       var idx=ps[0].dataIndex; var lab=axis[idx]||("W"+(idx+1));
@@ -815,7 +815,7 @@ function drawSeasonMonth(div, seriesObj, dec){
       ps.forEach(function(p){ s+="<br>"+p.marker+p.seriesName+"年： <b>"+fmt(p.value/10000,2)+"</b>"; });
       return s;
     }},
-    legend:{data:sorted.map(function(s){return s.name;}), bottom:0, left:"center", textStyle:{fontSize:10}, itemWidth:10, itemHeight:5, itemGap:6},
+    legend:{data:sorted.map(function(s){return s.name;}), selected:{'2027':false}, bottom:0, left:"center", textStyle:{fontSize:10}, itemWidth:10, itemHeight:5, itemGap:6},
     grid:{left:8,right:14,top:14,bottom:42,containLabel:true},
     xAxis:{type:"category", data:monthLabels, axisLine:{lineStyle:{color:"#ccc"}}, axisLabel:{fontSize:10}},
     yAxis:{type:"value", name:"万吨", nameTextStyle:{fontSize:10,color:"#999"}, nameGap:6, axisLine:{show:false}, splitLine:{lineStyle:{color:"#f0f0f0"}}, axisLabel:{fontSize:10, formatter:function(v){ var w=v/10000; return Math.abs(w)>=100?w.toFixed(0):w.toFixed(1); }}},
@@ -874,7 +874,7 @@ function drawSeasonBalance(div, seriesObj, dec){
       });
       return s;
     }},
-    legend:{data:legendNames, bottom:0, left:"center", textStyle:{fontSize:10}, itemWidth:10, itemHeight:5, itemGap:6},
+    legend:{data:legendNames, selected:{'2027':false}, bottom:0, left:"center", textStyle:{fontSize:10}, itemWidth:10, itemHeight:5, itemGap:6},
     grid:{left:8,right:14,top:14,bottom:42,containLabel:true},
     xAxis:{type:"category", data:monthLabels, axisLine:{lineStyle:{color:"#ccc"}}, axisLabel:{fontSize:10}},
     yAxis:{type:"value", scale:true, nameTextStyle:{fontSize:10,color:"#999"}, nameGap:6, axisLine:{show:false}, splitLine:{lineStyle:{color:"#f0f0f0"}}, axisLabel:{fontSize:10, formatter:function(v){ return Math.abs(v)>=100?v.toFixed(0):v.toFixed(1); }}},
