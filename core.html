@@ -29,6 +29,9 @@ body{background:var(--bg); color:var(--text);
 .logic li{position:relative; padding-left:18px; margin:8px 0; color:var(--text); font-size:16px; line-height:1.6;}
 .logic li::before{content:"●"; position:absolute; left:2px; color:var(--accent); font-size:9px; top:6px;}
 .logic b{color:var(--accent);}
+.logic li.img-line{list-style:none;}
+.logic li.img-line::before{content:none;}
+.logic img.logic-img{max-width:100%; height:auto; border-radius:10px; margin:4px 0; border:1px solid var(--border); display:block; cursor:zoom-in;}
 /* 年份筛选 */
 .ybar{display:flex; gap:8px; flex-wrap:wrap; margin:4px 0 14px;}
 .ybtn{display:inline-flex; align-items:center; gap:6px; padding:5px 14px; border-radius:16px;
@@ -150,12 +153,16 @@ body{background:var(--bg); color:var(--text);
   <div class="modal" id="modalLogic" style="display:none">
     <div class="modal-box">
       <div class="modal-head"><span>编辑定价逻辑</span><button id="logicClose">✕</button></div>
-      <div class="modal-search" style="font-size:12px;color:var(--sub)">每行一条。三种加粗标记：<code>**红**</code> 红色加粗 · <code>@@蓝@@</code> 蓝色加粗 · <code>%%绿%%</code> 绿色加粗。行首「供应：/需求：/核心：」自动蓝色加粗。按 <code>Tab</code> 缩进、<code>Shift+Tab</code> 取消缩进（每级2空格），保存后渲染层级缩进。</div>
+      <div class="modal-search" style="font-size:12px;color:var(--sub)">每行一条。三种加粗标记：<code>**红**</code> 红色加粗 · <code>@@蓝@@</code> 蓝色加粗 · <code>%%绿%%</code> 绿色加粗。行首「供应：/需求：/核心：」自动蓝色加粗。按 <code>Tab</code> 缩进、<code>Shift+Tab</code> 取消缩进（每级2空格），保存后渲染层级缩进。支持在框内 <b>粘贴 / 拖拽 / 点「插入图片」</b> 嵌入截图（自动压缩，仅保存在本浏览器）。</div>
       <div class="modal-list" style="padding:10px 16px 16px;">
         <textarea id="logicInput" style="width:100%; height:150px; border:1px solid var(--border); border-radius:8px; padding:10px; font-size:14px; line-height:1.7; font-family:inherit; resize:vertical; box-sizing:border-box;"></textarea>
-        <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:10px;">
-          <button class="abtn" id="logicSave">保存</button>
-          <button class="abtn" id="logicCancel">取消</button>
+        <input type="file" id="logicImgFile" accept="image/*" style="display:none">
+        <div style="display:flex; gap:10px; justify-content:space-between; align-items:center; margin-top:10px;">
+          <button class="abtn" id="logicImgBtn">🖼 插入图片</button>
+          <div style="display:flex; gap:10px;">
+            <button class="abtn" id="logicSave">保存</button>
+            <button class="abtn" id="logicCancel">取消</button>
+          </div>
         </div>
       </div>
     </div>
@@ -247,6 +254,7 @@ var DEFAULT_LOGIC=[
 var logicText=null;    // null=使用默认；保存后为数组
 var rowNotes=[];       // [{cardId, text}] 行标题，按行内第一张卡的 uid 锚定
 var logicHistory=[];   // [{date, text:[]}] 定价逻辑编辑历史（最新在前）
+var logicImages={};    // {id: dataURL} 粘贴/拖入的图片，按 id 在文本行中以 img::<id> 引用；仅存本浏览器 localStorage
 
 function defaultLayout(){
   // 默认布局：一行 4 张卡片，用固定 id（d1~d4），保证行标题锚定稳定
@@ -292,14 +300,24 @@ function parseLogicIndent(line){
   var spaces=m[1].replace(/\t/g,"  ").length;
   return {level:Math.min(Math.floor(spaces/2),8), text:m[2]};
 }
+function escAttr(s){ return String(s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
 function logicLineToHtml(line){
   var p=parseLogicIndent(line);
-  var s=esc(p.text);
+  var raw=p.text;
+  if(/^img::(.+)$/.test(raw)){
+    var id=raw.slice(5).trim();
+    var src=logicImages[id];
+    if(src){
+      return {level:p.level, isImg:true, html:'<img class="logic-img" src="'+escAttr(src)+'" alt="'+escAttr(id)+'">'};
+    }
+    return {level:p.level, isImg:true, html:'<span style="color:var(--sub)">[图片缺失：'+esc(id)+']</span>'};
+  }
+  var s=esc(raw);
   s=s.replace(/^([供应需求核心价格供需]+\s*[:：])/, '<b>$1</b>');
   s=s.replace(/\*\*([^*]+)\*\*/g, '<span style="color:#e0301e;font-weight:700">$1</span>');
   s=s.replace(/@@([^@]+)@@/g, '<span style="color:#0f4c81;font-weight:700">$1</span>');
   s=s.replace(/%%([^%]+)%%/g, '<span style="color:#0a9a5c;font-weight:700">$1</span>');
-  return {level:p.level, html:s};
+  return {level:p.level, isImg:false, html:s};
 }
 function renderLogic(){
   var list=document.getElementById("logicList");
@@ -309,7 +327,8 @@ function renderLogic(){
   lines.forEach(function(line){
     var r=logicLineToHtml(line);
     var li=document.createElement("li");
-    li.style.paddingLeft=(18+r.level*20)+"px";
+    if(r.isImg){ li.className="img-line"; li.style.paddingLeft="0"; }
+    else { li.style.paddingLeft=(18+r.level*20)+"px"; }
     li.innerHTML=r.html;
     list.appendChild(li);
   });
@@ -324,7 +343,7 @@ function setRowNote(cardId, text){
   saveContentAuto();
 }
 function contentPayload(){
-  return {logic: logicText||DEFAULT_LOGIC, rowNotes: rowNotes, history: logicHistory,
+  return {logic: logicText||DEFAULT_LOGIC, rowNotes: rowNotes, history: logicHistory, images: logicImages,
           savedAt: new Date().toLocaleString('zh-CN')};
 }
 function saveContentAuto(){ try{ localStorage.setItem(CONTENT_KEY, JSON.stringify(contentPayload())); }catch(e){} }
@@ -336,6 +355,7 @@ function loadContent(){
     if(Array.isArray(data.logic)&&data.logic.length) logicText=data.logic;
     if(Array.isArray(data.rowNotes)) rowNotes=data.rowNotes;
     if(Array.isArray(data.history)) logicHistory=data.history;
+    if(data.images && typeof data.images==="object") logicImages=data.images;
   }
   renderLogic();
 }
@@ -379,8 +399,13 @@ function openLogicHistory(){
     h.text.forEach(function(line){
       var r=logicLineToHtml(line);
       var li=document.createElement("li");
-      li.style.cssText='font-size:13px; color:var(--text); padding-left:'+(14+r.level*16)+'px; position:relative; margin:3px 0;';
-      li.innerHTML='<span style="position:absolute; left:'+(r.level*16)+'px; color:var(--accent);">●</span>'+r.html;
+      if(r.isImg){
+        li.style.cssText='font-size:13px; color:var(--text); padding-left:14px; position:relative; margin:3px 0;';
+        li.innerHTML=r.html;
+      } else {
+        li.style.cssText='font-size:13px; color:var(--text); padding-left:'+(14+r.level*16)+'px; position:relative; margin:3px 0;';
+        li.innerHTML='<span style="position:absolute; left:'+(r.level*16)+'px; color:var(--accent);">●</span>'+r.html;
+      }
       ul.appendChild(li);
     });
     item.appendChild(ul);
@@ -436,6 +461,57 @@ function setupLogicIndent(){
       this.selectionEnd=lineStart+newSel.length;
     }
   });
+  ta.addEventListener("paste", function(e){
+    var cd=e.clipboardData||window.clipboardData; if(!cd||!cd.items) return;
+    var imgItem=null;
+    for(var i=0;i<cd.items.length;i++){ if(cd.items[i].type&&cd.items[i].type.indexOf("image/")===0){ imgItem=cd.items[i]; break; } }
+    if(!imgItem) return;   // 非图片（纯文本）放行正常粘贴
+    e.preventDefault();
+    embedImageFile(imgItem.getAsFile()).then(function(d){ if(d) insertImageToken(d); });
+  });
+  ta.addEventListener("dragover", function(e){ e.preventDefault(); });
+  ta.addEventListener("drop", function(e){
+    var dt=e.dataTransfer; if(!dt||!dt.files||!dt.files.length) return;
+    if(/^image\//.test(dt.files[0].type)){ e.preventDefault(); embedImageFile(dt.files[0]).then(function(d){ if(d) insertImageToken(d); }); }
+  });
+}
+/* ---- 图片嵌入：压缩后存 localStorage（logicImages），文本行以 img::<id> 引用 ---- */
+function embedImageFile(file){
+  return new Promise(function(resolve){
+    if(!file || !/^image\//.test(file.type)){ resolve(null); return; }
+    var reader=new FileReader();
+    reader.onload=function(){
+      var img=new Image();
+      img.onload=function(){
+        try{
+          var maxW=1000, w=img.width, h=img.height;
+          if(w>maxW){ h=Math.round(h*maxW/w); w=maxW; }
+          var cv=document.createElement("canvas"); cv.width=w; cv.height=h;
+          cv.getContext("2d").drawImage(img,0,0,w,h);
+          resolve(cv.toDataURL("image/jpeg",0.85));
+        }catch(e){ resolve(reader.result); }
+      };
+      img.onerror=function(){ resolve(reader.result); };
+      img.src=reader.result;
+    };
+    reader.onerror=function(){ resolve(null); };
+    reader.readAsDataURL(file);
+  });
+}
+function insertImageToken(dataUrl){
+  if(!dataUrl) return;
+  var id="img_"+(Date.now().toString(36))+"_"+Math.random().toString(36).slice(2,7);
+  logicImages[id]=dataUrl;
+  var ta=document.getElementById("logicInput"); if(!ta) return;
+  var start=ta.selectionStart||0, end=ta.selectionEnd||0, val=ta.value;
+  var before=val.slice(0,start)+(start>0 && val.charAt(start-1)!=="\n"?"\n":"");
+  var token="img::"+id;
+  var after=val.slice(end);
+  var tail=(after.length>0 && after.charAt(0)!=="\n")?"\n":"";
+  ta.value=before+token+tail+after;
+  var pos=before.length+token.length+(tail?1:0);
+  ta.selectionStart=ta.selectionEnd=pos;
+  ta.focus();
 }
 
 /* ---- 贸易流：从 butadiene_trade.json 构建 indicators（月度季节图，不含桑基/堆积） ---- */
@@ -1321,6 +1397,16 @@ document.getElementById("logicClose").onclick=closeLogicEdit;
 document.getElementById("logicCancel").onclick=closeLogicEdit;
 document.getElementById("logicSave").onclick=saveLogicEdit;
 document.getElementById("historyLogic").onclick=openLogicHistory;
+document.getElementById("logicImgBtn").onclick=function(){ document.getElementById("logicImgFile").click(); };
+document.getElementById("logicImgFile").addEventListener("change", function(e){
+  var f=e.target.files&&e.target.files[0];
+  if(f){ embedImageFile(f).then(function(d){ if(d) insertImageToken(d); }); }
+  e.target.value="";
+});
+/* 点击逻辑区图片放大 */
+function showImgZoom(src){ var z=document.getElementById("imgZoom"); document.getElementById("imgZoomImg").src=src; z.classList.add("show"); z.style.display="flex"; }
+document.getElementById("imgZoom").addEventListener("click", function(){ this.classList.remove("show"); this.style.display="none"; });
+document.getElementById("logicList").addEventListener("click", function(e){ var im=e.target.closest&&e.target.closest(".logic-img"); if(im) showImgZoom(im.getAttribute("src")); });
 document.getElementById("historyClose").onclick=function(){ document.getElementById("modalHistory").style.display="none"; };
 document.getElementById("modalLogic").addEventListener("click", function(e){ if(e.target===this) closeLogicEdit(); });
 document.getElementById("modalHistory").addEventListener("click", function(e){ if(e.target===this) this.style.display="none"; });
@@ -1334,5 +1420,8 @@ document.addEventListener("click", function(e){
   document.querySelectorAll(".card .menu.show").forEach(function(m){ m.classList.remove("show"); });
 });
 </script>
+<div id="imgZoom" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.82); z-index:9999; align-items:center; justify-content:center; cursor:zoom-out;">
+  <img id="imgZoomImg" style="max-width:94vw; max-height:94vh; border-radius:10px; box-shadow:0 8px 40px rgba(0,0,0,.4);">
+</div>
 </body>
 </html>
