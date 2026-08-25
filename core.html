@@ -1538,7 +1538,7 @@ function drawReviewChart(div, entries){
   c.setOption({
     animation:false,
     grid:{left:4, right:rightPad, top:26, bottom:22, containLabel:false},
-    legend:{show:true, top:2, right:4, itemWidth:14, itemHeight:2, icon:"rect", textStyle:{fontSize:11,color:"#6b7686"}, data:legend},
+    legend:{show:true, top:2, left:"center", itemWidth:14, itemHeight:2, icon:"rect", textStyle:{fontSize:11,color:"#6b7686"}, data:legend},
     tooltip:{trigger:"axis", confine:true, formatter:function(ps){
       if(!ps.length) return "";
       var s=ps[0].axisValueLabel;
