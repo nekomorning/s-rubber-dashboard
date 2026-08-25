@@ -815,31 +815,57 @@ function drawSeasonMonth(div, seriesObj, dec){
   charts.push(c);
 }
 
-/* 平衡表季节图（与 trade 同结构 seriesObj，但单位不固定，不除 10000、y 轴自适应） */
+/* 平衡表季节图（与 trade 同结构 seriesObj，但单位不固定，不除 10000、y 轴自适应）
+   实际数据画实线，预测数据画虚线；过去年全实线，当前年从当前月起虚线，未来年全虚线 */
 function drawSeasonBalance(div, seriesObj, dec){
   var c=echarts.init(div);
   var series=buildSeasonSeries(seriesObj);
   var years=series.map(function(s){return s.name;});
   var sorted=series.slice().sort(function(a,b){return parseInt(a.name)-parseInt(b.name);})
     .filter(function(s){ var y=parseInt(s.name,10); return y>=2021 && y<=2027; });
+  var now=new Date();
+  var curY=now.getFullYear(), curM=now.getMonth()+1;
+  var sers=[], legendNames=[];
+  sorted.forEach(function(s){
+    var yi=parseInt(s.name,10);
+    var predStart = (yi < curY) ? 13 : (yi === curY ? curM : 1);
+    var col=yearColor(s.name);
+    var isLast = s.name === years[years.length-1];
+    var actual=[], pred=[];
+    for(var mi=0; mi<12; mi++){
+      var v=s.data[mi], mnum=mi+1;
+      actual.push(mnum <= predStart-1 ? v : null);
+      pred.push(mnum >= predStart-1 ? v : null);
+    }
+    legendNames.push(s.name);
+    sers.push({name:s.name, type:"line", smooth:true, symbol:"none", data:actual, connectNulls:true,
+      lineStyle:{width:isLast?2.2:1.5, color:col}, itemStyle:{color:col}, z:isLast?10:5});
+    if(pred.some(function(v){ return v!=null; })){
+      sers.push({name:s.name, type:"line", smooth:true, symbol:"none", data:pred, connectNulls:true,
+        lineStyle:{width:isLast?2.2:1.5, type:"dashed", color:col}, itemStyle:{color:col}, z:isLast?10:5});
+    }
+  });
   c.setOption({
     animation:false,
     tooltip:{trigger:"axis", confine:true, formatter:function(ps){
       if(!ps.length) return "";
       var s=ps[0].axisValue;
+      // 去重：同一年只显示一次有效值
+      var seen={};
       ps.sort(function(a,b){return Number(b.seriesName)-Number(a.seriesName);});
-      ps.forEach(function(p){ s+="<br>"+p.marker+p.seriesName+"年： <b>"+fmt(p.value, dec==null?2:dec)+"</b>"; });
+      ps.forEach(function(p){
+        if(p.value==null || p.value==='' || (typeof p.value==='number' && isNaN(p.value))) return;
+        if(seen[p.seriesName]) return;
+        seen[p.seriesName]=true;
+        s+="<br>"+p.marker+p.seriesName+"年： <b>"+fmt(p.value, dec==null?2:dec)+"</b>";
+      });
       return s;
     }},
-    legend:{data:sorted.map(function(s){return s.name;}), bottom:0, left:"center", textStyle:{fontSize:10}, itemWidth:10, itemHeight:5, itemGap:6},
+    legend:{data:legendNames, bottom:0, left:"center", textStyle:{fontSize:10}, itemWidth:10, itemHeight:5, itemGap:6},
     grid:{left:8,right:14,top:14,bottom:42,containLabel:true},
     xAxis:{type:"category", data:monthLabels, axisLine:{lineStyle:{color:"#ccc"}}, axisLabel:{fontSize:10}},
     yAxis:{type:"value", scale:true, nameTextStyle:{fontSize:10,color:"#999"}, nameGap:6, axisLine:{show:false}, splitLine:{lineStyle:{color:"#f0f0f0"}}, axisLabel:{fontSize:10, formatter:function(v){ return Math.abs(v)>=100?v.toFixed(0):v.toFixed(1); }}},
-    series: sorted.map(function(s){
-      var isLast = s.name === years[years.length-1];
-      return {name:s.name, type:"line", smooth:true, symbol:"none", data:s.data, connectNulls:true,
-        lineStyle:{width:isLast?2.2:1.5, color:yearColor(s.name)}, itemStyle:{color:yearColor(s.name)}, z:isLast?10:5};
-    })
+    series: sers
   });
   charts.push(c);
 }
