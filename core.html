@@ -641,7 +641,11 @@ function init(){
       if(res[4].status==="fulfilled"){ SOURCES.maint.bdops=res[4].value; SOURCES.maint.indicators=buildMainIndicators(res[4].value); }
       if(res[5].status==="fulfilled"){ var p=res[5].value; SOURCES.pe.indicators=(p&&p.indicators)?p.indicators:{}; }
       if(res[6].status==="fulfilled"){ var np=res[6].value; SOURCES.naphtha.charts=np.charts; SOURCES.naphtha.axis=np.axis; SOURCES.naphtha.years=np.years; SOURCES.naphtha.actual_num=np.actual_num; SOURCES.naphtha.latest_year=np.latest_year; SOURCES.naphtha.indicators=buildNaphthaIndicators(np); }
-      if(res[7].status==="fulfilled"){ var bal=res[7].value; SOURCES.balance.indicators=buildBalanceIndicators(bal); }
+      if(res[7].status==="fulfilled"){
+        var bal=res[7].value;
+        var balInds=buildBalanceIndicators(bal);
+        Object.keys(balInds).forEach(function(c){ SOURCES.balance[c]=balInds[c]; });
+      }
       // 年份并集
       var ys=new Set();
       [SOURCES.daily.years, SOURCES.kai.years].forEach(function(arr){ (arr||[]).forEach(function(y){ ys.add(String(y)); }); });
@@ -1174,9 +1178,10 @@ function renderPickerList(q){
     {src:"naphtha", label:"石脑油物流·季节图", inds:SOURCES.naphtha.indicators},
     {src:"pe", label:"PE日报（图片）", inds:SOURCES.pe.indicators}
   ];
-  if(SOURCES.balance && SOURCES.balance.indicators){
-    Object.keys(SOURCES.balance.indicators).forEach(function(c){
-      groups.push({src:"balance."+c, label:"平衡表·"+c, inds:SOURCES.balance.indicators[c].indicators});
+  if(SOURCES.balance){
+    Object.keys(SOURCES.balance).forEach(function(c){
+      if(c==="label" || c==="url" || !SOURCES.balance[c] || !SOURCES.balance[c].indicators) return;
+      groups.push({src:"balance."+c, label:"平衡表·"+c, inds:SOURCES.balance[c].indicators});
     });
   }
   function addItem(g,k){
