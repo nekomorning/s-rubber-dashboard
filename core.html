@@ -1518,8 +1518,8 @@ function drawReviewChart(div, entries){
     yAxisDefs.push({
       type:"value", name:en.unit||"", scale:true,
       position: isLeft?"left":"right",
-      offset: i>=2 ? (i-1)*46 : 0,
-      nameTextStyle:{fontSize:10,color:color,padding:isLeft?[0,0,0,4]:[0,4,0,0]},
+      offset: i>=2 ? (i-1)*36 : 0,
+      nameTextStyle:{fontSize:10,color:color,padding:isLeft?[0,0,0,6]:[0,6,0,0]},
       axisLine:{show:true,lineStyle:{color:color,width:1.5}},
       axisTick:{show:true,lineStyle:{color:color},inside:true},
       axisLabel:{fontSize:10,color:color,inside:true, formatter:function(v){ return Math.abs(v)>=10000?(v/10000)+"万":(Math.abs(v)>=1000?(v/1000)+"k":v); }},
@@ -1533,11 +1533,11 @@ function drawReviewChart(div, entries){
     endValue=allDates[allDates.length-1];
     if(allDates[0]>startValue) startValue=allDates[0];
   }
-  var rightPad = entries.length>=3 ? 108 : (entries.length===2 ? 58 : 4);
+  var rightPad = entries.length>=3 ? 78 : (entries.length===2 ? 42 : 4);
   var pad2=function(n){return ("0"+n).slice(-2);};
   c.setOption({
     animation:false,
-    grid:{left:4, right:rightPad, top:26, bottom:22, containLabel:false},
+    grid:{left:48, right:rightPad, top:26, bottom:22, containLabel:false},
     legend:{show:true, top:2, left:"center", itemWidth:14, itemHeight:2, icon:"rect", textStyle:{fontSize:11,color:"#6b7686"}, data:legend},
     tooltip:{trigger:"axis", confine:true, formatter:function(ps){
       if(!ps.length) return "";
