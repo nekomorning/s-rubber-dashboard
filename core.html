@@ -781,8 +781,8 @@ function buildBalanceIndicators(data){
   var out={};
   var countries=(data&&data.countries)||{};
   var now=new Date();
-  var y=now.getFullYear(), m=now.getMonth();
-  if(m===0){ y-=1; m=12; }
+  now.setMonth(now.getMonth()-1);
+  var y=now.getFullYear(), m=now.getMonth()+1;
   var actualDate=y+"-M"+(m<10?"0":"")+m;
   Object.keys(countries).forEach(function(c){
     var inds={};
@@ -791,7 +791,8 @@ function buildBalanceIndicators(data){
       var noPct=/开工|占比|依存度|库消比|库存/.test(se.name);
       inds[String(se.idx)]={
         title:se.name, unit:"", dec:2, src:"balance."+c,
-        seriesObj:so, stat:calcStats(so, actualDate), noPct:noPct
+        seriesObj:so, stat:calcStats(so, actualDate), noPct:noPct,
+        actualDate:actualDate
       };
     });
     out[c]={indicators:inds};
@@ -1100,7 +1101,7 @@ function makeCard(item, ri, ci){
       var isBalance=(ind.src||"").indexOf("balance")===0;
       var show4=isTrade||ind.src==="chain"||(isBalance && !ind.noPct);
       if(show4){
-        var cs=calcStats(ind.seriesObj); st=cs;
+        var cs=calcStats(ind.seriesObj, isBalance?ind.actualDate:null); st=cs;
         latestTxt2=fmt(cs?cs.latest:null,dec);
         cls2=chgCls(cs?cs.chg:null); sign=(cs&&cs.chg>0?"+":"");
         chgTxt2=(!cs||cs.chg===null?"":sign+fmt(cs.chg,dec));
