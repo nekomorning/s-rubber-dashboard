@@ -459,8 +459,16 @@ function latestNonNull(seriesObj){
 }
 function prevMonth(m){ var p=m.match(/(\d{4})-M(\d{2})/); if(!p) return null; var y=+p[1], mn=+p[2]; if(mn===1){y-=1;mn=12;}else{mn-=1;} return y+"-M"+(mn<10?"0":"")+mn; }
 function sameMonthLastYear(m){ var p=m.match(/(\d{4})-M(\d{2})/); if(!p) return null; return (parseInt(p[1],10)-1)+"-M"+p[2]; }
-function calcStats(seriesObj){
-  var l=latestNonNull(seriesObj); if(!l) return null;
+function calcStats(seriesObj, actualDate){
+  var l;
+  if(actualDate){
+    var keys=Object.keys(seriesObj||{}).filter(function(k){ return k<=actualDate; }).sort();
+    l=null;
+    for(var i=keys.length-1;i>=0;i--){ var v=seriesObj[keys[i]]; if(v!==null&&v!==undefined){ l={date:keys[i], value:v}; break; } }
+  } else {
+    l=latestNonNull(seriesObj);
+  }
+  if(!l) return null;
   var prev=seriesObj[prevMonth(l.date)];
   var yoy=seriesObj[sameMonthLastYear(l.date)];
   var chg=(prev===null||prev===undefined)?null:(l.value-prev);
@@ -772,6 +780,10 @@ function convertBalanceSeries(series){
 function buildBalanceIndicators(data){
   var out={};
   var countries=(data&&data.countries)||{};
+  var now=new Date();
+  var y=now.getFullYear(), m=now.getMonth();
+  if(m===0){ y-=1; m=12; }
+  var actualDate=y+"-M"+(m<10?"0":"")+m;
   Object.keys(countries).forEach(function(c){
     var inds={};
     (countries[c].seasonal||[]).forEach(function(se){
@@ -779,7 +791,7 @@ function buildBalanceIndicators(data){
       var noPct=/开工|占比|依存度|库消比|库存/.test(se.name);
       inds[String(se.idx)]={
         title:se.name, unit:"", dec:2, src:"balance."+c,
-        seriesObj:so, stat:calcStats(so), noPct:noPct
+        seriesObj:so, stat:calcStats(so, actualDate), noPct:noPct
       };
     });
     out[c]={indicators:inds};
