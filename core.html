@@ -93,6 +93,8 @@ body{background:var(--bg); color:var(--text);
 .modal-search input{width:100%; padding:8px 10px; border:1px solid var(--border); border-radius:8px; font-size:13px;}
 .modal-list{overflow:auto; padding:8px 10px 16px;}
 .src-group{font-size:12px; color:var(--sub); padding:10px 6px 4px; font-weight:700;}
+.src-group .tri{display:inline-block; width:14px; color:var(--accent);}
+.src-group.open .tri{color:var(--accent);}
 .src-sub{font-size:11px; color:var(--sub); padding:8px 6px 2px; font-weight:600;}
 .chart-item{padding:9px 12px; border-radius:8px; cursor:pointer; font-size:13px; border:1px solid transparent; display:flex; justify-content:space-between; gap:10px;}
 .chart-item:hover{background:#f0f3f8; border-color:var(--border);}
@@ -209,7 +211,8 @@ var SOURCES={
   chain:{label:"产业链合计", url:"chain_trade.json", indicators:null, chain:null},
   maint:{label:"装置检修-开工率", url:"bd_ops.json", indicators:null, bdops:null},
   pe:{label:"PE日报（图片）", url:"pe_daily.json", indicators:null},
-  naphtha:{label:"合成胶·石脑油物流", url:"naphtha_seasonal.json", charts:null, indicators:null, axis:null, years:null, actual_num:null, latest_year:null}
+  naphtha:{label:"合成胶·石脑油物流", url:"naphtha_seasonal.json", charts:null, indicators:null, axis:null, years:null, actual_num:null, latest_year:null},
+  balance:{label:"丁二烯平衡表", url:"butadiene_balance.json", indicators:null}
 };
 function resolveSource(srcKey){
   var parts=(srcKey||"").split(".");
@@ -229,6 +232,7 @@ function resolveSource(srcKey){
 }
 
 var allYears=[], yearVisible={}, charts=[], layout=[], dragFrom=null, currentPickIdx=null;
+var pickerExpanded={};
 var LS_KEY="coreLayoutV1";
 var LS_SAVED_KEY="coreLayoutV1_saved";
 var CONTENT_KEY="coreContentV1";
@@ -622,7 +626,7 @@ function init(){
   });
   Promise.allSettled([ fetchJson(SOURCES.daily.url), fetchJson(SOURCES.kai.url), Promise.all(tradeLoads),
                        fetchJson(SOURCES.chain.url), fetchJson(SOURCES.maint.url), fetchJson(SOURCES.pe.url),
-                       fetchJson(SOURCES.naphtha.url) ])
+                       fetchJson(SOURCES.naphtha.url), fetchJson(SOURCES.balance.url) ])
     .then(function(res){
       if(res[0].status==="fulfilled"){ var d=res[0].value; SOURCES.daily.indicators=d.indicators; SOURCES.daily.xlabels=d.xlabels; SOURCES.daily.years=d.years; SOURCES.daily.date=d.latestDataDate; SOURCES.daily.ts=d.ts||{}; }
       if(res[1].status==="fulfilled"){ var d2=res[1].value; SOURCES.kai.indicators=d2.indicators; SOURCES.kai.xlabels=d2.xlabels; SOURCES.kai.years=d2.years; }
@@ -637,6 +641,7 @@ function init(){
       if(res[4].status==="fulfilled"){ SOURCES.maint.bdops=res[4].value; SOURCES.maint.indicators=buildMainIndicators(res[4].value); }
       if(res[5].status==="fulfilled"){ var p=res[5].value; SOURCES.pe.indicators=(p&&p.indicators)?p.indicators:{}; }
       if(res[6].status==="fulfilled"){ var np=res[6].value; SOURCES.naphtha.charts=np.charts; SOURCES.naphtha.axis=np.axis; SOURCES.naphtha.years=np.years; SOURCES.naphtha.actual_num=np.actual_num; SOURCES.naphtha.latest_year=np.latest_year; SOURCES.naphtha.indicators=buildNaphthaIndicators(np); }
+      if(res[7].status==="fulfilled"){ var bal=res[7].value; SOURCES.balance.indicators=buildBalanceIndicators(bal); }
       // 年份并集
       var ys=new Set();
       [SOURCES.daily.years, SOURCES.kai.years].forEach(function(arr){ (arr||[]).forEach(function(y){ ys.add(String(y)); }); });
@@ -745,6 +750,38 @@ function buildNaphthaIndicators(json){
   return map;
 }
 
+/* 平衡表季节图：从 butadiene_balance.json 构建 indicators
+   每个国家（子页面）一组，src = "balance.<国家名>"；series 由 {年:[12月]} 转为 {YYYY-Mmm:值} */
+function convertBalanceSeries(series){
+  var out={};
+  Object.keys(series||{}).forEach(function(y){
+    var arr=series[y];
+    if(!Array.isArray(arr)) return;
+    for(var m=0;m<12;m++){
+      var v=arr[m];
+      if(v===null||v===undefined) continue;
+      out[y+"-M"+((m+1)<10?"0":"")+(m+1)] = v;
+    }
+  });
+  return out;
+}
+function buildBalanceIndicators(data){
+  var out={};
+  var countries=(data&&data.countries)||{};
+  Object.keys(countries).forEach(function(c){
+    var inds={};
+    (countries[c].seasonal||[]).forEach(function(se){
+      var so=convertBalanceSeries(se.series);
+      inds[String(se.idx)]={
+        title:se.name, unit:"", dec:2, src:"balance."+c,
+        seriesObj:so, stat:calcStats(so)
+      };
+    });
+    out[c]={indicators:inds};
+  });
+  return out;
+}
+
 /* 月序季节图（贸易流） */
 function drawSeasonMonth(div, seriesObj, dec){
   var c=echarts.init(div);
@@ -765,6 +802,35 @@ function drawSeasonMonth(div, seriesObj, dec){
     grid:{left:8,right:14,top:14,bottom:42,containLabel:true},
     xAxis:{type:"category", data:monthLabels, axisLine:{lineStyle:{color:"#ccc"}}, axisLabel:{fontSize:10}},
     yAxis:{type:"value", name:"万吨", nameTextStyle:{fontSize:10,color:"#999"}, nameGap:6, axisLine:{show:false}, splitLine:{lineStyle:{color:"#f0f0f0"}}, axisLabel:{fontSize:10, formatter:function(v){ var w=v/10000; return Math.abs(w)>=100?w.toFixed(0):w.toFixed(1); }}},
+    series: sorted.map(function(s){
+      var isLast = s.name === years[years.length-1];
+      return {name:s.name, type:"line", smooth:true, symbol:"none", data:s.data, connectNulls:true,
+        lineStyle:{width:isLast?2.2:1.5, color:yearColor(s.name)}, itemStyle:{color:yearColor(s.name)}, z:isLast?10:5};
+    })
+  });
+  charts.push(c);
+}
+
+/* 平衡表季节图（与 trade 同结构 seriesObj，但单位不固定，不除 10000、y 轴自适应） */
+function drawSeasonBalance(div, seriesObj, dec){
+  var c=echarts.init(div);
+  var series=buildSeasonSeries(seriesObj);
+  var years=series.map(function(s){return s.name;});
+  var sorted=series.slice().sort(function(a,b){return parseInt(a.name)-parseInt(b.name);})
+    .filter(function(s){ var y=parseInt(s.name,10); return y>=2021 && y<=2027; });
+  c.setOption({
+    animation:false,
+    tooltip:{trigger:"axis", confine:true, formatter:function(ps){
+      if(!ps.length) return "";
+      var s=ps[0].axisValue;
+      ps.sort(function(a,b){return Number(b.seriesName)-Number(a.seriesName);});
+      ps.forEach(function(p){ s+="<br>"+p.marker+p.seriesName+"年： <b>"+fmt(p.value, dec==null?2:dec)+"</b>"; });
+      return s;
+    }},
+    legend:{data:sorted.map(function(s){return s.name;}), bottom:0, left:"center", textStyle:{fontSize:10}, itemWidth:10, itemHeight:5, itemGap:6},
+    grid:{left:8,right:14,top:14,bottom:42,containLabel:true},
+    xAxis:{type:"category", data:monthLabels, axisLine:{lineStyle:{color:"#ccc"}}, axisLabel:{fontSize:10}},
+    yAxis:{type:"value", scale:true, nameTextStyle:{fontSize:10,color:"#999"}, nameGap:6, axisLine:{show:false}, splitLine:{lineStyle:{color:"#f0f0f0"}}, axisLabel:{fontSize:10, formatter:function(v){ return Math.abs(v)>=100?v.toFixed(0):v.toFixed(1); }}},
     series: sorted.map(function(s){
       var isLast = s.name === years[years.length-1];
       return {name:s.name, type:"line", smooth:true, symbol:"none", data:s.data, connectNulls:true,
@@ -917,6 +983,7 @@ function renderCardCharts(){
   document.querySelectorAll(".card .chart").forEach(function(div){
     var cfg=div._chart; if(!cfg) return;
     if(cfg.ind && ((cfg.ind.src||"").indexOf("trade")===0||cfg.ind.src==="chain")) drawSeasonMonth(div, cfg.ind.seriesObj, cfg.dec);
+    else if(cfg.ind && ((cfg.ind.src||"").indexOf("balance")===0)) drawSeasonBalance(div, cfg.ind.seriesObj, cfg.dec);
     else if(cfg.ind && cfg.ind.src==="naphtha") drawSeasonWeek(div, cfg.ind, cfg.dec);
     else if(cfg.ts) drawDailyTs(div, cfg.cfg, cfg.dec);
     else drawSeason(div, cfg.ind, cfg.xlabels, cfg.years);
@@ -1107,10 +1174,16 @@ function renderPickerList(q){
     {src:"naphtha", label:"石脑油物流·季节图", inds:SOURCES.naphtha.indicators},
     {src:"pe", label:"PE日报（图片）", inds:SOURCES.pe.indicators}
   ];
+  if(SOURCES.balance && SOURCES.balance.indicators){
+    Object.keys(SOURCES.balance.indicators).forEach(function(c){
+      groups.push({src:"balance."+c, label:"平衡表·"+c, inds:SOURCES.balance.indicators[c].indicators});
+    });
+  }
   function addItem(g,k){
     var ind=g.inds[k];
     var it=document.createElement("div"); it.className="chart-item";
-    it.innerHTML='<span>'+ind.title+'</span><span class="k">'+k+'</span>';
+    var kShown=(g.src.indexOf("balance")===0)?"":k;
+    it.innerHTML='<span>'+ind.title+'</span>'+(kShown?'<span class="k">'+kShown+'</span>':'');
     it.onclick=function(){
       if(currentPickIdx!==null){
         var r=layout[currentPickIdx.ri], c=currentPickIdx.ci;
@@ -1120,14 +1193,22 @@ function renderPickerList(q){
     };
     list.appendChild(it);
   }
+  var hasAny=false;
   groups.forEach(function(g){
     if(!g.inds) return;
     var keys=Object.keys(g.inds);
     if(q) keys=keys.filter(function(k){ var ind=g.inds[k]; return (k.indexOf(q)>=0)||(ind.title&&ind.title.indexOf(q)>=0); });
     if(!keys.length) return;
-    var gh=document.createElement("div"); gh.className="src-group";
-    gh.textContent=g.label+"（"+keys.length+"）";
+    hasAny=true;
+    var expanded = q ? true : !!pickerExpanded[g.src];
+    var gh=document.createElement("div"); gh.className="src-group"+(expanded?" open":"");
+    gh.innerHTML='<span class="tri">'+(expanded?"▾":"▸")+'</span>'+g.label+'（'+keys.length+'）';
+    if(!q){
+      gh.style.cursor="pointer"; gh.style.userSelect="none";
+      gh.onclick=function(){ pickerExpanded[g.src]=!pickerExpanded[g.src]; renderPickerList(""); };
+    }
     list.appendChild(gh);
+    if(!expanded) return;
     if(g.src==="pe"){
       // PE 日报按板块子分组
       var bySec={};
@@ -1141,7 +1222,7 @@ function renderPickerList(q){
       keys.forEach(function(k){ addItem(g,k); });
     }
   });
-  if(!list.children.length){
+  if(!hasAny){
     var empty=document.createElement("div"); empty.className="src-group"; empty.textContent="无匹配 / 数据源未加载";
     list.appendChild(empty);
   }
