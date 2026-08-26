@@ -108,6 +108,9 @@ body{background:var(--bg); color:var(--text);
 .review-card{background:var(--card); border:1px solid var(--border); border-radius:10px; padding:12px 14px 14px; min-height:420px; display:flex; flex-direction:column;}
 .review-card .card-head{display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:10px; flex-shrink:0;}
 .review-card .card-head .ttl{font-size:15px; font-weight:700; color:#2a3345;}
+.review-card .card-head .ttl.review-title{flex:1; min-width:0; background:transparent; border:none; border-bottom:1px solid transparent; padding:2px 4px; outline:none; cursor:text;}
+.review-card .card-head .ttl.review-title:hover{border-bottom-color:#dde3ec;}
+.review-card .card-head .ttl.review-title:focus{border-bottom-color:var(--accent); color:var(--accent);}
 .review-card .card-head .actions{display:flex; gap:8px;}
 .review-selectors{display:flex; gap:10px; flex-wrap:wrap; margin-bottom:10px; flex-shrink:0;}
 .review-selectors select{flex:1; min-width:110px; padding:6px 8px; border:1px solid var(--border); border-radius:6px; background:#fff; font-size:12px; color:var(--text); outline:none;}
@@ -161,7 +164,7 @@ body{background:var(--bg); color:var(--text);
     <h2 class="sec-title">复盘</h2>
     <div class="review-grid">
       <div class="review-card">
-        <div class="card-head"><span class="ttl">跨页数据对比 ①</span>
+        <div class="card-head"><input class="ttl review-title" value="跨页数据对比 ①" data-idx="0" spellcheck="false">
           <div class="actions">
             <button class="abtn review-save" data-idx="0">保存</button>
             <button class="abtn review-clear" data-idx="0">清空</button>
@@ -181,7 +184,7 @@ body{background:var(--bg); color:var(--text);
         <div class="review-text"><div class="logic" id="reviewNoteBox"><ul id="reviewNoteList"></ul></div></div>
       </div>
       <div class="review-card">
-        <div class="card-head"><span class="ttl">跨页数据对比 ②</span>
+        <div class="card-head"><input class="ttl review-title" value="跨页数据对比 ②" data-idx="1" spellcheck="false">
           <div class="actions">
             <button class="abtn review-save" data-idx="1">保存</button>
             <button class="abtn review-clear" data-idx="1">清空</button>
@@ -195,7 +198,7 @@ body{background:var(--bg); color:var(--text);
         <div id="reviewChart1" class="review-chart"></div>
       </div>
       <div class="review-card">
-        <div class="card-head"><span class="ttl">跨页数据对比 ③</span>
+        <div class="card-head"><input class="ttl review-title" value="跨页数据对比 ③" data-idx="2" spellcheck="false">
           <div class="actions">
             <button class="abtn review-save" data-idx="2">保存</button>
             <button class="abtn review-clear" data-idx="2">清空</button>
@@ -430,8 +433,10 @@ function setRowNote(cardId, text){
   saveContentAuto();
 }
 function contentPayload(){
+  readReviewTitles();
   return {logic: logicText||DEFAULT_LOGIC, rowNotes: rowNotes, history: logicHistory, images: logicImages,
           reviewText: reviewText||DEFAULT_REVIEW, reviewImages: reviewImages, reviewSels: reviewSels,
+          reviewTitles: reviewTitles||DEFAULT_REVIEW_TITLES.slice(),
           savedAt: new Date().toLocaleString('zh-CN')};
 }
 function saveContentAuto(){ try{ localStorage.setItem(CONTENT_KEY, JSON.stringify(contentPayload())); }catch(e){} }
@@ -457,6 +462,15 @@ function loadContent(){
       data.reviewSel.slice(0,3).forEach(function(id,i){ if(id) reviewSels[0][i]=id; });
     }
     if(data.reviewImages && typeof data.reviewImages==="object") reviewImages=data.reviewImages;
+    if(Array.isArray(data.reviewTitles)&&data.reviewTitles.length>=3){
+      reviewTitles=data.reviewTitles.slice(0,3);
+    }else{
+      reviewTitles=DEFAULT_REVIEW_TITLES.slice();
+    }
+    [0,1,2].forEach(function(i){
+      var el=document.querySelector('.review-title[data-idx="'+i+'"]');
+      if(el) el.value=reviewTitles[i]||DEFAULT_REVIEW_TITLES[i];
+    });
   }
   renderLogic();
 }
@@ -1479,6 +1493,8 @@ function buildYearBar(){
 var REVIEW_CATALOG=[], reviewCatalogMap={};
 var REVIEW_PALETTE=["#1E6FFF","#E0301E","#0a9a5c","#8B5CF6","#F59A23","#0f4c81"];
 var reviewText=null, reviewImages={}, reviewSels=[["","",""],["","",""],["","",""]], reviewCharts=[null,null,null];
+var DEFAULT_REVIEW_TITLES=["跨页数据对比 ①","跨页数据对比 ②","跨页数据对比 ③"];
+var reviewTitles=DEFAULT_REVIEW_TITLES.slice();
 var DEFAULT_REVIEW=[
   "复盘：**记录关键判断与事后验证**，用 **红** / @@蓝@@ / %%绿%% 区分结论、驱动、风险",
   "供应：",
@@ -1681,6 +1697,12 @@ function setupReviewIndent(){
   ta.addEventListener("dragover", function(e){ e.preventDefault(); });
   ta.addEventListener("drop", function(e){ var dt=e.dataTransfer; if(!dt||!dt.files||!dt.files.length) return; if(/^image\//.test(dt.files[0].type)){ e.preventDefault(); embedImageFile(dt.files[0]).then(function(d){ if(d) insertReviewImageToken(d); }); } });
 }
+function readReviewTitles(){
+  [0,1,2].forEach(function(i){
+    var el=document.querySelector('.review-title[data-idx="'+i+'"]');
+    reviewTitles[i]=(el && el.value.trim()) ? el.value.trim() : DEFAULT_REVIEW_TITLES[i];
+  });
+}
 function saveReviewAuto(){ try{ localStorage.setItem(CONTENT_KEY, JSON.stringify(contentPayload())); }catch(e){} }
 function syncReviewResize(){
   reviewCharts.forEach(function(c){ if(c){ try{ c.resize(); }catch(e){} } });
@@ -1689,6 +1711,7 @@ function syncReviewResize(){
 document.querySelectorAll(".review-save").forEach(function(b){
   b.onclick=function(){
     var orig=b.innerHTML;
+    readReviewTitles();
     try{
       localStorage.setItem(CONTENT_SAVED_KEY, JSON.stringify(contentPayload()));
       saveContentAuto();
@@ -1707,6 +1730,16 @@ document.querySelectorAll(".review-clear").forEach(function(b){
     populateReviewSelects();
     [0,1,2].forEach(function(i){ drawReviewChartFromSel(i); });
   };
+});
+document.querySelectorAll(".review-title").forEach(function(el){
+  el.addEventListener("change", function(){
+    var idx=parseInt(el.getAttribute("data-idx")||"0",10);
+    reviewTitles[idx]=(el.value.trim())?el.value.trim():DEFAULT_REVIEW_TITLES[idx];
+    saveReviewAuto();
+  });
+  el.addEventListener("keydown", function(e){
+    if(e.key==="Enter"){ e.preventDefault(); el.blur(); }
+  });
 });
 document.getElementById("reviewNoteEdit").onclick=openReviewNoteEdit;
 document.getElementById("reviewNoteClose").onclick=closeReviewNoteEdit;
