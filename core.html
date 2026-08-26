@@ -1790,12 +1790,6 @@ document.getElementById("logicImgFile").addEventListener("change", function(e){
   e.target.value="";
 });
 /* 点击逻辑区图片放大 */
-function closeImgZoom(){ var z=document.getElementById("imgZoom"); if(z){ z.classList.remove("show"); z.style.display="none"; } }
-function showImgZoom(src){ var z=document.getElementById("imgZoom"); document.getElementById("imgZoomImg").src=src; z.classList.add("show"); z.style.display="flex"; }
-document.getElementById("imgZoom").addEventListener("click", function(e){ if(e.target===this || e.target.id==="imgZoomImg") closeImgZoom(); });
-document.getElementById("imgZoomImg").addEventListener("click", function(e){ e.stopPropagation(); closeImgZoom(); });
-var zoomCloseBtn=document.querySelector("#imgZoom .zoom-close"); if(zoomCloseBtn){ zoomCloseBtn.addEventListener("click", function(e){ e.stopPropagation(); closeImgZoom(); }); }
-document.addEventListener("keydown", function(e){ if(e.key==="Escape") closeImgZoom(); });
 document.getElementById("logicList").addEventListener("click", function(e){ var im=e.target.closest&&e.target.closest(".logic-img"); if(im) showImgZoom(im.getAttribute("src")); });
 document.getElementById("historyClose").onclick=function(){ document.getElementById("modalHistory").style.display="none"; };
 document.getElementById("modalLogic").addEventListener("click", function(e){ if(e.target===this) closeLogicEdit(); });
@@ -1814,6 +1808,19 @@ document.addEventListener("click", function(e){
   <button class="zoom-close" aria-label="关闭放大图片">×</button>
   <img id="imgZoomImg">
 </div>
+<script>
+function closeImgZoom(){ var z=document.getElementById("imgZoom"); if(z){ z.classList.remove("show"); z.style.display="none"; } }
+function showImgZoom(src){ var z=document.getElementById("imgZoom"); document.getElementById("imgZoomImg").src=src; z.classList.add("show"); z.style.display="flex"; }
+(function(){
+  var zoom=document.getElementById("imgZoom");
+  var img=document.getElementById("imgZoomImg");
+  var btn=document.querySelector("#imgZoom .zoom-close");
+  if(zoom) zoom.addEventListener("click", function(e){ if(e.target===this || e.target===img) closeImgZoom(); });
+  if(img) img.addEventListener("click", function(e){ e.stopPropagation(); closeImgZoom(); });
+  if(btn) btn.addEventListener("click", function(e){ e.stopPropagation(); closeImgZoom(); });
+  document.addEventListener("keydown", function(e){ if(e.key==="Escape") closeImgZoom(); });
+})();
+</script>
 </body>
 
 <!-- 激光笔演示模式（全局右下角按钮） -->
