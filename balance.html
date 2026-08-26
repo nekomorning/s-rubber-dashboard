@@ -1080,8 +1080,9 @@ function aggRange(sy, sm, ey, em, ind){
   var sum=0; nz.forEach(function(v){ sum+=v; }); return sum;
 }
 function renderFilterTable(){
-  var ind = inds();
-  ind.forEach(function(i,idx){ i._idx = idx; });
+  var indAll = inds();
+  indAll.forEach(function(i,idx){ i._idx = idx; });
+  var ind = indAll.filter(function(i){ return !i.cumYoy; });
   var sy=+document.getElementById("fY").value, sm=+document.getElementById("fM").value;
   var ey=+document.getElementById("tY").value, em=+document.getElementById("tM").value;
   if(sy>ey || (sy===ey && sm>em)){ document.getElementById("filterWrap").innerHTML="<div class='note'>起始时间不能晚于结束时间</div>"; return; }
@@ -1138,7 +1139,9 @@ function renderFilterTable(){
 /* ---------- annual ---------- */
 function renderAnnual(){
   var c = country();
-  var ind = inds();
+  var indAll = inds();
+  indAll.forEach(function(i,idx){ i._idx = idx; });
+  var ind = indAll.filter(function(i){ return !i.cumYoy; });
   var ys = c.annualYears;
   var head = "<thead><tr><th class='date-col'>年份</th>";
   ind.forEach(function(i, idx){ head += thCell(i, idx); });
@@ -1148,7 +1151,7 @@ function renderAnnual(){
     body += "<tr><td class='date-col'>"+y+"</td>";
     var row = c.annual[String(y)] || [];
     ind.forEach(function(i, idx){
-      body += tdCell(row[idx], i, idx);
+      body += tdCell(row[i._idx], i, idx);
     });
     body += "</tr>";
   });
@@ -1165,7 +1168,7 @@ function renderAnnual(){
     if(opt.bg){ trStyle += "background:"+opt.bg+";"; }
     var r = "<tr style='"+trStyle+"'><td class='date-col'>"+label+"</td>";
     ind.forEach(function(i, idx){
-      var a = r2[idx], b = r1[idx];
+      var a = r2[i._idx], b = r1[i._idx];
       var out = "";
       var skip = i.cumYoy || (isPct && i.pct); // 累计同比：都跳过；占比/开工：增速%跳过
       if(!skip && a!==null && a!==undefined && b!==null && b!==undefined){
