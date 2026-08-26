@@ -313,6 +313,7 @@ var SOURCES={
   maint:{label:"装置检修-开工率", url:"bd_ops.json", indicators:null, bdops:null},
   pe:{label:"PE日报（图片）", url:"pe_daily.json", indicators:null},
   naphtha:{label:"合成胶·石脑油物流", url:"naphtha_seasonal.json", charts:null, indicators:null, axis:null, years:null, actual_num:null, latest_year:null},
+  nr_p1:{label:"天然胶·日度价格", url:"https://nekomorning.github.io/n-rubber-dashboard/index.html", indicators:null, xlabels:null, latestDataDate:null, _loading:false},
   balance:{label:"丁二烯平衡表", url:"butadiene_balance.json", indicators:null}
 };
 function resolveSource(srcKey){
@@ -870,6 +871,7 @@ function init(){
       populateReviewSelects();
       renderReviewNoteBox();
       [0,1,2].forEach(function(i){ drawReviewChartFromSel(i); });
+      loadNrP1();
       setTimeout(syncReviewResize, 50);
     })
     .catch(function(e){ document.getElementById("charts").innerHTML="<div style='padding:20px;color:#c00'>初始化失败："+e.message+"</div>"; });
@@ -1526,12 +1528,67 @@ function monthlyToFull(seriesObj){
   });
   return out;
 }
+function weeklyToFull(seriesByYear, axis){
+  var out={};
+  Object.keys(seriesByYear||{}).forEach(function(y){
+    (seriesByYear[y]||[]).forEach(function(v,i){
+      if(v===null||v===undefined) return;
+      var wk=(axis&&axis[i])||null; if(!wk) return;
+      var m=wk.match(/W(\d{1,2})/); if(!m) return;
+      try{
+        var d=new Date(+y,0,1);
+        var day=d.getDay();
+        var offset=(day<=4?1-day:8-day);
+        d.setDate(d.getDate()+offset+(parseInt(m[1],10)-1)*7);
+        out[d.toISOString().slice(0,10)]=v;
+      }catch(e){}
+    });
+  });
+  return out;
+}
+function parseNrCoreHtml(html){
+  var m=(html||"").match(/var\s+CORE\s*=\s*(\{[\s\S]*?\});?\s*<\/script>/);
+  if(!m) return null;
+  try{
+    var core=JSON.parse(m[1]);
+    var p1=core&&core.sources&&core.sources.p1;
+    if(!p1) return null;
+    return {latestDataDate:core.latestDataDate, label:p1.label||"日度价格", xlabels:p1.xlabels, indicators:p1.indicators||{}};
+  }catch(e){ return null; }
+}
+function buildNrP1Indicators(p1){
+  var out={};
+  Object.keys(p1.indicators||{}).forEach(function(k){
+    var ind=p1.indicators[k];
+    out[k]={title:ind.title||k, unit:ind.unit||"", dec:ind.dec==null?2:ind.dec, src:"nr_p1", key:k, series:ind.series, xlabels:ind.xlabels||p1.xlabels};
+  });
+  return out;
+}
+function loadNrP1(){
+  var s=SOURCES.nr_p1; if(!s||s._loading||s.indicators) return;
+  s._loading=true;
+  fetch(s.url).then(function(r){ return r.text(); }).then(function(html){
+    var p1=parseNrCoreHtml(html);
+    if(!p1){ s._loading=false; return; }
+    s.indicators=buildNrP1Indicators(p1);
+    s.xlabels=p1.xlabels;
+    s.latestDataDate=p1.latestDataDate;
+    buildReviewCatalog();
+    populateReviewSelects();
+  }).catch(function(e){ console.log("nr_p1 load failed", e); s._loading=false; });
+}
 function buildReviewCatalog(){
   REVIEW_CATALOG=[]; reviewCatalogMap={};
   var groups=[
     {page:"日度价格 · p1", src:"daily", inds:SOURCES.daily.indicators, xl:SOURCES.daily.xlabels, kind:"daily"},
     {page:"开工库存 · p2", src:"kai", inds:SOURCES.kai.indicators, xl:SOURCES.kai.xlabels, kind:"daily"}
   ];
+  if(SOURCES.nr_p1&&SOURCES.nr_p1.indicators){
+    groups.push({page:"天然胶 · 日度价格", src:"nr_p1", inds:SOURCES.nr_p1.indicators, xl:SOURCES.nr_p1.xlabels, kind:"daily"});
+  }
+  if(SOURCES.naphtha&&SOURCES.naphtha.indicators){
+    groups.push({page:"石脑油物流", src:"naphtha", inds:SOURCES.naphtha.indicators, kind:"weekly", axis:SOURCES.naphtha.axis});
+  }
   ["butadiene","pbr","sbr","abs"].forEach(function(prod){
     var sub=SOURCES.trade&&SOURCES.trade[prod];
     if(sub&&sub.indicators) groups.push({page:"贸易流 · "+sub.label, src:"trade."+prod, inds:sub.indicators, kind:"monthly"});
@@ -1545,7 +1602,10 @@ function buildReviewCatalog(){
     if(!g.inds) return;
     Object.keys(g.inds).forEach(function(k){
       var ind=g.inds[k];
-      var full = g.kind==="daily" ? dailyLikeToFull(ind.series, g.xl) : monthlyToFull(ind.seriesObj);
+      var full;
+      if(g.kind==="daily") full=dailyLikeToFull(ind.series, g.xl);
+      else if(g.kind==="weekly") full=weeklyToFull(ind.series, g.axis);
+      else full=monthlyToFull(ind.seriesObj);
       if(!Object.keys(full).length) return;
       var id=g.src+"|"+k;
       var entry={ id:id, page:g.page, name:ind.title||k, unit:ind.unit||"", dec:ind.dec==null?2:ind.dec, series:full, color:REVIEW_PALETTE[idx%REVIEW_PALETTE.length] };
