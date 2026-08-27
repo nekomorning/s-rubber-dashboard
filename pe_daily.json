@@ -1,6 +1,6 @@
 {
  "source": "PE日报日度季节性图",
- "fetchedAt": "2026-08-26",
+ "fetchedAt": "2026-08-27",
  "count": 13,
  "indicators": {
   "pe_00": {
@@ -8,44 +8,44 @@
    "title": "石脑油现货 · 美元/吨",
    "section": "1. 原料和上游",
    "unit": "美元/吨",
-   "latest": "814.0",
-   "chg": "-11.50",
-   "date": "08/25",
+   "latest": "796.8",
+   "chg": "-17.25",
+   "date": "08/26",
    "file": "pe_daily/pe_00.png",
-   "bytes": 186806
+   "bytes": 186946
   },
   "pe_01": {
    "key": "pe_01",
    "title": "石脑油09合约 · 美元/吨",
    "section": "1. 原料和上游",
    "unit": "美元/吨",
-   "latest": "775.4",
-   "chg": "-22.58",
-   "date": "08/26",
+   "latest": "781.9",
+   "chg": "+6.50",
+   "date": "08/27",
    "file": "pe_daily/pe_01.png",
-   "bytes": 159682
+   "bytes": 159765
   },
   "pe_02": {
    "key": "pe_02",
    "title": "石脑油01合约 · 美元/吨",
    "section": "1. 原料和上游",
    "unit": "美元/吨",
-   "latest": "696.3",
-   "chg": "-16.88",
-   "date": "08/26",
+   "latest": "695.5",
+   "chg": "-0.77",
+   "date": "08/27",
    "file": "pe_daily/pe_02.png",
-   "bytes": 163473
+   "bytes": 163582
   },
   "pe_03": {
    "key": "pe_03",
    "title": "亚洲原油价格 · 美元/桶",
    "section": "1. 原料和上游",
    "unit": "美元/桶",
-   "latest": "93.21",
-   "chg": "-5.10",
-   "date": "08/25",
+   "latest": "87.17",
+   "chg": "-6.04",
+   "date": "08/26",
    "file": "pe_daily/pe_03.png",
-   "bytes": 175036
+   "bytes": 175293
   },
   "pe_04": {
    "key": "pe_04",
@@ -96,11 +96,11 @@
    "title": "石脑油现货Crk · 美元/吨",
    "section": "2. 裂解价差",
    "unit": "美元/吨",
-   "latest": "156.6",
-   "chg": "-0.56",
-   "date": "08/25",
+   "latest": "172.8",
+   "chg": "+16.16",
+   "date": "08/26",
    "file": "pe_daily/pe_08.png",
-   "bytes": 181883
+   "bytes": 182042
   },
   "pe_09": {
    "key": "pe_09",
@@ -129,22 +129,22 @@
    "title": "乙烯东北亚 · 美元/吨",
    "section": "3. 乙烯",
    "unit": "美元/吨",
-   "latest": "257.0",
-   "chg": "+11.50",
-   "date": "08/25",
+   "latest": "254.2",
+   "chg": "-2.75",
+   "date": "08/26",
    "file": "pe_daily/pe_11.png",
-   "bytes": 111393
+   "bytes": 111566
   },
   "pe_12": {
    "key": "pe_12",
    "title": "乙烯-石脑油价差 · 美元/吨",
    "section": "3. 乙烯",
    "unit": "美元/吨",
-   "latest": "257.0",
-   "chg": "+11.50",
-   "date": "08/25",
+   "latest": "254.2",
+   "chg": "-2.75",
+   "date": "08/26",
    "file": "pe_daily/pe_12.png",
-   "bytes": 195525
+   "bytes": 195327
   }
  }
 }
