@@ -452,7 +452,8 @@ function saveMaintTable(){
     var daysInput = tr.querySelector('[data-field="days"]'), lossInput = tr.querySelector('[data-field="loss"]');
     var days = daysInput ? daysInput.value.trim() : '';
     var loss = lossInput ? lossInput.value.trim() : '';
-    var op = {co:co, cap:cap, start:start, end:end, reason:reason, note:note, lossRate:lossRate, monthly_loss:[]};
+    // 原因备注已合并到单列（data-field=reason）：整列值进入 reason；note 置空
+    var op = {co:co, cap:cap, start:start, end:end, reason:reason, note:'', lossRate:lossRate, monthly_loss:[]};
     recalcMaint(op);
     if(days !== '' && days !== '—'){
       var d = parseFloat(days); if(!isNaN(d)) op.days = d;
@@ -508,11 +509,16 @@ function renderMaintTable(){
     var endClass = op.ongoing ? ' class="ongoing"' : '';
     var capCell = op.cap;
     var noteCell = '';
+    var isPreset = MAINT_REASONS.indexOf(op.reason) >= 0;
     if(op.reason){
-      var cls = op.reason === '计划' ? 'reason-plan' : op.reason === '临时' ? 'reason-temp' : op.reason === '亏损' ? 'reason-loss' : 'reason-long';
-      noteCell = '<span class="reason-tag ' + cls + '">' + op.reason + '</span>';
+      if(isPreset){
+        var cls = op.reason === '计划' ? 'reason-plan' : op.reason === '临时' ? 'reason-temp' : op.reason === '亏损' ? 'reason-loss' : 'reason-long';
+        noteCell = '<span class="reason-tag ' + cls + '">' + op.reason + '</span>';
+      } else {
+        noteCell = escapeHtml(op.reason);
+      }
     }
-    if(op.note) noteCell += ' ' + op.note;
+    if(op.note) noteCell += ' ' + escapeHtml(op.note);
     return '<tr><td>'+op.co+'</td><td>'+capCell+'</td><td>'+op.start+'</td><td'+endClass+'>'+op.end+'</td><td'+endClass+'>'+days+'</td><td class="loss">'+loss+'</td><td>'+noteCell+'</td></tr>';
   }).join('') + '</tbody>';
   var t = document.getElementById('maintTbl'); if(t) t.innerHTML = head + body;
@@ -528,13 +534,13 @@ function renderMaintTableEdit(){
     return new Date(parseInt(m[1],10), parseInt(m[2],10)-1, parseInt(m[3],10)).getTime();
   }
   var sorted = ops.slice().sort(function(a,b){ return parseStart(a.start) - parseStart(b.start); });
-  var head = '<thead><tr><th>生产企业</th><th>检修产能(万吨/年)</th><th>停车时间</th><th>开车时间</th><th>检修天数</th><th>检修损失(万吨)</th><th style="min-width:130px">原因</th><th style="min-width:120px">备注</th><th class="act">操作</th></tr></thead>';
-  var options = MAINT_REASONS.map(function(r){ return '<option value="'+r+'" '+(r==='计划'?'selected':'')+'>'+r+'</option>'; }).join('');
+  // 单列「原因备注」：下拉预设 + 允许自由输入（combobox）
+  var head = '<thead><tr><th>生产企业</th><th>检修产能(万吨/年)</th><th>停车时间</th><th>开车时间</th><th>检修天数</th><th>检修损失(万吨)</th><th style="min-width:170px">原因备注</th><th class="act">操作</th></tr></thead>';
   var body = '<tbody>' + sorted.map(function(op, idx){
     var days = op.days === null || op.days === undefined ? '' : op.days;
     var loss = op.loss === null || op.loss === undefined ? '' : op.loss;
-    var reason = op.reason || '';
-    var sel = '<select data-field="reason">' + MAINT_REASONS.map(function(r){ return '<option value="'+r+'" '+(r===reason?'selected':'')+'>'+r+'</option>'; }).join('') + '</select>';
+    // 已有备注合并进同一格，便于编辑/保留
+    var comboVal = (op.reason || '') + (op.note ? ' · ' + op.note : '');
     return '<tr data-idx="'+idx+'">'+
       '<td><input data-field="co" value="'+escapeHtml(op.co||'')+'"></td>'+
       '<td><input data-field="cap" value="'+escapeHtml(String(op.cap||''))+'"></td>'+
@@ -542,12 +548,15 @@ function renderMaintTableEdit(){
       '<td><input data-field="end" placeholder="YYYY/M/D" value="'+escapeHtml(op.end||'')+'"></td>'+
       '<td><input data-field="days" value="'+escapeHtml(String(days))+'"></td>'+
       '<td><input data-field="loss" value="'+escapeHtml(String(loss))+'"></td>'+
-      '<td>'+sel+'</td>'+
-      '<td><input data-field="note" value="'+escapeHtml(op.note||'')+'"></td>'+
+      '<td><input class="maint-combo" list="maintReasonList" data-field="reason" placeholder="选预设或手填" value="'+escapeHtml(comboVal)+'"></td>'+
       '<td class="act"><button onclick="deleteMaintRow('+idx+')">删除</button></td>'+
       '</tr>';
   }).join('') + '</tbody>';
   var t = document.getElementById('maintTbl'); if(t) t.innerHTML = head + body;
+  // 注入 datalist（下拉预设，同时允许自由文字）
+  var dl = document.getElementById('maintReasonList');
+  if(!dl){ dl = document.createElement('datalist'); dl.id = 'maintReasonList'; var ml = document.querySelector('.maint-left'); if(ml) ml.appendChild(dl); }
+  if(dl) dl.innerHTML = MAINT_REASONS.map(function(r){ return '<option value="'+r+'">'+r+'</option>'; }).join('');
   var wrap = document.querySelector('.maint-table-wrap');
   if(wrap) wrap.scrollTop = wrap.scrollHeight;
 }
