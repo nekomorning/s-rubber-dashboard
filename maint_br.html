@@ -166,7 +166,7 @@ body{font-family:"Microsoft YaHei",system-ui,sans-serif;background:var(--bg);col
 
   <div class="section-title">顺丁装置检修列表<span style="font-size:12px;color:var(--sub);font-weight:400">（停车时间→开车时间算检修天数；损失=年产能×天数/365；检修清单由 BR装置跟踪 sheet 日产量自动检测，2026 年起）</span></div>
   <div class="maint-section">
-    <div class="maint-left"><div class="section-title" style="font-size:14px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;gap:8px"><span id="maintTblTitle">检修装置明细</span><div class="maint-tools"><button class="primary" id="editBtn" onclick="toggleEdit()">编辑</button><button class="primary" id="addBtn" onclick="addMaintRow()" style="display:none">+ 新增行</button><button class="danger" id="resetBtn" onclick="resetMaint()" style="display:none">重置默认</button><button class="primary" id="publishBtn" onclick="publishMaint()">发布到线上</button></div></div><div class="maint-table-wrap"><table class="maint-tbl" id="maintTbl"></table></div></div>
+    <div class="maint-left"><div class="section-title" style="font-size:14px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;gap:8px"><span id="maintTblTitle">检修装置明细</span><div class="maint-tools"><button class="primary" id="editBtn" onclick="toggleEdit()">编辑</button><button class="primary" id="addBtn" onclick="addMaintRow()" style="display:none">+ 新增行</button><button class="danger" id="resetBtn" onclick="resetMaint()" style="display:none">重置默认</button><button class="primary" id="publishBtn" onclick="publishMaint()">发布到线上</button><button id="ghTokenBtn" onclick="ghOpenTokenModal(null)" title="设置/更换 GitHub 令牌（仅存本浏览器）">⚙ 令牌</button></div></div><div class="maint-table-wrap"><table class="maint-tbl" id="maintTbl"></table></div></div>
     <div class="maint-right"><div class="section-title" style="font-size:14px;margin-bottom:8px">月度合计检修损失（万吨）</div><div class="maint-chart-card"><div class="chart" id="maintLossChart"></div></div></div>
   </div>
 
@@ -506,18 +506,108 @@ function resetMaint(){
   renderMaintTable(); renderMaintLossChart();
   showToast('已恢复默认');
 }
-// 导出当前检修表为 JSON（发给我即可由发布脚本同步到线上，他人刷新即见）
+
+/* ===== 线上直推：GitHub git-data API（令牌仅存本浏览器 localStorage，不进页面源码） ===== */
+var GH_REPO="nekomorning/s-rubber-dashboard", GH_BRANCH="main", GH_TOKEN_KEY="gh_pat_srubber";
+function ghToken(){ try{ return localStorage.getItem(GH_TOKEN_KEY)||""; }catch(e){ return ""; } }
+function ghSetToken(t){ try{ localStorage.setItem(GH_TOKEN_KEY, t); }catch(e){} }
+function ghClearToken(){ try{ localStorage.removeItem(GH_TOKEN_KEY); }catch(e){} }
+function ghB64(s){ var b=new TextEncoder().encode(s), x=""; for(var i=0;i<b.length;i++){ x+=String.fromCharCode(b[i]); } return btoa(x); }
+function ghApi(method,path,body,token){
+  var h={"Authorization":"Bearer "+token,"Accept":"application/vnd.github+json","Content-Type":"application/json"};
+  var o={method:method,headers:h}; if(body!==undefined){ o.body=JSON.stringify(body); }
+  return fetch("https://api.github.com/"+path,o).then(function(r){
+    return r.text().then(function(t){ var d=null; try{ d=t?JSON.parse(t):null; }catch(e){}
+      if(!r.ok){ throw new Error((d&&d.message)||("HTTP "+r.status)); } return d; });
+  });
+}
+function ghCommitFile(fname,contentStr,msg){
+  var tk=ghToken(); if(!tk){ return Promise.reject(new Error("NO_TOKEN")); }
+  return ghApi("GET","repos/"+GH_REPO+"/git/refs/heads/"+GH_BRANCH,undefined,tk).then(function(ref){
+    var cs=ref.object.sha;
+    return ghApi("GET","repos/"+GH_REPO+"/git/commits/"+cs,undefined,tk).then(function(c){ return {cs:cs,tree:c.tree.sha}; });
+  }).then(function(a){
+    return ghApi("POST","repos/"+GH_REPO+"/git/blobs",{content:ghB64(contentStr),encoding:"base64"},tk).then(function(b){ return {tree:a.tree,cs:a.cs,blob:b.sha}; });
+  }).then(function(b){
+    return ghApi("POST","repos/"+GH_REPO+"/git/trees",{base_tree:b.tree,tree:[{path:fname,mode:"100644",type:"blob",sha:b.blob}]},tk).then(function(t){ return {tree:t.sha,cs:b.cs}; });
+  }).then(function(c){
+    return ghApi("POST","repos/"+GH_REPO+"/git/commits",{message:msg,tree:c.tree,parents:[c.cs]},tk);
+  }).then(function(cm){
+    return ghApi("PATCH","repos/"+GH_REPO+"/git/refs/heads/"+GH_BRANCH,{sha:cm.sha},tk).then(function(){ return cm.sha; });
+  });
+}
+function ghToast(msg){
+  var old=document.getElementById("ghToastBox"); if(old){ old.remove(); }
+  var d=document.createElement("div"); d.id="ghToastBox";
+  d.style.cssText="position:fixed;left:50%;bottom:36px;transform:translateX(-50%);background:#0f4c81;color:#fff;padding:11px 18px;border-radius:10px;font-size:13px;z-index:99999;box-shadow:0 8px 24px rgba(0,0,0,.28);max-width:80vw;line-height:1.6";
+  d.textContent=msg; document.body.appendChild(d);
+  setTimeout(function(){ if(d&&d.parentNode){ d.remove(); } }, 6000);
+}
+function ghDownload(fname,payload){
+  var blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"});
+  var u=URL.createObjectURL(blob); var a=document.createElement("a");
+  a.href=u; a.download=fname; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(function(){ URL.revokeObjectURL(u); },1000);
+}
+function ghOpenTokenModal(onSaved){
+  var ov=document.createElement("div");
+  ov.style.cssText="position:fixed;inset:0;background:rgba(15,20,28,.55);display:flex;align-items:center;justify-content:center;z-index:99998";
+  var box=document.createElement("div");
+  box.style.cssText="background:#fff;border-radius:12px;padding:20px 22px;width:min(520px,92vw);max-height:88vh;overflow:auto;box-shadow:0 12px 40px rgba(0,0,0,.25);font-size:13px;color:#1f2733;line-height:1.75";
+  var has=!!ghToken();
+  box.innerHTML='<div style="font-size:15px;font-weight:700;margin-bottom:8px">设置 GitHub 令牌（用于一键发布到线上）</div>'+
+   '<div style="color:#6b7686;margin-bottom:12px">令牌只保存在你自己的浏览器 localStorage，<b>不会</b>写进页面源码，也不会发送给任何人。他人打开链接看不到、也拿不到你的令牌。</div>'+
+   '<div style="background:#f4f6fa;border:1px solid #e5e9f0;border-radius:8px;padding:10px 12px;margin-bottom:12px">'+
+   '到 <a href="https://github.com/settings/personal-access-tokens" target="_blank" rel="noopener" style="color:#2b7cff">GitHub → Settings → Developer settings → Fine-grained tokens</a> 创建令牌：<br>'+
+   '· Repository access：<b>Only select repositories → s-rubber-dashboard</b><br>'+
+   '· Permissions → Repository permissions：<b>Contents = Read and write</b><br>'+
+   '<span style="color:#d92626">务必按上面限定范围，切勿使用全权限的 classic token。</span></div>'+
+   (has?'<div style="color:#0a9a5c;margin-bottom:10px">当前已保存令牌。粘贴新的可覆盖。</div>':'')+
+   '<input id="ghTokInput" type="password" placeholder="粘贴 github_pat_… 令牌" style="width:100%;box-sizing:border-box;border:1px solid #dfe4ec;border-radius:8px;padding:9px 11px;font-size:13px;outline:none;margin-bottom:14px">'+
+   '<div style="display:flex;gap:8px;align-items:center;justify-content:space-between">'+
+   '<span id="ghTokClear" style="color:#8a93a3;font-size:12px;cursor:pointer;text-decoration:underline;'+(has?'':'display:none;')+'">清除已保存令牌</span>'+
+   '<span><button id="ghTokCancel" style="border:1px solid #dfe4ec;background:#fff;border-radius:8px;padding:8px 14px;font-size:13px;cursor:pointer">取消</button> '+
+   '<button id="ghTokSave" style="border:0;background:#0f4c81;color:#fff;border-radius:8px;padding:8px 16px;font-size:13px;cursor:pointer">保存</button></span></div>';
+  ov.appendChild(box); document.body.appendChild(ov);
+  var inp=box.querySelector("#ghTokInput"); setTimeout(function(){ inp.focus(); },60);
+  function close(){ ov.remove(); }
+  box.querySelector("#ghTokCancel").onclick=close;
+  ov.onclick=function(e){ if(e.target===ov){ close(); } };
+  box.querySelector("#ghTokClear").onclick=function(){ ghClearToken(); close(); ghToast("已清除已保存的令牌"); };
+  box.querySelector("#ghTokSave").onclick=function(){
+    var v=(inp.value||"").trim(); if(!v){ inp.style.borderColor="#d92626"; return; }
+    ghSetToken(v); close(); ghToast("令牌已保存（仅存本浏览器）"); if(onSaved){ onSaved(); }
+  };
+  inp.addEventListener("keydown",function(e){ if(e.key==="Enter"){ box.querySelector("#ghTokSave").click(); } });
+}
+function ghPublish(fname,payload,msg,btn,toastFn){
+  function toast(m){ (toastFn||ghToast)(m); }
+  function mark(txt){ if(btn){ if(!btn.dataset.ghOrig){ btn.dataset.ghOrig=btn.innerHTML; } btn.innerHTML=txt; } }
+  function done(){ if(btn){ btn.innerHTML=btn.dataset.ghOrig||btn.innerHTML; btn.disabled=false; } }
+  function push(){
+    if(btn){ btn.disabled=true; } mark("⏳ 正在提交…");
+    ghCommitFile(fname,JSON.stringify(payload,null,2),msg).then(function(sha){
+      mark("✓ 已提交 "+sha.slice(0,8));
+      toast("已提交到线上（commit "+sha.slice(0,8)+"）。GitHub Pages 约 1 分钟后更新，他人刷新即可看到。");
+      setTimeout(done,4000);
+    })["catch"](function(e){
+      done();
+      if(String(e.message)==="NO_TOKEN"){ ghOpenTokenModal(push); return; }
+      if(window.confirm("直接提交失败："+e.message+"\n\n是否改为下载 JSON 手动发布？")){ ghDownload(fname,payload); }
+    });
+  }
+  if(!ghToken()){ ghOpenTokenModal(push); return; }
+  push();
+}
+
+// 发布检修表到线上（有令牌→直接提交 GitHub；首次会弹窗让你粘贴令牌）
 function publishMaint(){
   if(editingMaint) saveMaintTable();
   var exportOps = maintOps.map(function(o){
     return {co:o.co, cap:o.cap, start:o.start, end:o.end, reason:o.reason||'', note:o.note||'', lossRate:o.lossRate||1};
   });
   var payload = {product:PRODUCT, updatedAt:new Date().toISOString().slice(0,10), maintOps:exportOps};
-  var blob = new Blob([JSON.stringify(payload, null, 2)], {type:'application/json'});
-  var url = URL.createObjectURL(blob);
-  var a = document.createElement('a'); a.href = url; a.download = MAINT_OPS_FILE; document.body.appendChild(a); a.click(); document.body.removeChild(a);
-  setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
-  showToast('已导出 '+MAINT_OPS_FILE+'，发给我即可同步到线上（他人刷新即见）');
+  ghPublish(MAINT_OPS_FILE, payload, '装置检修表·可编辑数据更新（'+PRODUCT+'）', document.getElementById('publishBtn'), function(m){ showToast(m); });
 }
 var selDims = ['企业性质', '是否配套', '原料来源', '地区'];
 function renderMaintTable(){
