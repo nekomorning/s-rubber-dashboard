@@ -159,6 +159,7 @@ body{background:var(--bg); color:var(--text);
     <button class="abtn" id="addCard">＋ 新增一行</button>
     <button class="abtn" id="saveLayout">💾 保存布局</button>
     <button class="abtn" id="saveContent">💾 保存内容</button>
+    <button class="abtn primary" id="publishCore">🔼 发布到线上</button>
   </div>
   <div class="ybar" id="ybar"></div>
   <div id="charts"></div>
@@ -340,6 +341,23 @@ var LS_SAVED_KEY="coreLayoutV1_saved";
 var CONTENT_KEY="coreContentV1";
 var CONTENT_SAVED_KEY="coreContentV1_saved";
 
+/* 线上共享内容（发布到 GitHub Pages 后他人可见）；本地草稿仅自己可见 */
+var ONLINE_CONTENT_URL="core_content.json";
+var onlineContent=null;   // 线上已发布的内容载荷（含 savedAtISO）
+var onlineLayout=null;    // 线上已发布的布局 {v, savedAtISO}
+function pickNewer(a,b){
+  if(!a) return b; if(!b) return a;
+  var ta=a.savedAtISO?Date.parse(a.savedAtISO):0;
+  var tb=b.savedAtISO?Date.parse(b.savedAtISO):0;
+  return (ta>=tb)?a:b;   // 平局时线上优先
+}
+function pickLocalOrOnline(savedKey, autoKey, online){
+  var cand = online || null;
+  try{ var s=localStorage.getItem(savedKey); if(s) cand=pickNewer(cand, JSON.parse(s)); }catch(e){}
+  try{ var s2=localStorage.getItem(autoKey); if(s2) cand=pickNewer(cand, JSON.parse(s2)); }catch(e){}
+  return cand;
+}
+
 /* 定价逻辑默认文本（每行一条；**文字** = 红色加粗；行首“供应：/需求：/核心：”自动加粗蓝色） */
 var DEFAULT_LOGIC=[
   "供应：**原料是核心变量（快变量）**，丁二烯开工、进出口、合成胶出口都是结果",
@@ -355,13 +373,14 @@ function defaultLayout(){
   // 默认布局：一行 4 张卡片，用固定 id（d1~d4），保证行标题锚定稳定
   return [ DEFAULT_DAILY.map(function(k, i){ return {id:"d"+(i+1), src:"daily", key:k, focus:false}; }) ];
 }
-function save(){ try{ localStorage.setItem(LS_KEY, JSON.stringify(layout)); }catch(e){} }
+function save(){ try{ localStorage.setItem(LS_KEY, JSON.stringify({v:layout, savedAtISO:new Date().toISOString()})); }catch(e){} }
 function loadLayout(){
   function read(k){
     try{
       var s=localStorage.getItem(k);
       if(s){
-        var a=JSON.parse(s);
+        var raw=JSON.parse(s);
+        var a=(raw && typeof raw==="object" && Array.isArray(raw.v))?raw.v:raw; // 兼容旧版裸数组
         if(Array.isArray(a)){
           // 兼容旧版一维数组：按 4 个分组转换为二维
           if(a.length>0 && !Array.isArray(a[0])){
@@ -369,16 +388,21 @@ function loadLayout(){
             for(var i=0;i<a.length;i+=GROUP) grouped.push(a.slice(i,i+GROUP));
             a=grouped;
           }
-          return a.map(function(row){
+          return {v: a.map(function(row){
             return (row||[]).map(function(it){ return {id:it.id||uid(), src:it.src||"daily", key:it.key||null, focus:!!it.focus}; });
-          });
+          }), savedAtISO:(raw&&raw.savedAtISO)||""};
         }
       }
     }catch(e){}
     return null;
   }
-  // 优先级：用户主动保存的快照 > 自动保存 > 默认
-  return read(LS_SAVED_KEY) || read(LS_KEY) || defaultLayout();
+  // 优先级：线上已发布 > 本地主动保存 > 本地自动保存 > 默认
+  var cand=(onlineLayout && Array.isArray(onlineLayout.v))?onlineLayout
+          :(onlineLayout && Array.isArray(onlineLayout))?{v:onlineLayout, savedAtISO:""}
+          :null;
+  cand=pickNewer(cand, read(LS_SAVED_KEY));
+  cand=pickNewer(cand, read(LS_KEY));
+  return cand?cand.v:defaultLayout();
 }
 
 function fetchJson(u){
@@ -442,13 +466,11 @@ function contentPayload(){
   return {logic: logicText||DEFAULT_LOGIC, rowNotes: rowNotes, history: logicHistory, images: logicImages,
           reviewText: reviewText||DEFAULT_REVIEW, reviewImages: reviewImages, reviewSels: reviewSels,
           reviewTitles: reviewTitles||DEFAULT_REVIEW_TITLES.slice(),
-          savedAt: new Date().toLocaleString('zh-CN')};
+          savedAt: new Date().toLocaleString('zh-CN'), savedAtISO: new Date().toISOString()};
 }
 function saveContentAuto(){ try{ localStorage.setItem(CONTENT_KEY, JSON.stringify(contentPayload())); }catch(e){} }
 function loadContent(){
-  var data=null;
-  try{ var s=localStorage.getItem(CONTENT_SAVED_KEY); if(s) data=JSON.parse(s); }catch(e){}
-  if(!data){ try{ var s2=localStorage.getItem(CONTENT_KEY); if(s2) data=JSON.parse(s2); }catch(e){} }
+  var data=pickLocalOrOnline(CONTENT_SAVED_KEY, CONTENT_KEY, onlineContent);
   if(data){
     if(Array.isArray(data.logic)&&data.logic.length) logicText=data.logic;
     if(Array.isArray(data.rowNotes)) rowNotes=data.rowNotes;
@@ -830,7 +852,8 @@ function init(){
   });
   Promise.allSettled([ fetchJson(SOURCES.daily.url), fetchJson(SOURCES.kai.url), Promise.all(tradeLoads),
                        fetchJson(SOURCES.chain.url), fetchJson(SOURCES.maint.url), fetchJson(SOURCES.pe.url),
-                       fetchJson(SOURCES.naphtha.url), fetchJson(SOURCES.balance.url) ])
+                       fetchJson(SOURCES.naphtha.url), fetchJson(SOURCES.balance.url),
+                       fetchJson(ONLINE_CONTENT_URL) ])
     .then(function(res){
       if(res[0].status==="fulfilled"){ var d=res[0].value; SOURCES.daily.indicators=d.indicators; SOURCES.daily.xlabels=d.xlabels; SOURCES.daily.years=d.years; SOURCES.daily.date=d.latestDataDate; SOURCES.daily.ts=d.ts||{}; }
       if(res[1].status==="fulfilled"){ var d2=res[1].value; SOURCES.kai.indicators=d2.indicators; SOURCES.kai.xlabels=d2.xlabels; SOURCES.kai.years=d2.years; }
@@ -850,6 +873,7 @@ function init(){
         var balInds=buildBalanceIndicators(bal);
         Object.keys(balInds).forEach(function(c){ SOURCES.balance[c]=balInds[c]; });
       }
+      if(res[8] && res[8].status==="fulfilled"){ var oc=res[8].value; if(oc){ if(oc.content) onlineContent=oc.content; if(oc.layout) onlineLayout=oc.layout; } }
       // 年份并集
       var ys=new Set();
       [SOURCES.daily.years, SOURCES.kai.years].forEach(function(arr){ (arr||[]).forEach(function(y){ ys.add(String(y)); }); });
@@ -1837,6 +1861,20 @@ document.getElementById("saveContent").onclick=function(){
     b.classList.add("saved");
     setTimeout(function(){ b.innerHTML=orig; b.classList.remove("saved"); }, 2500);
   }catch(e){ alert("保存失败："+e.message); }
+};
+document.getElementById("publishCore").onclick=function(){
+  try{
+    saveContentAuto();
+    var payload={ content: contentPayload(), layout:{v:layout, savedAtISO:new Date().toISOString()}, savedAtISO:new Date().toISOString() };
+    var blob=new Blob([JSON.stringify(payload,null,2)], {type:"application/json"});
+    var a=document.createElement("a");
+    a.href=URL.createObjectURL(blob);
+    a.download="core_content.json";
+    document.body.appendChild(a); a.click(); a.remove();
+    var b=this, orig=b.innerHTML;
+    b.innerHTML="✓ 已导出，把 core_content.json 发我即可同步";
+    setTimeout(function(){ b.innerHTML=orig; }, 3200);
+  }catch(e){ alert("导出失败："+e.message); }
 };
 document.getElementById("editLogic").onclick=openLogicEdit;
 document.getElementById("logicClose").onclick=closeLogicEdit;
