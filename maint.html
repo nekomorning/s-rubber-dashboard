@@ -546,7 +546,7 @@ function ghDownload(fname,payload){
   a.href=u; a.download=fname; document.body.appendChild(a); a.click(); a.remove();
   setTimeout(function(){ URL.revokeObjectURL(u); },1000);
 }
-function ghOpenTokenModal(onSaved){
+function ghOpenTokenModal(onSaved, opt){
   var ov=document.createElement("div");
   ov.style.cssText="position:fixed;inset:0;background:rgba(15,20,28,.55);display:flex;align-items:center;justify-content:center;z-index:99998";
   var box=document.createElement("div");
@@ -564,7 +564,8 @@ function ghOpenTokenModal(onSaved){
    '<div style="display:flex;gap:8px;align-items:center;justify-content:space-between">'+
    '<span id="ghTokClear" style="color:#8a93a3;font-size:12px;cursor:pointer;text-decoration:underline;'+(has?'':'display:none;')+'">清除已保存令牌</span>'+
    '<span><button id="ghTokCancel" style="border:1px solid #dfe4ec;background:#fff;border-radius:8px;padding:8px 14px;font-size:13px;cursor:pointer">取消</button> '+
-   '<button id="ghTokSave" style="border:0;background:#0f4c81;color:#fff;border-radius:8px;padding:8px 16px;font-size:13px;cursor:pointer">保存</button></span></div>';
+   '<button id="ghTokSave" style="border:0;background:#0f4c81;color:#fff;border-radius:8px;padding:8px 16px;font-size:13px;cursor:pointer">保存</button></span></div>'+
+   ((opt&&opt.fname)?'<div id="ghTokDl" style="margin-top:12px;color:#2b7cff;font-size:12px;cursor:pointer;text-decoration:underline">暂时不想设置令牌？点此下载 JSON（发我手动发布）</div>':'');
   ov.appendChild(box); document.body.appendChild(ov);
   var inp=box.querySelector("#ghTokInput"); setTimeout(function(){ inp.focus(); },60);
   function close(){ ov.remove(); }
@@ -576,6 +577,8 @@ function ghOpenTokenModal(onSaved){
     ghSetToken(v); close(); ghToast("令牌已保存（仅存本浏览器）"); if(onSaved){ onSaved(); }
   };
   inp.addEventListener("keydown",function(e){ if(e.key==="Enter"){ box.querySelector("#ghTokSave").click(); } });
+  var dl=box.querySelector("#ghTokDl");
+  if(dl){ dl.onclick=function(){ close(); ghDownload(opt.fname,opt.payload); ghToast("已下载 "+opt.fname+"，把它发给我即可同步到线上"); }; }
 }
 function ghPublish(fname,payload,msg,btn,toastFn){
   function toast(m){ (toastFn||ghToast)(m); }
@@ -589,11 +592,11 @@ function ghPublish(fname,payload,msg,btn,toastFn){
       setTimeout(done,4000);
     })["catch"](function(e){
       done();
-      if(String(e.message)==="NO_TOKEN"){ ghOpenTokenModal(push); return; }
+      if(String(e.message)==="NO_TOKEN"){ ghOpenTokenModal(push,{fname:fname,payload:payload}); return; }
       if(window.confirm("直接提交失败："+e.message+"\n\n是否改为下载 JSON 手动发布？")){ ghDownload(fname,payload); }
     });
   }
-  if(!ghToken()){ ghOpenTokenModal(push); return; }
+  if(!ghToken()){ ghOpenTokenModal(push,{fname:fname,payload:payload}); return; }
   push();
 }
 
