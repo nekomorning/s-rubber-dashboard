@@ -166,7 +166,7 @@ body{font-family:"Microsoft YaHei",system-ui,sans-serif;background:var(--bg);col
 
   <div class="section-title">丁二烯装置检修列表<span style="font-size:12px;color:var(--sub);font-weight:400">（停车时间→开车时间算检修天数；损失=年产能×天数/365；截至 2026-08-14）</span></div>
   <div class="maint-section">
-    <div class="maint-left"><div class="section-title" style="font-size:14px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;gap:8px"><span id="maintTblTitle">检修装置明细</span><div class="maint-tools"><button class="primary" id="editBtn" onclick="toggleEdit()">编辑</button><button class="primary" id="addBtn" onclick="addMaintRow()" style="display:none">+ 新增行</button><button class="danger" id="resetBtn" onclick="resetMaint()" style="display:none">重置默认</button></div></div><div class="maint-table-wrap"><table class="maint-tbl" id="maintTbl"></table></div></div>
+    <div class="maint-left"><div class="section-title" style="font-size:14px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;gap:8px"><span id="maintTblTitle">检修装置明细</span><div class="maint-tools"><button class="primary" id="editBtn" onclick="toggleEdit()">编辑</button><button class="primary" id="addBtn" onclick="addMaintRow()" style="display:none">+ 新增行</button><button class="danger" id="resetBtn" onclick="resetMaint()" style="display:none">重置默认</button><button class="primary" id="publishBtn" onclick="publishMaint()">发布到线上</button></div></div><div class="maint-table-wrap"><table class="maint-tbl" id="maintTbl"></table></div></div>
     <div class="maint-right"><div class="section-title" style="font-size:14px;margin-bottom:8px">月度合计检修损失（万吨）</div><div class="maint-chart-card"><div class="chart" id="maintLossChart"></div></div></div>
   </div>
 
@@ -311,6 +311,7 @@ function renderGrid(){
   });
 }
 var PRODUCT = (D && D.product) || '丁二烯';
+var MAINT_OPS_FILE = 'maint_ops_' + (PRODUCT==='丁二烯'?'bd':PRODUCT==='顺丁'?'br':PRODUCT==='丁苯'?'sbr':'x') + '.json';
 var maintOps = [];
 var editingMaint = false;
 var MAINT_REASONS = ['计划','临时','亏损','长停'];
@@ -379,26 +380,36 @@ function recalcMaint(op){
   return op;
 }
 function cloneOps(ops){ return JSON.parse(JSON.stringify(ops||[])); }
-function loadMaintOpsFromStorage(){
+// 从线上 JSON 加载（手动发布到 GitHub Pages 后共享）；失败回退内联 D；再套用 localStorage 草稿
+function loadMaintOps(cb){
   var base = (D && D.maintOps) || [];
-  try{
-    var raw = localStorage.getItem(lsKey());
-    if(raw){
-      var arr = JSON.parse(raw);
-      if(Array.isArray(arr) && arr.length){
-        maintOps = arr.map(function(o){ return recalcMaint(o); });
-        return;
-      }
-    }
-  }catch(e){}
-  maintOps = cloneOps(base);
+  function applyDraft(){
+    try{
+      var raw = localStorage.getItem(lsKey());
+      if(raw){ var a = JSON.parse(raw); if(Array.isArray(a) && a.length){ maintOps = a.map(recalcMaint); return true; } }
+    }catch(e){}
+    return false;
+  }
+  fetch(MAINT_OPS_FILE, {cache:'no-store'}).then(function(r){
+    if(!r.ok) throw new Error('no-file');
+    return r.json();
+  }).then(function(arr){
+    var ops = Array.isArray(arr) ? arr : (arr && arr.maintOps ? arr.maintOps : []);
+    if(Array.isArray(ops) && ops.length) maintOps = ops.map(recalcMaint);
+    else maintOps = cloneOps(base);
+  }).catch(function(){
+    maintOps = cloneOps(base);
+  }).then(function(){
+    applyDraft();
+    if(cb) cb();
+  });
 }
 function saveMaintOpsToStorage(){
   try{ localStorage.setItem(lsKey(), JSON.stringify(maintOps)); }catch(e){}
 }
 function clearMaintStorage(){
   try{ localStorage.removeItem(lsKey()); }catch(e){}
-  loadMaintOpsFromStorage();
+  loadMaintOps(function(){ renderMaintTable(); renderMaintLossChart(); });
 }
 function showToast(msg){
   var t = document.getElementById('toast'); if(!t) return;
@@ -491,6 +502,19 @@ function resetMaint(){
   if(resetBtn) resetBtn.style.display = 'none';
   renderMaintTable(); renderMaintLossChart();
   showToast('已恢复默认');
+}
+// 导出当前检修表为 JSON（发给我即可由发布脚本同步到线上，他人刷新即见）
+function publishMaint(){
+  if(editingMaint) saveMaintTable();
+  var exportOps = maintOps.map(function(o){
+    return {co:o.co, cap:o.cap, start:o.start, end:o.end, reason:o.reason||'', note:o.note||'', lossRate:o.lossRate||1};
+  });
+  var payload = {product:PRODUCT, updatedAt:new Date().toISOString().slice(0,10), maintOps:exportOps};
+  var blob = new Blob([JSON.stringify(payload, null, 2)], {type:'application/json'});
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a'); a.href = url; a.download = MAINT_OPS_FILE; document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
+  showToast('已导出 '+MAINT_OPS_FILE+'，发给我即可同步到线上（他人刷新即见）');
 }
 var selDims = ['企业性质', '是否外销', '原料来源', '工艺路线'];
 function renderMaintTable(){
@@ -620,8 +644,7 @@ function init(){
   var n = allYears.length;
   allYears.forEach(function(y,i){ yearVisible[y] = (i >= n-4); });
   document.getElementById('latestDate').textContent = (D && D.latestDataDate) || '';
-  loadMaintOpsFromStorage();
-  buildDimBar(); buildYearBar(); renderMaintTable(); renderMaintLossChart(); renderGrid();
+  loadMaintOps(function(){ buildDimBar(); buildYearBar(); renderMaintTable(); renderMaintLossChart(); renderGrid(); });
 }
 window.addEventListener('resize', function(){ var t; return function(){ clearTimeout(t); t=setTimeout(function(){ charts.forEach(function(c){ c.resize(); }); },150); }; }());
 init();
