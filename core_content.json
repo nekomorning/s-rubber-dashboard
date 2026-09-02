@@ -277,8 +277,8 @@
       "BR-NR价差（比价关系→替代需求；26年基本来自BR波动，近期天胶强）",
       "丁二烯供需（中东石脑油出口减；丁二烯供应低位，需求持续增；关注下游负反馈）"
     ],
-    "savedAt": "2026/9/2 11:01:50",
-    "savedAtISO": "2026-09-02T03:01:50.910Z"
+    "savedAt": "2026/9/2 10:27:29",
+    "savedAtISO": "2026-09-02T02:27:29.321Z"
   },
   "layout": {
     "v": [
@@ -408,7 +408,7 @@
         {
           "id": "cmt7hizj96gi",
           "src": "trade.butadiene",
-          "key": "SEAsia|Export",
+          "key": "Korea_Rep|Export",
           "focus": false
         },
         {
@@ -428,7 +428,7 @@
         {
           "id": "cmt7hrz0q34s",
           "src": "trade.pbr",
-          "key": "SEAsia|Import",
+          "key": "USA|Import",
           "focus": false
         },
         {
@@ -579,7 +579,7 @@
         }
       ]
     ],
-    "savedAtISO": "2026-09-02T03:01:50.910Z"
+    "savedAtISO": "2026-09-02T02:27:29.321Z"
   },
-  "savedAtISO": "2026-09-02T03:01:50.910Z"
+  "savedAtISO": "2026-09-02T03:15:32.789Z"
 }
