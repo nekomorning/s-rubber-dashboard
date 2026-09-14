@@ -1230,16 +1230,28 @@ function replaceDescForExport(container){
   var tas = container.querySelectorAll ? container.querySelectorAll('textarea.sec--desc') : [];
   var backups = [];
   tas.forEach(function(ta){
+    if(!ta.value || !ta.value.trim()){
+      // 空文本框：导出时不显示空白框，图表自动上移
+      backups.push({ta:ta, display:ta.style.display || '', hidden:true});
+      ta.style.display = 'none';
+      return;
+    }
     var div = document.createElement('div');
     div.className = 'sec--desc';
     div.textContent = ta.value;
     var style = window.getComputedStyle(ta);
     div.style.cssText = 'width:'+ta.offsetWidth+'px;min-height:'+ta.offsetHeight+'px;height:auto;white-space:pre-wrap;word-break:break-word;line-height:'+style.lineHeight+';font-size:'+style.fontSize+';font-family:'+style.fontFamily+';padding:'+style.padding+';border:'+style.border+';border-radius:'+style.borderRadius+';background:'+style.background+';color:'+style.color+';box-sizing:'+style.boxSizing+';';
     ta.parentNode.replaceChild(div, ta);
-    backups.push({div:div, ta:ta, parent:div.parentNode});
+    backups.push({div:div, ta:ta, parent:div.parentNode, hidden:false});
   });
   return function restore(){
-    backups.forEach(function(b){ b.parent.replaceChild(b.ta, b.div); });
+    backups.forEach(function(b){
+      if(b.hidden){
+        b.ta.style.display = b.display;
+      } else {
+        b.parent.replaceChild(b.ta, b.div);
+      }
+    });
   };
 }
 
