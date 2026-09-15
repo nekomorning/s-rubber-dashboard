@@ -92,6 +92,10 @@
       {
         "cardId": "cmt818r3j49s",
         "text": "下游半钢：开工同比低位，库存有压力，7月出口环比大幅下滑"
+      },
+      {
+        "cardId": "cmu2uoatu36k",
+        "text": "顺丁-量：中国出口增加，替代韩国减量"
       }
     ],
     "history": [
@@ -277,8 +281,8 @@
       "BR-NR价差（比价关系→替代需求；26年基本来自BR波动，近期天胶强）",
       "丁二烯供需（中东石脑油出口减；丁二烯供应低位，需求持续增；关注下游负反馈）"
     ],
-    "savedAt": "2026/9/2 10:27:29",
-    "savedAtISO": "2026-09-02T02:27:29.321Z"
+    "savedAt": "2026/9/15 23:52:37",
+    "savedAtISO": "2026-09-15T15:52:37.025Z"
   },
   "layout": {
     "v": [
@@ -322,22 +326,22 @@
           "focus": false
         },
         {
-          "id": "cmt0al63b68v",
+          "id": "cmu2ulcx762s",
           "src": "pe",
-          "key": "pe_08",
-          "focus": true
-        },
-        {
-          "id": "cmt0al85amh",
-          "src": "pe",
-          "key": "pe_09",
+          "key": "pe_01",
           "focus": false
         },
         {
-          "id": "cmt0aldg0g5",
+          "id": "cmu2ulk9l725",
           "src": "pe",
-          "key": "pe_12",
+          "key": "pe_06",
           "focus": true
+        },
+        {
+          "id": "cmu2um2oo5l3",
+          "src": "pe",
+          "key": "pe_09",
+          "focus": false
         }
       ],
       [
@@ -426,9 +430,9 @@
       ],
       [
         {
-          "id": "cmt7hrz0q34s",
+          "id": "cmu2uoatu36k",
           "src": "trade.pbr",
-          "key": "USA|Import",
+          "key": "USA|Export",
           "focus": false
         },
         {
@@ -444,9 +448,9 @@
           "focus": false
         },
         {
-          "id": "cmt7hsgyv5g",
+          "id": "cmu2un1j61ef",
           "src": "trade.pbr",
-          "key": "USA|Export",
+          "key": "SEAsia|Import",
           "focus": false
         }
       ],
@@ -579,7 +583,7 @@
         }
       ]
     ],
-    "savedAtISO": "2026-09-02T02:27:29.321Z"
+    "savedAtISO": "2026-09-15T15:52:37.025Z"
   },
-  "savedAtISO": "2026-09-02T03:15:32.789Z"
+  "savedAtISO": "2026-09-15T15:52:37.025Z"
 }
