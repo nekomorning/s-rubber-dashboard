@@ -505,13 +505,17 @@ function saveMaintTable(){
     // 原因备注已合并到单列（data-field=reason）：整列值进入 reason；note 置空
     var op = {co:co, cap:cap, start:start, end:end, reason:reason, note:'', lossRate:lossRate, monthly_loss:[]};
     recalcMaint(op);
+    var rd = op.days, rl = op.loss;
     if(days !== '' && days !== '—'){
       var d = parseFloat(days); if(!isNaN(d)) op.days = d;
     }
     if(loss !== '' && loss !== '—'){
       var l = parseFloat(loss); if(!isNaN(l)) op.loss = Math.round(l*100)/100;
     }
-    if(days !== '' || loss !== ''){
+    // 仅当用户手改了天数/损失（与重算值不同）才用平均法重建月度切分；否则保留 recalc 的逐月数据
+    var dChanged = days !== '' && days !== '—' && !isNaN(parseFloat(days)) && Math.abs(parseFloat(days) - (rd||0)) > 0.01;
+    var lChanged = loss !== '' && loss !== '—' && !isNaN(parseFloat(loss)) && Math.abs(parseFloat(loss) - (rl||0)) > 0.01;
+    if(dChanged || lChanged){
       var totalD = op.days||0, totalL = op.loss||0;
       if(totalD>0 && totalL>0){
         op.monthly_loss = [{monthStr: monthStr(new Date()), days:totalD, loss:totalL, isLastMonth:true}];
