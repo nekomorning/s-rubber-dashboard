@@ -126,6 +126,9 @@ body{font-family:"Microsoft YaHei",system-ui,sans-serif;background:var(--bg);col
 .maint-tools{display:flex;gap:8px;align-items:center;}
 .maint-tools button{border:1px solid var(--border);border-radius:4px;background:#fff;color:var(--accent);font-size:12px;padding:4px 12px;cursor:pointer;white-space:nowrap;}
 .maint-tools button:hover{background:#f0f4fa;border-color:var(--accent);}
+.draft-banner{display:none;margin:10px 0;padding:10px 14px;border:1px solid #f0c36d;background:#fdf3d8;color:#8a5a00;border-radius:6px;font-size:13px;line-height:1.6;align-items:center;gap:10px;flex-wrap:wrap;}
+.draft-banner button{border:1px solid var(--border);border-radius:4px;background:#fff;color:var(--accent);font-size:12px;padding:4px 12px;cursor:pointer;white-space:nowrap;margin-left:8px;}
+.draft-banner button:hover{background:#f0f4fa;border-color:var(--accent);}
 .maint-tools button.primary{background:var(--accent);color:#fff;border-color:var(--accent);}
 .maint-tools button.primary:hover{background:#0d3e6b;}
 .maint-tools button.danger{color:#d92626;border-color:#d92626;}
@@ -165,6 +168,7 @@ body{font-family:"Microsoft YaHei",system-ui,sans-serif;background:var(--bg);col
   </div>
 
   <div class="section-title">丁二烯装置检修列表<span style="font-size:12px;color:var(--sub);font-weight:400">（停车时间→开车时间算检修天数；损失=年产能×天数/365；截至 2026-08-14）</span></div>
+  <div id="draftBanner" class="draft-banner"></div>
   <div class="maint-section">
     <div class="maint-left"><div class="section-title" style="font-size:14px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;gap:8px"><span id="maintTblTitle">检修装置明细</span><div class="maint-tools"><button class="primary" id="editBtn" onclick="toggleEdit()">编辑</button><button class="primary" id="addBtn" onclick="addMaintRow()" style="display:none">+ 新增行</button><button class="danger" id="resetBtn" onclick="resetMaint()" style="display:none">重置默认</button><button class="primary" id="publishBtn" onclick="publishMaint()">发布到线上</button><button id="ghTokenBtn" onclick="ghOpenTokenModal(null)" title="设置/更换 GitHub 令牌（仅存本浏览器）">⚙ 令牌</button></div></div><div class="maint-table-wrap"><table class="maint-tbl" id="maintTbl"></table></div></div>
     <div class="maint-right"><div class="section-title" style="font-size:14px;margin-bottom:8px">月度合计检修损失（万吨）</div><div class="maint-chart-card"><div class="chart" id="maintLossChart"></div></div></div>
@@ -385,17 +389,20 @@ function cloneOps(ops){ return JSON.parse(JSON.stringify(ops||[])); }
 // 从线上 JSON 加载（手动发布到 GitHub Pages 后共享）；失败回退内联 D；再套用 localStorage 草稿
 function loadMaintOps(cb){
   var base = (D && D.maintOps) || [];
+  var onlineDay = '';
   function applyDraft(){
-    try{
-      var raw = localStorage.getItem(lsKey());
-      if(raw){ var a = JSON.parse(raw); if(Array.isArray(a) && a.length){ maintOps = a.map(recalcMaint); return true; } }
-    }catch(e){}
-    return false;
+    var d = readDraft();
+    if(!d || !d.ops || !d.ops.length) return false;
+    maintOps = d.ops.map(recalcMaint);
+    var draftDay = (d.savedAt || '').slice(0,10);
+    if(!draftDay || (onlineDay && draftDay <= onlineDay)) showDraftBanner(draftDay, onlineDay);
+    return true;
   }
   fetch(MAINT_OPS_FILE, {cache:'no-store'}).then(function(r){
     if(!r.ok) throw new Error('no-file');
     return r.json();
   }).then(function(arr){
+    onlineDay = (arr && arr.updatedAt) ? String(arr.updatedAt).slice(0,10) : '';
     var ops = Array.isArray(arr) ? arr : (arr && arr.maintOps ? arr.maintOps : []);
     if(Array.isArray(ops) && ops.length) maintOps = ops.map(recalcMaint);
     else maintOps = cloneOps(base);
@@ -407,7 +414,31 @@ function loadMaintOps(cb){
   });
 }
 function saveMaintOpsToStorage(){
-  try{ localStorage.setItem(lsKey(), JSON.stringify(maintOps)); }catch(e){}
+  try{ localStorage.setItem(lsKey(), JSON.stringify({savedAt:new Date().toISOString(), ops:maintOps})); }catch(e){}
+}
+function readDraft(){
+  try{
+    var raw = localStorage.getItem(lsKey());
+    if(!raw) return null;
+    var v = JSON.parse(raw);
+    if(Array.isArray(v)) return {savedAt:'', ops:v};
+    if(v && Array.isArray(v.ops)) return {savedAt:v.savedAt||'', ops:v.ops};
+  }catch(e){}
+  return null;
+}
+function showDraftBanner(draftDay, onlineDay){
+  var el = document.getElementById('draftBanner'); if(!el) return;
+  el.innerHTML = '⚠ 本页正显示<b>本地草稿</b>（保存于 ' + (draftDay || '未知时间') + '），已覆盖线上数据（' + (onlineDay || '未知') + '）。'
+    + '<button class="primary" onclick="useOnlineOps()">改用线上数据</button>'
+    + '<button onclick="keepDraft()">保留草稿</button>';
+  el.style.display = 'block';
+}
+function useOnlineOps(){
+  var el = document.getElementById('draftBanner'); if(el) el.style.display = 'none';
+  clearMaintStorage();
+}
+function keepDraft(){
+  var el = document.getElementById('draftBanner'); if(el) el.style.display = 'none';
 }
 function clearMaintStorage(){
   try{ localStorage.removeItem(lsKey()); }catch(e){}
