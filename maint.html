@@ -355,6 +355,7 @@ function recalcMaint(op){
         if(!agg[ms]) agg[ms] = {monthStr:ms, days:0, loss:0};
         agg[ms].days += 1;
         agg[ms].loss += cap * lossRate / 365;
+        totalLoss += cap * lossRate / 365;
         d1 = new Date(d1.getTime()+oneDay); totalDays++;
       }
       op.days = totalDays; op.loss = Math.round(totalLoss*100)/100;
@@ -368,6 +369,7 @@ function recalcMaint(op){
         var ms = monthStr(d1);
         if(!agg[ms]) agg[ms] = {monthStr:ms, days:0, loss:0};
         agg[ms].days += 1; agg[ms].loss += cap * lossRate / 365;
+        totalLoss += cap * lossRate / 365;
         d1 = new Date(d1.getTime()+oneDay); totalDays++;
       }
       op.days = totalDays; op.loss = Math.round(totalLoss*100)/100;
