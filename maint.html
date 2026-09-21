@@ -167,7 +167,7 @@ body{font-family:"Microsoft YaHei",system-ui,sans-serif;background:var(--bg);col
     <a class="stab" href="https://nekomorning.github.io/s-rubber-dashboard/maint_sbr.html">丁苯</a>
   </div>
 
-  <div class="section-title">丁二烯装置检修列表<span style="font-size:12px;color:var(--sub);font-weight:400">（停车时间→开车时间算检修天数；损失=年产能×天数/365；截至 2026-08-14）</span></div>
+  <div class="section-title">丁二烯装置检修列表<span style="font-size:12px;color:var(--sub);font-weight:400">（停车时间→开车时间算检修天数；损失=年产能×天数/365）</span></div>
   <div id="draftBanner" class="draft-banner"></div>
   <div class="maint-section">
     <div class="maint-left"><div class="section-title" style="font-size:14px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;gap:8px"><span id="maintTblTitle">检修装置明细</span><div class="maint-tools"><button class="primary" id="editBtn" onclick="toggleEdit()">编辑</button><button class="primary" id="addBtn" onclick="addMaintRow()" style="display:none">+ 新增行</button><button class="danger" id="resetBtn" onclick="resetMaint()" style="display:none">重置默认</button><button class="primary" id="publishBtn" onclick="publishMaint()">发布到线上</button><button id="ghTokenBtn" onclick="ghOpenTokenModal(null)" title="设置/更换 GitHub 令牌（仅存本浏览器）">⚙ 令牌</button></div></div><div class="maint-table-wrap"><table class="maint-tbl" id="maintTbl"></table></div></div>
