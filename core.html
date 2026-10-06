@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<html lang="zh-CN" data-page-node-id="EQeZk6tTCpna33h8jMpbup">
+<head data-page-node-id="1d0oGm8Js8fvLJCrorpSUn">
+<meta charset="UTF-8" data-page-node-id="DOi0gEHN5Sv7AE1BFdCNyo">
+<meta name="viewport" content="width=device-width, initial-scale=1.0" data-page-node-id="4gUZvDWwdQZziSTUBvwKCy">
 <title>合成胶数据看板 · 核心逻辑</title>
 <style>
 :root{
@@ -125,146 +125,146 @@ body{background:var(--bg); color:var(--text);
 @media (max-width:1100px){ .review-grid{grid-template-columns:1fr;} }
 </style>
 </head>
-<body>
-<div class="wrap">
-  <div class="header">
-    <h1>合成胶数据看板 · 核心逻辑</h1>
-    <div class="date" id="dataDate">数据加载中…</div>
+<body data-page-node-id="CEMWVncno1xwF5SvCouR6Y">
+<div class="wrap" data-page-node-id="5HkHe4X8oCbrBAZK5knplj">
+  <div class="header" data-page-node-id="YXmuEdxUTbvjXQX4brjUMl">
+    <h1 data-page-node-id="7WQgIr5XsnXqHx0KXkSXjU">合成胶数据看板 · 核心逻辑</h1>
+    <div class="date" id="dataDate" data-page-node-id="F8YEkmdCAAWTQLASvroXwe">数据加载中…</div>
   </div>
-  <div class="tabs">
-    <a class="tab active" href="https://nekomorning.github.io/s-rubber-dashboard/core.html">核心逻辑</a>
-    <a class="tab" href="https://nekomorning.github.io/s-rubber-dashboard/balance.html">平衡表</a>
-    <a class="tab" href="https://nekomorning.github.io/s-rubber-dashboard/p3.html">贸易流</a>
-    <a class="tab" href="https://nekomorning.github.io/s-rubber-dashboard/capacity.html">产能投放</a>
-    <a class="tab" href="https://nekomorning.github.io/s-rubber-dashboard/maint.html">装置检修</a>
-    <a class="tab" href="https://nekomorning.github.io/s-rubber-dashboard/p2.html">开工库存表需</a>
-    <a class="tab" href="https://nekomorning.github.io/s-rubber-dashboard/p1.html">日度价格</a>
-    <a class="tab" href="https://nekomorning.github.io/s-rubber-dashboard/weekly.html">周报</a>
+  <div class="tabs" data-page-node-id="ICNIgemlJvbnlcOjvHHMxB">
+    <a class="tab active" href="https://nekomorning.github.io/s-rubber-dashboard/core.html" data-page-node-id="PJrUaxPhuAwbV1SaVLgDbj">核心逻辑</a>
+    <a class="tab" href="https://nekomorning.github.io/s-rubber-dashboard/balance.html" data-page-node-id="9SbQWHFWRl81AnJpGH6kdj">平衡表</a>
+    <a class="tab" href="https://nekomorning.github.io/s-rubber-dashboard/p3.html" data-page-node-id="h2NC53xyrvaEVOewmmtLnE">贸易流</a>
+    <a class="tab" href="https://nekomorning.github.io/s-rubber-dashboard/capacity.html" data-page-node-id="PNXS2fhOJYd4T29Y2XAw85">产能投放</a>
+    <a class="tab" href="https://nekomorning.github.io/s-rubber-dashboard/maint.html" data-page-node-id="m8ZxJJidcrDdirM57ejAEK">装置检修</a>
+    <a class="tab" href="https://nekomorning.github.io/s-rubber-dashboard/p2.html" data-page-node-id="w9wtK2HBxj0xj19489WBnI">开工库存表需</a>
+    <a class="tab" href="https://nekomorning.github.io/s-rubber-dashboard/p1.html" data-page-node-id="c1Ygbh75kb3syJ6xsWRaD7">日度价格</a>
+    <a class="tab" href="https://nekomorning.github.io/s-rubber-dashboard/weekly.html" data-page-node-id="DYiBapdp1RA6NguxFpcysS">周报</a>
   </div>
 
-  <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
-    <h2 class="sec-title" style="margin:24px 0 6px;">定价逻辑</h2>
-    <div class="logic-tools">
-      <button class="abtn" id="editLogic">✎ 编辑</button>
-      <button class="abtn" id="historyLogic">🕘 历史</button>
+  <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;" data-page-node-id="CRCEkWgimvOsZq0VSy0Pnq">
+    <h2 class="sec-title" style="margin:24px 0 6px;" data-page-node-id="eKDSQOY0sPECZk6gCHUSBH">定价逻辑</h2>
+    <div class="logic-tools" data-page-node-id="LYiNvlaqENyZ6C9JN3Gi0G">
+      <button class="abtn" id="editLogic" data-page-node-id="CIVV1YAFRzCqDnvlU7J27w">✎ 编辑</button>
+      <button class="abtn" id="historyLogic" data-page-node-id="sHpnNwUfdjIZm0d4cWh8PR">🕘 历史</button>
     </div>
   </div>
-  <div class="logic" id="logicBox">
-    <ul id="logicList"></ul>
+  <div class="logic" id="logicBox" data-page-node-id="JAMk7V4gPCmJyH6mo5hhs1">
+    <ul id="logicList" data-page-node-id="XWt4scuPs5lfH97wxDhUog"></ul>
   </div>
 
-  <h2 class="sec-title">核心数据跟踪图表</h2>
-  <div class="topbar">
-    <span class="sec-sub">数据来源于各看板页（日度价格 / 开工库存 / 贸易流），跟随每日刷新同步更新 · 点卡片右上角按钮可自定义（✎选择 / ∅清空 / ↑↓排序 / ☆关注蓝框 / ✕删除），卡片可拖拽排序</span>
-    <button class="abtn" id="addCard">＋ 新增一行</button>
-    <button class="abtn" id="saveLayout">💾 保存布局</button>
-    <button class="abtn" id="saveContent">💾 保存内容</button>
-    <button class="abtn primary" id="publishCore">🔼 发布到线上</button>
-    <button class="abtn" id="ghTokenBtn" title="设置/更换 GitHub 令牌（仅存本浏览器）">⚙ 令牌</button>
+  <h2 class="sec-title" data-page-node-id="CQaU64Ufdid61DhhtsUVFY">核心数据跟踪图表</h2>
+  <div class="topbar" data-page-node-id="9rLa0vGxWNpbS7CjYgprD6">
+    <span class="sec-sub" data-page-node-id="JPJKHnfHrgxJYGIIiKYWDb">数据来源于各看板页（日度价格 / 开工库存 / 贸易流），跟随每日刷新同步更新 · 点卡片右上角按钮可自定义（✎选择 / ∅清空 / ↑↓排序 / ☆关注蓝框 / ✕删除），卡片可拖拽排序</span>
+    <button class="abtn" id="addCard" data-page-node-id="TtABsUB2ta4SWBYoA8nZen">＋ 新增一行</button>
+    <button class="abtn" id="saveLayout" data-page-node-id="DBvk3rUgcIoC14LoGxTiyC">💾 保存布局</button>
+    <button class="abtn" id="saveContent" data-page-node-id="p8L6PtQ1EbDnyFDrFQtcap">💾 保存内容</button>
+    <button class="abtn primary" id="publishCore" data-page-node-id="Mw98fIkw9rtYygTfIMS22K">🔼 发布到线上</button>
+    <button class="abtn" id="ghTokenBtn" title="设置/更换 GitHub 令牌（仅存本浏览器）" data-page-node-id="uQnaGFSESLl7S5EqfUrrC3">⚙ 令牌</button>
   </div>
-  <div class="ybar" id="ybar"></div>
-  <div id="charts"></div>
+  <div class="ybar" id="ybar" data-page-node-id="xXEy0Vxevf8J9hXWRHYOrZ"></div>
+  <div id="charts" data-page-node-id="F9lk6hsonWnSvToGSJS0tJ"></div>
 
   <!-- 复盘板块 -->
-  <section class="review-section">
-    <h2 class="sec-title">复盘</h2>
-    <div class="review-grid">
-      <div class="review-card">
-        <div class="card-head"><input class="ttl review-title" value="跨页数据对比 ①" data-idx="0" spellcheck="false">
-          <div class="actions">
-            <button class="abtn review-save" data-idx="0">保存</button>
-            <button class="abtn review-clear" data-idx="0">清空</button>
+  <section class="review-section" data-page-node-id="nAMaXYpFkYTkpDjD3jcfmT">
+    <h2 class="sec-title" data-page-node-id="vi3jlAl09afLJj1krnGDUS">复盘</h2>
+    <div class="review-grid" data-page-node-id="189JusJfuasUJOZ036VKwL">
+      <div class="review-card" data-page-node-id="LbkloHAGMZ6rACatRAVE4u">
+        <div class="card-head" data-page-node-id="l0IPfaV6VV6u7FnToD3lH2"><input class="ttl review-title" value="跨页数据对比 ①" data-idx="0" spellcheck="false" data-page-node-id="RJFLyJd4xQfn8F3DJCOgvJ">
+          <div class="actions" data-page-node-id="0vLomvTq4iTQQhu83mapsg">
+            <button class="abtn review-save" data-idx="0" data-page-node-id="T0lufACCSH1W4VCsD2tBG6">保存</button>
+            <button class="abtn review-clear" data-idx="0" data-page-node-id="QAh7C47jpcAcTanwGDJ7J4">清空</button>
           </div>
         </div>
-        <div class="review-selectors">
-          <select id="reviewSel0_0" class="review-sel"></select>
-          <select id="reviewSel0_1" class="review-sel"></select>
-          <select id="reviewSel0_2" class="review-sel"></select>
+        <div class="review-selectors" data-page-node-id="gv0pObH03jDN0VMjHTXyw8">
+          <select id="reviewSel0_0" class="review-sel" data-page-node-id="gEEnQF6WnE069So8YRlwOm"></select>
+          <select id="reviewSel0_1" class="review-sel" data-page-node-id="Q5MzazAEx3eLs5AK7l5PWJ"></select>
+          <select id="reviewSel0_2" class="review-sel" data-page-node-id="ZlOK7JTeK2VnteaHflbVLG"></select>
         </div>
-        <div id="reviewChart0" class="review-chart"></div>
+        <div id="reviewChart0" class="review-chart" data-page-node-id="uuXFE4VR9wneNufcjRxhzh"></div>
       </div>
-      <div class="review-card">
-        <div class="card-head"><span class="ttl">复盘笔记</span>
-          <button class="abtn" id="reviewNoteEdit">✎ 编辑</button>
+      <div class="review-card" data-page-node-id="7bZ2N7hfd6wN2BJDSpmfgS">
+        <div class="card-head" data-page-node-id="C6snSYRbm5bNhqBOfBUgK6"><span class="ttl" data-page-node-id="1NRf73hp7nVVlClcBTksX1">复盘笔记</span>
+          <button class="abtn" id="reviewNoteEdit" data-page-node-id="1ndv1vGcYcQEj3c8f6fuAj">✎ 编辑</button>
         </div>
-        <div class="review-text"><div class="logic" id="reviewNoteBox"><ul id="reviewNoteList"></ul></div></div>
+        <div class="review-text" data-page-node-id="tIgWJDFNEA5o2lu7uz8IiK"><div class="logic" id="reviewNoteBox" data-page-node-id="CRBRuznbflY1ViwzBAcGRx"><ul id="reviewNoteList" data-page-node-id="9hlr94sJO692d5MSbu0EGb"></ul></div></div>
       </div>
-      <div class="review-card">
-        <div class="card-head"><input class="ttl review-title" value="跨页数据对比 ②" data-idx="1" spellcheck="false">
-          <div class="actions">
-            <button class="abtn review-save" data-idx="1">保存</button>
-            <button class="abtn review-clear" data-idx="1">清空</button>
+      <div class="review-card" data-page-node-id="BwUOTbjiuAdBtW3AYKbFGM">
+        <div class="card-head" data-page-node-id="hGhRixv5894EeqOtHzOepG"><input class="ttl review-title" value="跨页数据对比 ②" data-idx="1" spellcheck="false" data-page-node-id="zJhrzHwzrbpAlv0oe8onMk">
+          <div class="actions" data-page-node-id="uTxhQ32bwrbqkQkrtGGDZd">
+            <button class="abtn review-save" data-idx="1" data-page-node-id="glcsi8ZmSx58dDd1IneWx4">保存</button>
+            <button class="abtn review-clear" data-idx="1" data-page-node-id="YEBODFkyvUqs2b9jlZrBua">清空</button>
           </div>
         </div>
-        <div class="review-selectors">
-          <select id="reviewSel1_0" class="review-sel"></select>
-          <select id="reviewSel1_1" class="review-sel"></select>
-          <select id="reviewSel1_2" class="review-sel"></select>
+        <div class="review-selectors" data-page-node-id="Vs49NwD9ftT6887kMBFkT3">
+          <select id="reviewSel1_0" class="review-sel" data-page-node-id="lmrk4QP0O2E97yAeH2rxuO"></select>
+          <select id="reviewSel1_1" class="review-sel" data-page-node-id="BjBWN2Dr2BLGh1iayNLc2z"></select>
+          <select id="reviewSel1_2" class="review-sel" data-page-node-id="46lRmYJatwkMYBnWYHkeWe"></select>
         </div>
-        <div id="reviewChart1" class="review-chart"></div>
+        <div id="reviewChart1" class="review-chart" data-page-node-id="tDeO7iMCPLWLh6bhgLE8ra"></div>
       </div>
-      <div class="review-card">
-        <div class="card-head"><input class="ttl review-title" value="跨页数据对比 ③" data-idx="2" spellcheck="false">
-          <div class="actions">
-            <button class="abtn review-save" data-idx="2">保存</button>
-            <button class="abtn review-clear" data-idx="2">清空</button>
+      <div class="review-card" data-page-node-id="eeusLRFlDQtgFa66CcOuSU">
+        <div class="card-head" data-page-node-id="DLuLk1HZZU4O04knMhbOT1"><input class="ttl review-title" value="跨页数据对比 ③" data-idx="2" spellcheck="false" data-page-node-id="MzFXtyFnOTjpe5dmErbmJn">
+          <div class="actions" data-page-node-id="10s0TOn5Ku3LG7vmFF6r8v">
+            <button class="abtn review-save" data-idx="2" data-page-node-id="E10EBfM00VtEJYTGwR1AMV">保存</button>
+            <button class="abtn review-clear" data-idx="2" data-page-node-id="LO4KseaZlTmJ8s1Q5wBvBi">清空</button>
           </div>
         </div>
-        <div class="review-selectors">
-          <select id="reviewSel2_0" class="review-sel"></select>
-          <select id="reviewSel2_1" class="review-sel"></select>
-          <select id="reviewSel2_2" class="review-sel"></select>
+        <div class="review-selectors" data-page-node-id="K3CQ5URCAcSaaZxOuOEwVB">
+          <select id="reviewSel2_0" class="review-sel" data-page-node-id="GH5PrULAMmeXi9rssUX2Vv"></select>
+          <select id="reviewSel2_1" class="review-sel" data-page-node-id="FAV9GgtAjXs2IsjrwMmC3p"></select>
+          <select id="reviewSel2_2" class="review-sel" data-page-node-id="y0sFkcM4TtRjJD3idZ7rLJ"></select>
         </div>
-        <div id="reviewChart2" class="review-chart"></div>
+        <div id="reviewChart2" class="review-chart" data-page-node-id="stcFxVhiQ4eHaDH9YuW67S"></div>
       </div>
     </div>
   </section>
 
-  <div class="modal" id="modal">
-    <div class="modal-box">
-      <div class="modal-head"><span>选择图表</span><button id="modalClose">✕</button></div>
-      <div class="modal-search"><input id="modalSearch" placeholder="搜索图表名称…"></div>
-      <div class="modal-list" id="modalList"></div>
+  <div class="modal" id="modal" data-page-node-id="LWDEARaSq9s3yDQq7aAECm">
+    <div class="modal-box" data-page-node-id="5ErAA4HFXfjqoGqJWyPzWk">
+      <div class="modal-head" data-page-node-id="11TYGTG9W4DoXEh3zDxH4T"><span data-page-node-id="Fx3AjLB9WAaxzJdk2otPX7">选择图表</span><button id="modalClose" data-page-node-id="EJ8I97ZXG4awuaoTssbaF0">✕</button></div>
+      <div class="modal-search" data-page-node-id="xHBv2UK2fbrAK5Pyk4s8Yf"><input id="modalSearch" placeholder="搜索图表名称…" data-page-node-id="VNOJEzpkB6ohkh0QQS8xI5"></div>
+      <div class="modal-list" id="modalList" data-page-node-id="cM8z9l87X9wqLt3gpMXaAT"></div>
     </div>
   </div>
 
-  <div class="modal" id="modalLogic" style="display:none">
-    <div class="modal-box">
-      <div class="modal-head"><span>编辑定价逻辑</span><button id="logicClose">✕</button></div>
-      <div class="modal-search" style="font-size:12px;color:var(--sub)">每行一条。三种加粗标记：<code>**红**</code> 红色加粗 · <code>@@蓝@@</code> 蓝色加粗 · <code>%%绿%%</code> 绿色加粗。行首「供应：/需求：/核心：」自动蓝色加粗。按 <code>Tab</code> 缩进、<code>Shift+Tab</code> 取消缩进（每级2空格），保存后渲染层级缩进。支持在框内 <b>粘贴 / 拖拽 / 点「插入图片」</b> 嵌入截图（自动压缩，仅保存在本浏览器）。</div>
-      <div class="modal-list" style="padding:10px 16px 16px;">
+  <div class="modal" id="modalLogic" style="display:none" data-page-node-id="3RhNxQay5GTyRwkDwINoUq">
+    <div class="modal-box" data-page-node-id="9W4Sib4BQeFPS1G3wILizW">
+      <div class="modal-head" data-page-node-id="2VFXZe5kB41gFltHaKVfBr"><span data-page-node-id="CosvkaqEpuCkFiY3Igqx7P">编辑定价逻辑</span><button id="logicClose" data-page-node-id="NTFAETAHzwR92wD6zjACEi">✕</button></div>
+      <div class="modal-search" style="font-size:12px;color:var(--sub)" data-page-node-id="9wiAuZwu4szbeCJO5nTg3k">每行一条。三种加粗标记：<code data-page-node-id="xXxyVlRZ1AShU9whNEMyBM">**红**</code> 红色加粗 · <code data-page-node-id="16sqnAsHjUS47F6RdckNpj">@@蓝@@</code> 蓝色加粗 · <code data-page-node-id="PwYP4aI0RChlEEyUfskEIm">%%绿%%</code> 绿色加粗。行首「供应：/需求：/核心：」自动蓝色加粗。按 <code data-page-node-id="b6UAkx6xUG3HPxQgsbJtGb">Tab</code> 缩进、<code data-page-node-id="GDCQAjQEd7vbpkxYtZXwTx">Shift+Tab</code> 取消缩进（每级2空格），保存后渲染层级缩进。支持在框内 <b data-page-node-id="73gLxUbCWV4DDLDZmcMuFH">粘贴 / 拖拽 / 点「插入图片」</b> 嵌入截图（自动压缩，仅保存在本浏览器）。</div>
+      <div class="modal-list" style="padding:10px 16px 16px;" data-page-node-id="5ELz6w54p1rXUXHRKh8AiW">
         <textarea id="logicInput" style="width:100%; height:150px; border:1px solid var(--border); border-radius:8px; padding:10px; font-size:14px; line-height:1.7; font-family:inherit; resize:vertical; box-sizing:border-box;"></textarea>
-        <input type="file" id="logicImgFile" accept="image/*" style="display:none">
-        <div style="display:flex; gap:10px; justify-content:space-between; align-items:center; margin-top:10px;">
-          <button class="abtn" id="logicImgBtn">🖼 插入图片</button>
-          <div style="display:flex; gap:10px;">
-            <button class="abtn" id="logicSave">保存</button>
-            <button class="abtn" id="logicCancel">取消</button>
+        <input type="file" id="logicImgFile" accept="image/*" style="display:none" data-page-node-id="D1QwGowL7xYpdic3AiRULF">
+        <div style="display:flex; gap:10px; justify-content:space-between; align-items:center; margin-top:10px;" data-page-node-id="FIfi0Y4NCbQ2F3DOtp4qVD">
+          <button class="abtn" id="logicImgBtn" data-page-node-id="g4JZ1XtbuIFFmOpoco8nt9">🖼 插入图片</button>
+          <div style="display:flex; gap:10px;" data-page-node-id="IDIkKCtWiCCNhGCMwBaZHH">
+            <button class="abtn" id="logicSave" data-page-node-id="T09XRUmU8sQFgJ4VVfbz88">保存</button>
+            <button class="abtn" id="logicCancel" data-page-node-id="nkimcYs1UshCi5rWZuFX22">取消</button>
           </div>
         </div>
       </div>
     </div>
   </div>
 
-  <div class="modal" id="modalHistory" style="display:none">
-    <div class="modal-box">
-      <div class="modal-head"><span>定价逻辑 · 历史编辑记录</span><button id="historyClose">✕</button></div>
-      <div class="modal-list" id="historyList" style="padding:10px 16px 16px;"></div>
+  <div class="modal" id="modalHistory" style="display:none" data-page-node-id="dWLdlfXbJ43Vg3m24RSNex">
+    <div class="modal-box" data-page-node-id="gjVqsjdLItr6y0SiMI4HAA">
+      <div class="modal-head" data-page-node-id="7t5Nm82qWsHEJWWuaNxx4M"><span data-page-node-id="HiHQYkFSYPhAfQoQaO53P9">定价逻辑 · 历史编辑记录</span><button id="historyClose" data-page-node-id="op95NP4aFly0Umv4U4BsFo">✕</button></div>
+      <div class="modal-list" id="historyList" style="padding:10px 16px 16px;" data-page-node-id="dcPCu83zPDGhGTeCNFGvJ8"></div>
     </div>
   </div>
 
-  <div class="modal" id="modalReviewNote" style="display:none">
-    <div class="modal-box">
-      <div class="modal-head"><span>编辑复盘笔记</span><button id="reviewNoteClose">✕</button></div>
-      <div class="modal-search" style="font-size:12px;color:var(--sub)">每行一条。三种加粗标记：<code>**红**</code> 红色加粗 · <code>@@蓝@@</code> 蓝色加粗 · <code>%%绿%%</code> 绿色加粗。支持在框内 <b>粘贴 / 拖拽 / 点「插入图片」</b> 嵌入截图（自动压缩，仅保存在本浏览器）。</div>
-      <div class="modal-list" style="padding:10px 16px 16px;">
+  <div class="modal" id="modalReviewNote" style="display:none" data-page-node-id="rNZCE9b0FWSD28NMEEVZav">
+    <div class="modal-box" data-page-node-id="RJ9RQ2KmG4C4zgi9X5Azdp">
+      <div class="modal-head" data-page-node-id="5XuRbAhIrPLb0QfWiDSUsG"><span data-page-node-id="xLoDnVHfB2GmyQ3sdt80H9">编辑复盘笔记</span><button id="reviewNoteClose" data-page-node-id="tOIPAOtmz7QaOmQ8vKGtBH">✕</button></div>
+      <div class="modal-search" style="font-size:12px;color:var(--sub)" data-page-node-id="pmAHcRKjGZyfawe0bFQiyT">每行一条。三种加粗标记：<code data-page-node-id="HqbimCFw8nuWVCwoAsVhaz">**红**</code> 红色加粗 · <code data-page-node-id="JtVVRbeByhew2aXWLdJ2D9">@@蓝@@</code> 蓝色加粗 · <code data-page-node-id="1UpFBUcOQ5Sw2sDFdn2rQn">%%绿%%</code> 绿色加粗。支持在框内 <b data-page-node-id="6OIQMwF2jYUPgbnPvipWRM">粘贴 / 拖拽 / 点「插入图片」</b> 嵌入截图（自动压缩，仅保存在本浏览器）。</div>
+      <div class="modal-list" style="padding:10px 16px 16px;" data-page-node-id="akyhX97q8FUSbVE0hIqoKk">
         <textarea id="reviewNoteInput" style="width:100%; height:200px; border:1px solid var(--border); border-radius:8px; padding:10px; font-size:14px; line-height:1.7; font-family:inherit; resize:vertical; box-sizing:border-box;"></textarea>
-        <input type="file" id="reviewNoteImgFile" accept="image/*" style="display:none">
-        <div style="display:flex; gap:10px; justify-content:space-between; align-items:center; margin-top:10px;">
-          <button class="abtn" id="reviewNoteImgBtn">🖼 插入图片</button>
-          <div style="display:flex; gap:10px;">
-            <button class="abtn" id="reviewNoteSave">保存</button>
-            <button class="abtn" id="reviewNoteCancel">取消</button>
+        <input type="file" id="reviewNoteImgFile" accept="image/*" style="display:none" data-page-node-id="ieIc1vVk1o5j9m5zbCI84F">
+        <div style="display:flex; gap:10px; justify-content:space-between; align-items:center; margin-top:10px;" data-page-node-id="jKWfxFzw0sGgNw0TQKDDDI">
+          <button class="abtn" id="reviewNoteImgBtn" data-page-node-id="EtRCIqGCNjmdUBzqIzIyuT">🖼 插入图片</button>
+          <div style="display:flex; gap:10px;" data-page-node-id="dcPMmvqSm3tiAAf8YvMo6k">
+            <button class="abtn" id="reviewNoteSave" data-page-node-id="c2EwprWeRxcJFfHWr0t03B">保存</button>
+            <button class="abtn" id="reviewNoteCancel" data-page-node-id="rUMkXokGKAFz4fjX4O0Ekx">取消</button>
           </div>
         </div>
       </div>
@@ -1998,9 +1998,9 @@ document.addEventListener("click", function(e){
   document.querySelectorAll(".card .menu.show").forEach(function(m){ m.classList.remove("show"); });
 });
 </script>
-<div id="imgZoom" style="display:none;">
-  <button class="zoom-close" aria-label="关闭放大图片">×</button>
-  <img id="imgZoomImg">
+<div id="imgZoom" style="display:none;" data-page-node-id="mP7cSKRogyc5WxmjSEA5KL">
+  <button class="zoom-close" aria-label="关闭放大图片" data-page-node-id="0tUWmPUL9V1UWjLKRXC6Fk">×</button>
+  <img id="imgZoomImg" data-page-node-id="YyDFdnDh62jKZTI5bsIkBD">
 </div>
 <script>
 function closeImgZoom(){ var z=document.getElementById("imgZoom"); if(z){ z.classList.remove("show"); z.style.display="none"; } }
@@ -2018,8 +2018,8 @@ function showImgZoom(src){ var z=document.getElementById("imgZoom"); document.ge
 </body>
 
 <!-- 激光笔演示模式（全局右下角按钮） -->
-<button id="laserFab" title="激光笔模式（演示用）" aria-label="激光笔模式"><span class="laser-icon"></span></button>
-<div id="laserDot"></div>
+<button id="laserFab" title="激光笔模式（演示用）" aria-label="激光笔模式" data-page-node-id="a1VNEpvgwcV5uufGn3paN7"><span class="laser-icon" data-page-node-id="cblJnwoeFVfla6fQTf1jo2"></span></button>
+<div id="laserDot" data-page-node-id="XquT6b9aNNDab37BZCXQsj"></div>
 <style>
 #laserFab{position:fixed;right:16px;bottom:16px;z-index:99999;width:40px;height:40px;border-radius:50%;background:#d92626;border:2px solid #fff;box-shadow:0 2px 10px rgba(0,0,0,.28);cursor:pointer;display:flex;align-items:center;justify-content:center;opacity:.9;transition:opacity .2s,transform .2s;padding:0;}
 #laserFab:hover{opacity:1;transform:scale(1.1);}
