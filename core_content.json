@@ -96,6 +96,10 @@
       {
         "cardId": "cmu2uoatu36k",
         "text": "顺丁-量：中国出口增加，替代韩国减量"
+      },
+      {
+        "cardId": "cmt7hri6568",
+        "text": "顺丁-量："
       }
     ],
     "history": [
@@ -281,8 +285,8 @@
       "BR-NR价差（比价关系→替代需求；26年基本来自BR波动，近期天胶强）",
       "丁二烯供需（中东石脑油出口减；丁二烯供应低位，需求持续增；关注下游负反馈）"
     ],
-    "savedAt": "2026/10/8 13:33:25",
-    "savedAtISO": "2026-10-08T05:33:25.212Z"
+    "savedAt": "2026/10/8 13:51:47",
+    "savedAtISO": "2026-10-08T05:51:47.001Z"
   },
   "layout": {
     "v": [
@@ -430,12 +434,6 @@
       ],
       [
         {
-          "id": "cmu2uoatu36k",
-          "src": "trade.pbr",
-          "key": "USA|Export",
-          "focus": false
-        },
-        {
           "id": "cmt7hri6568",
           "src": "trade.pbr",
           "key": "China|Export",
@@ -451,6 +449,12 @@
           "id": "cmu2un1j61ef",
           "src": "trade.pbr",
           "key": "SEAsia|Import",
+          "focus": false
+        },
+        {
+          "id": "cmu2uoatu36k",
+          "src": "trade.pbr",
+          "key": "USA|Export",
           "focus": false
         }
       ],
@@ -583,7 +587,7 @@
         }
       ]
     ],
-    "savedAtISO": "2026-10-08T05:33:25.212Z"
+    "savedAtISO": "2026-10-08T05:51:47.001Z"
   },
-  "savedAtISO": "2026-10-08T05:33:25.212Z"
+  "savedAtISO": "2026-10-08T05:51:47.001Z"
 }
