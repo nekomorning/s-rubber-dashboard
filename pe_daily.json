@@ -1,7 +1,7 @@
 {
  "source": "PE日报日度季节性图",
  "sourceUrl": "https://chem-daily-portal.app.workbuddy.host/",
- "fetchedAt": "2026-10-12",
+ "fetchedAt": "2026-10-15",
  "count": 10,
  "indicators": {
   "pe_00": {
@@ -9,22 +9,22 @@
    "title": "石脑油现货 · 美元/吨",
    "section": "1. 原料和上游",
    "unit": "美元/吨",
-   "latest": "972.1",
-   "chg": "+35.77",
-   "date": "10/08",
+   "latest": "1,001",
+   "chg": "+4.25",
+   "date": "10/14",
    "file": "pe_daily/pe_00.png",
-   "bytes": 191479
+   "bytes": 192077
   },
   "pe_01": {
    "key": "pe_01",
    "title": "石脑油M1-M3 · 美元/吨",
    "section": "1. 原料和上游",
    "unit": "美元/吨",
-   "latest": "69.44",
-   "chg": "+2.99",
-   "date": "10/09",
+   "latest": "62.82",
+   "chg": "-4.20",
+   "date": "10/14",
    "file": "pe_daily/pe_01.png",
-   "bytes": 140112
+   "bytes": 140682
   },
   "pe_02": {
    "key": "pe_02",
@@ -35,7 +35,7 @@
    "chg": "",
    "date": "",
    "file": "pe_daily/pe_02.png",
-   "bytes": 83309
+   "bytes": 77596
   },
   "pe_03": {
    "key": "pe_03",
@@ -53,11 +53,11 @@
    "title": "布伦特M1-M3 · 美元/桶",
    "section": "1. 原料和上游",
    "unit": "美元/桶",
-   "latest": "5.67",
-   "chg": "-0.21",
-   "date": "10/09",
+   "latest": "5.16",
+   "chg": "-0.18",
+   "date": "10/14",
    "file": "pe_daily/pe_04.png",
-   "bytes": 162120
+   "bytes": 162607
   },
   "pe_05": {
    "key": "pe_05",
@@ -68,7 +68,7 @@
    "chg": "",
    "date": "",
    "file": "pe_daily/pe_05.png",
-   "bytes": 90470
+   "bytes": 75060
   },
   "pe_06": {
    "key": "pe_06",
@@ -90,29 +90,29 @@
    "chg": "",
    "date": "",
    "file": "pe_daily/pe_07.png",
-   "bytes": 73344
+   "bytes": 63801
   },
   "pe_08": {
    "key": "pe_08",
    "title": "乙烯东北亚 · 美元/吨",
    "section": "3. 乙烯",
    "unit": "美元/吨",
-   "latest": "1,151",
+   "latest": "1,161",
    "chg": "+0.00",
-   "date": "10/10",
+   "date": "10/15",
    "file": "pe_daily/pe_08.png",
-   "bytes": 113944
+   "bytes": 114271
   },
   "pe_09": {
    "key": "pe_09",
    "title": "乙烯-石脑油价差 · 美元/吨",
    "section": "3. 乙烯",
    "unit": "美元/吨",
-   "latest": "178.9",
-   "chg": "-35.77",
-   "date": "10/08",
+   "latest": "160.2",
+   "chg": "-14.25",
+   "date": "10/14",
    "file": "pe_daily/pe_09.png",
-   "bytes": 199225
+   "bytes": 199593
   }
  }
 }
