@@ -1,7 +1,7 @@
 {
  "source": "PE日报日度季节性图",
  "sourceUrl": "https://chem-daily-portal.app.workbuddy.host/",
- "fetchedAt": "2026-10-15",
+ "fetchedAt": "2026-10-20",
  "count": 10,
  "indicators": {
   "pe_00": {
@@ -9,22 +9,22 @@
    "title": "石脑油现货 · 美元/吨",
    "section": "1. 原料和上游",
    "unit": "美元/吨",
-   "latest": "1,001",
-   "chg": "+4.25",
-   "date": "10/14",
+   "latest": "976.0",
+   "chg": "-12.00",
+   "date": "10/16",
    "file": "pe_daily/pe_00.png",
-   "bytes": 192077
+   "bytes": 192286
   },
   "pe_01": {
    "key": "pe_01",
    "title": "石脑油M1-M3 · 美元/吨",
    "section": "1. 原料和上游",
    "unit": "美元/吨",
-   "latest": "62.82",
-   "chg": "-4.20",
-   "date": "10/14",
+   "latest": "62.49",
+   "chg": "+0.12",
+   "date": "10/16",
    "file": "pe_daily/pe_01.png",
-   "bytes": 140682
+   "bytes": 140780
   },
   "pe_02": {
    "key": "pe_02",
@@ -35,7 +35,7 @@
    "chg": "",
    "date": "",
    "file": "pe_daily/pe_02.png",
-   "bytes": 77596
+   "bytes": 67683
   },
   "pe_03": {
    "key": "pe_03",
@@ -53,11 +53,11 @@
    "title": "布伦特M1-M3 · 美元/桶",
    "section": "1. 原料和上游",
    "unit": "美元/桶",
-   "latest": "5.16",
-   "chg": "-0.18",
-   "date": "10/14",
+   "latest": "6.36",
+   "chg": "+1.08",
+   "date": "10/16",
    "file": "pe_daily/pe_04.png",
-   "bytes": 162607
+   "bytes": 162775
   },
   "pe_05": {
    "key": "pe_05",
@@ -68,7 +68,7 @@
    "chg": "",
    "date": "",
    "file": "pe_daily/pe_05.png",
-   "bytes": 75060
+   "bytes": 74678
   },
   "pe_06": {
    "key": "pe_06",
@@ -90,7 +90,7 @@
    "chg": "",
    "date": "",
    "file": "pe_daily/pe_07.png",
-   "bytes": 63801
+   "bytes": 69622
   },
   "pe_08": {
    "key": "pe_08",
@@ -99,20 +99,20 @@
    "unit": "美元/吨",
    "latest": "1,161",
    "chg": "+0.00",
-   "date": "10/15",
+   "date": "10/19",
    "file": "pe_daily/pe_08.png",
-   "bytes": 114271
+   "bytes": 114286
   },
   "pe_09": {
    "key": "pe_09",
    "title": "乙烯-石脑油价差 · 美元/吨",
    "section": "3. 乙烯",
    "unit": "美元/吨",
-   "latest": "160.2",
-   "chg": "-14.25",
-   "date": "10/14",
+   "latest": "185.0",
+   "chg": "+12.00",
+   "date": "10/16",
    "file": "pe_daily/pe_09.png",
-   "bytes": 199593
+   "bytes": 199604
   }
  }
 }
