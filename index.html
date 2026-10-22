@@ -306,10 +306,10 @@ body{padding-bottom:40px;}
   color:#a4acb9;cursor:pointer;transition:all .15s;font-family:inherit;}
 .ychip.on{color:#1f2733;font-weight:600;background:#f4f6fa;}
 .ychip:hover{box-shadow:0 1px 4px rgba(15,30,50,.15);}
-/* 「导出日报」按钮：位于年份筛选条之后 */
-.exp-daily-btn{font-size:12px;padding:3px 12px;border-radius:12px;border:1.5px solid #0f4c81;
+/* 「导出日报」按钮：与年份 chip 同高同基线（盒模型完全一致：font-size/padding/border/line-height） */
+.exp-daily-btn{font-size:12px;padding:2px 10px;border-radius:12px;border:1.5px solid #0f4c81;
   background:#0f4c81;color:#fff;cursor:pointer;transition:all .15s;font-family:inherit;
-  white-space:nowrap;align-self:center;}
+  line-height:normal;white-space:nowrap;margin-left:4px;}
 .exp-daily-btn:hover{background:#2b7cff;border-color:#2b7cff;box-shadow:0 1px 5px rgba(15,76,129,.28);}
 .exp-daily-btn:disabled{opacity:.6;cursor:default;}
 .board-body{min-height:1px;}
@@ -418,20 +418,25 @@ table.maint-tbl td{font-size:12px;}
 <body>
 <div class="hero">
   <h1>合成胶数据看板 · 全览</h1>
-  <div class="sub"><b>高频数据</b>（日度价格 / 开工库存表需）· <b>月度数据</b>（丁二烯平衡表 / 贸易流）· <b>核心逻辑</b>（研究框架 + 丁二烯 / 顺丁基本面表）</div>
+  <div class="sub"><b>高频数据</b>（日度价格 / 开工库存表需）· <b>平衡表</b>（丁二烯 / 合成胶 / 轮胎 / 韩国 / 欧盟）· <b>贸易流</b>（丁二烯 / 顺丁 / 丁苯 / ABS）· <b>核心逻辑</b>（研究框架 + 丁二烯 / 顺丁基本面表）</div>
   <div class="note">图表懒加载：滚动到板块附近才初始化　|　p1 截至 2026-10-22，p2 截至 2026-10-23</div>
 </div>
 <div class="toptabs">
   <button class="ttab" data-t="hf">高频数据<span class="tn">2 板块</span></button>
-  <button class="ttab" data-t="mf">月度数据<span class="tn">2 板块</span></button>
+  <button class="ttab" data-t="bal">平衡表<span class="tn" id="tn-bal"></span></button>
+  <button class="ttab" data-t="trade">贸易流<span class="tn" id="tn-trade"></span></button>
   <button class="ttab" data-t="core">核心逻辑<span class="tn">框架 + 2 表</span></button>
 </div>
 <div class="toc-dock" id="dock-hf" style="display:none">
   <div class="toc-panel" id="toc-hf"><div class="toc-title">目录 · 高频数据</div></div>
   <div class="toc-tab">目 录</div>
 </div>
-<div class="toc-dock" id="dock-mf" style="display:none">
-  <div class="toc-panel" id="toc-mf"><div class="toc-title">目录 · 月度数据</div></div>
+<div class="toc-dock" id="dock-bal" style="display:none">
+  <div class="toc-panel" id="toc-bal"><div class="toc-title">目录 · 平衡表</div></div>
+  <div class="toc-tab">目 录</div>
+</div>
+<div class="toc-dock" id="dock-trade" style="display:none">
+  <div class="toc-panel" id="toc-trade"><div class="toc-title">目录 · 贸易流</div></div>
   <div class="toc-tab">目 录</div>
 </div>
 <div class="toc-dock" id="dock-core" style="display:none">
@@ -444,8 +449,12 @@ table.maint-tbl td{font-size:12px;}
   <main class="boards" id="boards-hf">
   </main>
 </div>
-<div class="tabpane" id="pane-mf" style="display:none">
-  <main class="boards" id="boards-mf">
+<div class="tabpane" id="pane-bal" style="display:none">
+  <main class="boards" id="boards-bal">
+  </main>
+</div>
+<div class="tabpane" id="pane-trade" style="display:none">
+  <main class="boards" id="boards-trade">
   </main>
 </div>
 <div class="tabpane" id="pane-core" style="display:none">
@@ -636,9 +645,11 @@ table.maint-tbl td{font-size:12px;}
 </script>
 <script>
 /* ============================================================
-   合成胶数据看板 · 全览（单页纵向）— 初稿
+   合成胶数据看板 · 全览（单页纵向）
    核心调度：
-     - 顶部三标签：高频数据 / 月度数据 / 核心逻辑
+     - 顶部四标签：高频数据 / 平衡表 / 贸易流 / 核心逻辑
+     - 平衡表、贸易流 tab 内不再放页面内标签，各张表（国家 / 品种）
+       直接作为独立板块纵向堆叠，左侧目录 dock 可跳转
      - 左侧目录 dock（hover 浮现，滚动自动高亮）
      - 板块懒加载：滚动到附近才渲染 ECharts
    数据源 __SR__：p1(日度价格) / p2(开工库存表需) / maint(装置检修)
@@ -650,12 +661,13 @@ var BOARDS = [
   {tab:"hf", pid:"p2",    label:"开工库存表需", sub:"丁二烯 / 顺丁 / 丁苯 / ABS / SBS / 半钢 · 周度", kind:"p2x", cnt:0},
   /* 装置检修暂不放进高频数据页（2026-10-09 用户要求）；恢复时把下面这行注释去掉即可 */
   /* {tab:"hf", pid:"maint", label:"装置检修", sub:"丁二烯 / 顺丁 / 丁苯 · 停车与降负损失", kind:"maint", cnt:3}, */
-  {tab:"mf", pid:"bal",   label:"丁二烯平衡表", sub:"中国丁二烯 / 中国合成胶 / 中国轮胎 / 韩国 / 欧盟", kind:"bal", cnt:5},
-  {tab:"mf", pid:"trade", label:"贸易流",       sub:"丁二烯 / 顺丁 / 丁苯 / ABS · 分主体月度", kind:"trade", cnt:4}
+  {tab:"bal",   pid:"bal",   label:"平衡表", kind:"bal",   cnt:5},
+  {tab:"trade", pid:"trade", label:"贸易流", kind:"trade", cnt:4}
 ];
 var TABS = [
   {id:"hf",   label:"高频数据", sub:"日度 / 周度"},
-  {id:"mf",   label:"月度数据", sub:"月度 / 年度"},
+  {id:"bal",  label:"平衡表",   sub:"丁二烯 / 合成胶 / 轮胎 / 韩国 / 欧盟"},
+  {id:"trade",label:"贸易流",   sub:"丁二烯 / 顺丁 / 丁苯 / ABS"},
   {id:"core", label:"核心逻辑", sub:"研究框架 + 2 张基本面表"}
 ];
 var BYID = {}; BOARDS.forEach(function(b){ BYID["b-"+b.pid] = b; });
@@ -735,7 +747,7 @@ function lazyRender(el){
 
 /* ---------- 板块渲染分发 ---------- */
 function renderBoard(bd){
-  var ds = window.__SR__[bd.pid]; if(!ds) return;
+  var ds = window.__SR__[bd.src||bd.pid]; if(!ds) return;
   var mk = document.getElementById("b-"+bd.pid); if(!mk) return;
   var ctx = boardCtx(bd.pid);
   ctx.charts.forEach(function(c){ try{c.dispose();}catch(e){} });
@@ -753,6 +765,7 @@ function renderBoard(bd){
   }
   DEC = (typeof ds.dec==="number")?ds.dec:2;
   UNIT = ds.unit || "万吨";
+  if(bd.kind==="tradec") UNIT = "吨";
 
   mk.innerHTML="";
   var head=document.createElement("div"); head.className="board-head";
@@ -782,8 +795,8 @@ function renderBoard(bd){
   if(bd.kind==="std"){ renderStd(bd, ds, box); }
   else if(bd.kind==="p2x"){ renderP2x(bd, ds, box); }
   else if(bd.kind==="maint"){ renderMaint(bd, ds, box, ctx); }
-  else if(bd.kind==="bal"){ renderBal(bd, ds, box, ctx); }
-  else if(bd.kind==="trade"){ renderTrade(bd, ds, box, ctx); }
+  else if(bd.kind==="balc"){ renderBalC(bd, ds, box, ctx); }
+  else if(bd.kind==="tradec"){ renderTradeC(bd, ds, box, ctx); }
 
   ctx.charts = allCharts.slice(from);
   ctx.charts.forEach(function(c){ try{c.resize();}catch(e){} });
@@ -1028,14 +1041,9 @@ function renderMaint(bd, ds, box){
       var w=document.createElement("div"); w.innerHTML=h; return w.firstChild; })()));
 }
 
-/* ================= ④ 丁二烯平衡表 ================= */
-function renderBal(bd, ds, box, ctx){
-  if(!ctx.ui.cty) ctx.ui.cty=(ds.countries&&ds.countries[0])?ds.countries[0].name:null;
-  addSegBar(box, (ds.countries||[]).map(function(c){ return {k:c.name,label:c.name}; }), ctx.ui.cty, function(k){
-    ctx.ui.cty=k; renderBoard(bd);
-  }, "ctybar");
-  var ct=null; (ds.countries||[]).forEach(function(c){ if(c.name===ctx.ui.cty) ct=c; });
-  if(!ct) return;
+/* ================= ④ 平衡表（每个国家一张独立板块，先表后图） ================= */
+function renderBalC(bd, ds, box, ctx){
+  var ct = bd.cty; if(!ct) return;
   addNote(box, ct.note||"");
 
   /* 年度表 */
@@ -1061,26 +1069,7 @@ function renderBal(bd, ds, box, ctx){
   var wrap=document.createElement("div"); wrap.innerHTML=h;
   box.appendChild(buildTblScroll(wrap.firstChild));
 
-  /* 月度季节图（前 N 个指标，避免卡片过多） */
-  addSecTitle(box, "月度季节图（1–12 月 · 每条线为一个年度）");
-  var MAXC = (ct.indicators.length>16)?16:ct.indicators.length;
-  addNote(box, "共 "+ct.indicators.length+" 个指标；初稿每表默认展示前 "+MAXC+" 个指标的月度季节图，完整列见年度表与月度数据表。");
-  var g=addGrid(box,4);
-  ct.seasonal.slice(0,MAXC).forEach(function(s){
-    var card=mkCard(s.name, "", "");
-    g.appendChild(card.el);
-    var ser=[];
-    ct.seasonYears.forEach(function(y){
-      var arr=s.series[String(y)]; if(!arr) return;
-      var hasData=arr.some(function(v){ return v!==null&&v!==undefined; });
-      if(!hasData) return;
-      ser.push({name:String(y), color:yearColor(y), width:1.6, data:arr});
-    });
-    drawLines(card.div, {xlabels:["1月","2月","3月","4月","5月","6月","7月","8月","9月","10月","11月","12月"],
-      dec:1, xInterval:0, series:ser});
-  });
-
-  /* 近期月度数据表 */
+  /* 月度数据表 */
   addSecTitle(box, "月度数据（最近 36 个月）");
   var mt=document.createElement("div");
   var mh="<table class='data'><thead><tr><th class='yr-col'>月份</th>";
@@ -1101,17 +1090,49 @@ function renderBal(bd, ds, box, ctx){
   mh+="</tbody></table>";
   mt.innerHTML=mh;
   box.appendChild(buildTblScroll(mt.firstChild));
+
+  /* 月度季节图（前 N 个指标，避免卡片过多） */
+  addSecTitle(box, "月度季节图（1–12 月 · 每条线为一个年度）");
+  var MAXC = (ct.indicators.length>16)?16:ct.indicators.length;
+  addNote(box, "共 "+ct.indicators.length+" 个指标；默认展示前 "+MAXC+" 个指标的月度季节图，完整列见年度表与月度数据表。");
+  var g=addGrid(box,4);
+  ct.seasonal.slice(0,MAXC).forEach(function(s){
+    var card=mkCard(s.name, "", "");
+    g.appendChild(card.el);
+    var ser=[];
+    ct.seasonYears.forEach(function(y){
+      var arr=s.series[String(y)]; if(!arr) return;
+      var hasData=arr.some(function(v){ return v!==null&&v!==undefined; });
+      if(!hasData) return;
+      ser.push({name:String(y), color:yearColor(y), width:1.6, data:arr});
+    });
+    drawLines(card.div, {xlabels:["1月","2月","3月","4月","5月","6月","7月","8月","9月","10月","11月","12月"],
+      dec:1, xInterval:0, series:ser});
+  });
 }
 
-/* ================= ⑤ 贸易流 ================= */
-function renderTrade(bd, ds, box, ctx){
-  if(!ctx.ui.prod) ctx.ui.prod=(ds.products&&ds.products[0])?ds.products[0].key:null;
-  addSegBar(box, (ds.products||[]).map(function(p){ return {k:p.key,label:p.label}; }), ctx.ui.prod, function(k){
-    ctx.ui.prod=k; renderBoard(bd);
-  }, "prodbar");
-  var pr=null; (ds.products||[]).forEach(function(p){ if(p.key===ctx.ui.prod) pr=p; });
-  if(!pr) return;
+/* ================= ⑤ 贸易流（每个品种一个独立板块，先表后图） ================= */
+function renderTradeC(bd, ds, box, ctx){
+  var pr = bd.prod; if(!pr) return;
   addNote(box, pr.note||"");
+
+  /* 年度数据表 */
+  addSecTitle(box, "年度数据（吨）");
+  var mt=document.createElement("div");
+  var mh="<table class='data'><thead><tr><th class='yr-col'>主体</th>";
+  mh+="<th colspan='"+(pr.years.length)+"'>进口</th><th colspan='"+(pr.years.length)+"'>出口</th></tr><tr><th class='yr-col'></th>";
+  pr.years.forEach(function(y){ mh+="<th>"+y+"</th>"; });
+  pr.years.forEach(function(y){ mh+="<th>"+y+"</th>"; });
+  mh+="</tr></thead><tbody>";
+  pr.subjects.forEach(function(s){
+    mh+="<tr><td class='yr-col'>"+esc(s.display)+"</td>";
+    pr.years.forEach(function(y,i){ mh+="<td class='num'>"+fmt(s.yearImp[i],0)+"</td>"; });
+    pr.years.forEach(function(y,i){ mh+="<td class='num'>"+fmt(s.yearExp[i],0)+"</td>"; });
+    mh+="</tr>";
+  });
+  mh+="</tbody></table>";
+  mt.innerHTML=mh;
+  box.appendChild(buildTblScroll(mt.firstChild));
 
   /* 每主体一张：进口 / 出口 双线（最新 3 年月度） */
   addSecTitle(box, "月度曲线 · 进口 vs 出口（吨）");
@@ -1140,23 +1161,6 @@ function renderTrade(bd, ds, box, ctx){
     ser2.push({name:s.display+" 出口", color:col, width:1.4, data:s.yearExp, dash:"dashed"});
   });
   drawLines(c2.div, {xlabels:ys.map(String), dec:0, xInterval:0, yName:"吨", series:ser2});
-
-  /* 年度数据表 */
-  var mt=document.createElement("div");
-  var mh="<table class='data'><thead><tr><th class='yr-col'>主体</th>";
-  mh+="<th colspan='"+(pr.years.length)+"'>进口</th><th colspan='"+(pr.years.length)+"'>出口</th></tr><tr><th class='yr-col'></th>";
-  pr.years.forEach(function(y){ mh+="<th>"+y+"</th>"; });
-  pr.years.forEach(function(y){ mh+="<th>"+y+"</th>"; });
-  mh+="</tr></thead><tbody>";
-  pr.subjects.forEach(function(s){
-    mh+="<tr><td class='yr-col'>"+esc(s.display)+"</td>";
-    pr.years.forEach(function(y,i){ mh+="<td class='num'>"+fmt(s.yearImp[i],0)+"</td>"; });
-    pr.years.forEach(function(y,i){ mh+="<td class='num'>"+fmt(s.yearExp[i],0)+"</td>"; });
-    mh+="</tr>";
-  });
-  mh+="</tbody></table>";
-  mt.innerHTML=mh;
-  box.appendChild(buildTblScroll(mt.firstChild));
 }
 function lastVal(arr){
   if(!arr||!arr.length) return null;
@@ -1165,12 +1169,34 @@ function lastVal(arr){
 }
 
 /* ================= 目录与骨架 ================= */
+/* 平衡表 / 贸易流 tab：把数据里的每张表（国家 / 品种）展开成独立板块，
+   进入左侧目录、纵向堆叠；页面内不再放切换标签 */
+function expandBoards(tab){
+  var out=[];
+  BOARDS.forEach(function(bd){
+    if(bd.tab!==tab) return;
+    if(bd.kind==="bal"||bd.kind==="trade"){
+      var ds=window.__SR__[bd.pid]||{};
+      var items=(bd.kind==="bal")?(ds.countries||[]):(ds.products||[]);
+      items.forEach(function(it,i){
+        if(bd.kind==="bal"){
+          out.push({tab:tab, pid:bd.pid+"-"+i, src:bd.pid, kind:"balc", cty:it, cnt:1,
+                    label:it.name, sub:"单位万吨 · "+(it.indicators?it.indicators.length:0)+" 个指标"});
+        }else{
+          out.push({tab:tab, pid:bd.pid+"-"+i, src:bd.pid, kind:"tradec", prod:it, cnt:1,
+                    label:it.label, sub:"HS "+it.hs+" · 单位吨 · "+(it.subjects?it.subjects.length:0)+" 个主体"});
+        }
+      });
+    }else out.push(bd);
+  });
+  return out;
+}
 function buildShell(tab){
   var root=document.getElementById("boards-"+tab), toc=document.getElementById("toc-"+tab);
   var idx=0;
-  BOARDS.forEach(function(bd){
-    if(bd.tab!==tab) return;
+  expandBoards(tab).forEach(function(bd){
     idx++; bd.n=idx;
+    BYID["b-"+bd.pid]=bd;
     var sec=document.createElement("section");
     sec.className="board is-lazy"; sec.id="b-"+bd.pid;
     sec.innerHTML='<div class="board-head"><h2>'+bd.n+". "+bd.label+"<small>"+(bd.sub||"")+"</small></h2></div>"+
@@ -1184,7 +1210,7 @@ function buildShell(tab){
 }
 function syncToc(t){
   var links=Array.prototype.slice.call(document.querySelectorAll("#toc-"+t+" a"));
-  var pids=BOARDS.filter(function(b){ return b.tab===t; }).map(function(b){ return b.pid; });
+  var pids=links.map(function(a){ return a.dataset.pid; });
   if(!pids.length) pids=links.map(function(a){ return a.dataset.pid; });
   var ticking=false;
   if(window.__tocHandler) window.removeEventListener("scroll", window.__tocHandler);
@@ -1204,7 +1230,16 @@ function syncToc(t){
   window.addEventListener("scroll", window.__tocHandler, {passive:true});
 }
 
+/* 顶部标签徽标按实际数据动态填充，避免数据增减后文案过期 */
+function fillTabBadges(){
+  function set(tn,txt){ var e=document.querySelector('.ttab[data-t="'+tn+'"] .tn'); if(e) e.textContent=txt; }
+  var bal=window.__SR__.bal||{}, tr=window.__SR__.trade||{};
+  set("bal",(bal.countries||[]).length+" 张平衡表");
+  set("trade",(tr.products||[]).length+" 个品种");
+}
+
 function boot(){
+  fillTabBadges();
   var btns=document.querySelectorAll(".ttab");
   Array.prototype.forEach.call(btns, function(b){ b.onclick=function(){ switchTab(b.dataset.t); }; });
   switchTab("hf");
