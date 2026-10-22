@@ -306,6 +306,12 @@ body{padding-bottom:40px;}
   color:#a4acb9;cursor:pointer;transition:all .15s;font-family:inherit;}
 .ychip.on{color:#1f2733;font-weight:600;background:#f4f6fa;}
 .ychip:hover{box-shadow:0 1px 4px rgba(15,30,50,.15);}
+/* 「导出日报」按钮：位于年份筛选条之后 */
+.exp-daily-btn{font-size:12px;padding:3px 12px;border-radius:12px;border:1.5px solid #0f4c81;
+  background:#0f4c81;color:#fff;cursor:pointer;transition:all .15s;font-family:inherit;
+  white-space:nowrap;align-self:center;}
+.exp-daily-btn:hover{background:#2b7cff;border-color:#2b7cff;box-shadow:0 1px 5px rgba(15,76,129,.28);}
+.exp-daily-btn:disabled{opacity:.6;cursor:default;}
 .board-body{min-height:1px;}
 .board .section-title{margin-top:14px;}
 .board-ph{color:#a4acb9;font-size:12.5px;padding:26px 4px;}
@@ -1034,8 +1040,7 @@ function renderBal(bd, ds, box, ctx){
 
   /* 年度表 */
   addSecTitle(box, "年度表");
-  var t=document.createElement("table"); t.className="data";
-  var h="<thead><tr><th class='yr-col'>年份</th>";
+  var h="<table class='data'><thead><tr><th class='yr-col'>年份</th>";
   ct.indicators.forEach(function(i){ h+="<th"+(i.hl?" class='hl'":"")+">"+esc(i.name)+"</th>"; });
   h+="</tr></thead><tbody>";
   ct.annual.forEach(function(row){
