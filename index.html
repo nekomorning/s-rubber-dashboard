@@ -1134,19 +1134,32 @@ function renderTradeC(bd, ds, box, ctx){
   mt.innerHTML=mh;
   box.appendChild(buildTblScroll(mt.firstChild));
 
-  /* 每主体一张：进口 / 出口 双线（最新 3 年月度） */
-  addSecTitle(box, "月度曲线 · 进口 vs 出口（吨）");
-  var g=addGrid(box,2);
+  /* 月度季节图：每个主体两张（进口 / 出口），横轴 1–12 月、每条线为一个年度 */
+  addSecTitle(box, "月度季节图（1–12 月 · 每条线为一个年度）");
+  var g=addGrid(box,4);
+  var SXL=["1月","2月","3月","4月","5月","6月","7月","8月","9月","10月","11月","12月"];
   pr.subjects.forEach(function(s){
-    var last=s.months[s.months.length-1]||"";
-    var meta='最新 <b>'+esc(last)+'</b>　进口 <b>'+fmt(lastVal(s.Imp),0)+'</b>　出口 <b>'+fmt(lastVal(s.Exp),0)+'</b>';
-    var card=mkCard(s.display, meta, "");
-    g.appendChild(card.el);
-    card.div.className="chart";
-    var ser=[];
-    ser.push({name:"进口", color:"#C0392B", width:2.0, data:s.Imp.slice(-36)});
-    ser.push({name:"出口", color:"#2b7cff", width:2.0, data:s.Exp.slice(-36)});
-    drawLines(card.div, {xlabels:s.months.slice(-36), dec:0, xInterval:2, yName:"吨", series:ser});
+    ["Imp","Exp"].forEach(function(flow){
+      var dir=(flow==="Imp")?"进口":"出口";
+      var lastM=s.months[s.months.length-1]||"";
+      var meta='最新 <b>'+esc(lastM)+'</b>　'+dir+' <b>'+fmt(lastVal(s[flow]),0)+'</b> 吨';
+      var card=mkCard(s.display+" · "+dir+"季节图", meta, "");
+      g.appendChild(card.el);
+      var by={};
+      s.months.forEach(function(m,i){
+        var p=/^(\d{4})-M(\d{2})$/.exec(m); if(!p) return;
+        var y=p[1]; if(!by[y]) by[y]=[null,null,null,null,null,null,null,null,null,null,null,null];
+        var v=s[flow][i];
+        if(v!==null&&v!==undefined) by[y][(+p[2])-1]=v;
+      });
+      var ser=[];
+      Object.keys(by).sort().forEach(function(y){
+        var arr=by[y], has=false;
+        for(var k=0;k<12;k++){ if(arr[k]!==null&&arr[k]!==undefined){ has=true; break; } }
+        if(has) ser.push({name:y, color:yearColor(y), width:1.6, data:arr});
+      });
+      drawLines(card.div, {xlabels:SXL, dec:0, xInterval:0, yName:"吨", series:ser});
+    });
   });
 
   /* 年度合计 */
