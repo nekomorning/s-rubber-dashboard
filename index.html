@@ -508,8 +508,9 @@ table.wk-tbl{font-size:12.5px;}
     gap:7px !important; }
   .wk-grid .card{ page-break-inside:avoid; break-inside:avoid; }
   .wk-grid .card{ box-shadow:none !important; border:1px solid #e0e5ee !important; }
-  .wk-grid .chart{ height:158px !important; }
-  .wk-grid .card .chart svg{ max-height:158px; }
+  /* 图表高度交给 SVG 等比缩放（prepWeeklyPrint 已转 viewBox），禁止硬改高度导致裁切 */
+  .wk-grid .chart{ height:auto !important; }
+  .wk-grid .card .chart svg{ width:100% !important; height:auto !important; display:block; }
   .wk-p,.wk-ul li{ font-size:11.5pt; line-height:1.72; }
   .wk-tblwrap{ overflow-x:hidden !important; }
   table.wk-tbl{ font-size:9pt; width:100% !important; min-width:0 !important; table-layout:fixed; }
@@ -1599,11 +1600,25 @@ function renderWeekly(bd, ds, box, ctx){
   if(board){ board.classList.add("wk-board"); }
 }
 
-/* 导出周报：确保全部渲染 → 打印（浏览器「另存为 PDF」，矢量文字与图表） */
-function exportWeekly(){
+/* 导出周报：确保全部渲染 → SVG 流式化 → 打印（浏览器「另存为 PDF」，矢量文字与图表）
+   关键：打印时页面宽度变为 A4，而 ECharts SVG 是按屏幕像素固化的，
+   必须先把每张 SVG 转成 viewBox + 宽度 100%，打印布局里才会按卡片等比缩放，
+   否则出现裁切/错位「乱码」 */
+function prepWeeklyPrint(){
   var root=document.getElementById("b-wk");
   if(root && root.dataset.done!=="1") lazyRender(root);
   allCharts.forEach(function(c){ try{c.resize();}catch(e){} });
+  document.querySelectorAll("#b-wk .card .chart svg").forEach(function(svg){
+    var r=svg.getBoundingClientRect();
+    var w=Math.round(r.width), h=Math.round(r.height);
+    if(!w||!h) return;
+    svg.setAttribute("viewBox","0 0 "+w+" "+h);
+    svg.removeAttribute("width"); svg.removeAttribute("height");
+    svg.style.width="100%"; svg.style.height="auto"; svg.style.display="block";
+  });
+}
+function exportWeekly(){
+  prepWeeklyPrint();
   document.body.classList.add("printing-weekly");
   var tip=document.getElementById("wk-tip");
   if(tip) tip.style.display="block";
@@ -1612,6 +1627,8 @@ function exportWeekly(){
 window.addEventListener("afterprint", function(){
   document.body.classList.remove("printing-weekly");
   var tip=document.getElementById("wk-tip"); if(tip) tip.style.display="none";
+  /* 重新渲染周报板块，恢复 ECharts 原生 SVG（尺寸/交互） */
+  var bd=BYID["b-wk"]; if(bd) renderBoard(bd);
 });
 
 /* ================= 目录与骨架 ================= */
