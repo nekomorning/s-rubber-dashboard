@@ -1198,7 +1198,10 @@ function renderTradeC(bd, ds, box, ctx){
   });
   h1+="</tbody></table>";
   var w1=document.createElement("div"); w1.innerHTML=h1;
-  box.appendChild(buildTblScroll(w1.firstChild,"520px"));
+  /* 默认滚到最底（最新月份），高度约 12 行，历史数据自行拉动 */
+  var sc1=buildTblScroll(w1.firstChild,"380px");
+  box.appendChild(sc1);
+  sc1.scrollTop=sc1.scrollHeight;
 
   /* ② 累计同比（万吨） */
   addSecTitle(box, "累计同比（单位：万吨 · 各主体 YTD 与其最新数据月对齐）");
