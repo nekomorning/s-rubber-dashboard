@@ -1048,12 +1048,92 @@ function renderMaint(bd, ds, box){
       var w=document.createElement("div"); w.innerHTML=h; return w.firstChild; })()));
 }
 
-/* ================= ④ 平衡表（每个国家一张独立板块，先表后图） ================= */
+/* ================= ④ 平衡表（每个国家一张独立板块，先表后图） =================
+   版式对齐贸易流（2026-10-23 用户拍板）：
+   月度数据（全量历史 · 默认锚定 2026 年）→ 累计同比 → 年度表 → 月度季节图 */
 function renderBalC(bd, ds, box, ctx){
   var ct = bd.cty; if(!ct) return;
   addNote(box, ct.note||"");
+  var BMP=/^(\d{4})-(\d{2})$/;
 
-  /* 年度表 */
+  /* ① 月度数据表：全量历史，高度约 12 行，默认滚动锚定 2026 年末 */
+  addSecTitle(box, "月度数据");
+  var mh="<table class='data'><thead><tr><th class='yr-col'>月份</th>";
+  ct.indicators.forEach(function(i){ mh+="<th"+(i.hl?" class='hl'":"")+">"+esc(i.name)+"</th>"; });
+  mh+="</tr></thead><tbody>";
+  ct.months.forEach(function(row){
+    mh+="<tr><td class='yr-col'>"+esc(row.date)+"</td>";
+    ct.indicators.forEach(function(i,idx){
+      var v=row.vals[idx];
+      if(v===null||v===undefined){ mh+="<td>—</td>"; return; }
+      var txt = (i.pct==="frac")?(Number(v)*100).toFixed(1)+"%"
+              : (i.pct==="pct")?Number(v).toFixed(1)+"%"
+              : Number(v).toFixed(2);
+      mh+="<td class='num"+(i.hl?" hl":"")+"'>"+txt+"</td>";
+    });
+    mh+="</tr>";
+  });
+  mh+="</tbody></table>";
+  var mt=document.createElement("div"); mt.innerHTML=mh;
+  var sc1=buildTblScroll(mt.firstChild,"380px");
+  box.appendChild(sc1);
+  (function(){ /* 锚定 2026 年最后一行：该行底边贴容器底边 */
+    var rows=sc1.querySelectorAll("tbody tr"), last26=null;
+    for(var i=rows.length-1;i>=0;i--){
+      if(/^2026/.test(rows[i].cells[0].innerText)){ last26=rows[i]; break; }
+    }
+    if(last26) sc1.scrollTop=last26.offsetTop+last26.offsetHeight-sc1.clientHeight;
+  })();
+
+  /* ② 累计同比（YTD 逐列与其最新数据月对齐；仅流量类指标，产能/开工/占比/库存类不适用） */
+  var base=[];
+  ct.indicators.forEach(function(i,idx){
+    if(i.pct||i.cumYoy) return;
+    var n=i.name||"";
+    if(/同比|基数|产能|开工|占比/.test(n)) return;
+    if(/库存/.test(n)&&!/变化/.test(n)) return;
+    base.push({name:n,idx:idx});
+  });
+  function colMax26(idx){ var mx=0;
+    ct.months.forEach(function(r){ var p=BMP.exec(r.date); if(!p||+p[1]!==2026) return;
+      var v=r.vals[idx]; if(v!==null&&v!==undefined&&+p[2]>mx) mx=+p[2]; });
+    return mx; }
+  function ytdSum(idx,y){ var s=null, mx=colMax26(idx);
+    ct.months.forEach(function(r){ var p=BMP.exec(r.date); if(!p||+p[1]!==y||+p[2]>mx) return;
+      var v=r.vals[idx]; if(v!==null&&v!==undefined) s=(s===null)?v:s+v; });
+    return s; }
+  if(base.length){
+    addSecTitle(box, "累计同比（各列 YTD 与其最新数据月对齐 · 单位同该列）");
+    addNote(box, "仅对产量/进出口/供应/表需/消费等流量类指标计算累计同比；产能、开工、占比、库存类指标不适用。");
+    var yh="<table class='data'><thead><tr><th class='yr-col'>累计</th>";
+    base.forEach(function(b){ yh+="<th>"+esc(b.name)+"</th>"; });
+    yh+="</tr></thead><tbody>";
+    function f2(v){ return (v===null||v===undefined)?"—":Number(v).toFixed(2); }
+    [["25YTD",function(b){return ytdSum(b.idx,2025);}],
+     ["26YTD",function(b){return ytdSum(b.idx,2026);}],
+     ["同比增减",function(b){var a=ytdSum(b.idx,2025),c=ytdSum(b.idx,2026);
+        return (a===null||c===null)?null:c-a;}]
+    ].forEach(function(rw){
+      yh+="<tr><td class='yr-col'>"+rw[0]+"</td>";
+      base.forEach(function(b){
+        var v=rw[1](b);
+        var cls=(rw[0]==="同比增减")?numCls(v):"";
+        yh+="<td class='num"+(cls?" "+cls:"")+"'>"+f2(v)+"</td>";
+      });
+      yh+="</tr>";
+    });
+    yh+="<tr><td class='yr-col'>同比%</td>";
+    base.forEach(function(b){
+      var a=ytdSum(b.idx,2025), c=ytdSum(b.idx,2026), t="—", tv=null;
+      if(a!==null&&c!==null&&a!==0){ tv=(c-a)/Math.abs(a)*100; t=tv.toFixed(0)+"%"; }
+      yh+="<td class='num "+numCls(tv)+"'>"+t+"</td>";
+    });
+    yh+="</tr></tbody></table>";
+    var yw=document.createElement("div"); yw.innerHTML=yh;
+    box.appendChild(buildTblScroll(yw.firstChild));
+  }
+
+  /* ③ 年度表 */
   addSecTitle(box, "年度表");
   var h="<table class='data'><thead><tr><th class='yr-col'>年份</th>";
   ct.indicators.forEach(function(i){ h+="<th"+(i.hl?" class='hl'":"")+">"+esc(i.name)+"</th>"; });
@@ -1076,29 +1156,7 @@ function renderBalC(bd, ds, box, ctx){
   var wrap=document.createElement("div"); wrap.innerHTML=h;
   box.appendChild(buildTblScroll(wrap.firstChild));
 
-  /* 月度数据表 */
-  addSecTitle(box, "月度数据（最近 36 个月）");
-  var mt=document.createElement("div");
-  var mh="<table class='data'><thead><tr><th class='yr-col'>月份</th>";
-  ct.indicators.forEach(function(i){ mh+="<th>"+esc(i.name)+"</th>"; });
-  mh+="</tr></thead><tbody>";
-  ct.months.slice(-36).forEach(function(row){
-    mh+="<tr><td class='yr-col'>"+esc(row.date)+"</td>";
-    ct.indicators.forEach(function(i,idx){
-      var v=row.vals[idx];
-      if(v===null||v===undefined){ mh+="<td>—</td>"; return; }
-      var txt = (i.pct==="frac")?(Number(v)*100).toFixed(1)+"%"
-              : (i.pct==="pct")?Number(v).toFixed(1)+"%"
-              : Number(v).toFixed(2);
-      mh+="<td class='num'>"+txt+"</td>";
-    });
-    mh+="</tr>";
-  });
-  mh+="</tbody></table>";
-  mt.innerHTML=mh;
-  box.appendChild(buildTblScroll(mt.firstChild));
-
-  /* 月度季节图（前 N 个指标，避免卡片过多） */
+  /* ④ 月度季节图（前 N 个指标，避免卡片过多） */
   addSecTitle(box, "月度季节图（1–12 月 · 每条线为一个年度）");
   var MAXC = (ct.indicators.length>16)?16:ct.indicators.length;
   addNote(box, "共 "+ct.indicators.length+" 个指标；默认展示前 "+MAXC+" 个指标的月度季节图，完整列见年度表与月度数据表。");
