@@ -1255,7 +1255,7 @@ function boot(){
   fillTabBadges();
   var btns=document.querySelectorAll(".ttab");
   Array.prototype.forEach.call(btns, function(b){ b.onclick=function(){ switchTab(b.dataset.t); }; });
-  switchTab("hf");
+  var _mt=(location.search||"").match(/[?&]tab=([a-z]+)/); switchTab(_mt&&document.querySelector('.ttab[data-t="'+_mt[1]+'"]')?_mt[1]:"hf");
   var t;
   window.addEventListener("resize", function(){ clearTimeout(t); t=setTimeout(function(){
     allCharts.forEach(function(c){ try{c.resize();}catch(e){} });
