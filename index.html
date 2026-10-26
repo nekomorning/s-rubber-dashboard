@@ -1761,35 +1761,47 @@ function boot(){
 var TILE_W=440, TILE_H=340, EXP_SCALE=2, EXP_GAP=12, EXP_MARGIN=24, EXP_BANNER=56;
 var EXP_ACCENT="#0f4c81", EXP_PAGE_H=52, EXP_SEC_H=44, EXP_ROW_H=36, EXP_TS_H=300;
 
-/* 季节图 option（复刻 makeCard，但显式传入数据源与年份可见性，供离线渲染） */
+/* 季节图 option（对齐天然胶旧版 exportOption：含图表标题 + 最新值/涨跌副标题，图例在底部） */
 function expSeasonOption(Dp, ind, ticks, yv){
+  var st=ind.stat||{};
   var series=[], legend=[], yrs=yearKeysOf(ind.series);
   yrs.forEach(function(y){
     var pts=ind.series[String(y)]; if(!pts||!pts.length) return;
     legend.push(String(y));
     var isLatest=(y===yrs[yrs.length-1]);
     series.push({name:String(y), type:"line", showSymbol:false, connectNulls:true, data:pts,
-      lineStyle:{width:isLatest?2.2:1.4, color:yearColor(y)}, itemStyle:{color:yearColor(y)},
+      lineStyle:{width:isLatest?2.4:1.4, color:yearColor(y)}, itemStyle:{color:yearColor(y)},
       z:isLatest?10:5});
   });
   var xl=Dp.xlabels||[];
+  var valTxt=fmt(st.latest, ind.dec)+" "+(ind.unit||"");
+  var chgTxt="";
+  if(st.chg!==null && st.chg!==undefined){
+    var noPct=(st.noPct===true)||/月差/.test(ind.title||"");
+    chgTxt=arrow(st.chg)+" "+(st.chg>0?"+":"")+fmt(st.chg,ind.dec)
+      +(noPct?"":("（"+(st.pct==null?"—":(st.pct>0?"+":"")+Number(st.pct).toFixed(2)+"%")+"）"));
+  }
+  var subColor = st.chg>0?"#d92626":(st.chg<0?"#0a9a5c":"#6b7686");
   return {
-    animation:false,
-    grid:{left:8,right:14,top:26,bottom:4,containLabel:true},
-    legend:{show:true, top:0, right:0, itemWidth:14, itemHeight:2, icon:"rect",
-      textStyle:{fontSize:11,color:"#6b7686"}, data:legend,
+    animation:false, backgroundColor:"#ffffff",
+    title:{ text:ind.title, subtext:valTxt+(chgTxt?"   "+chgTxt:""),
+      left:12, top:10, textStyle:{fontSize:20, fontWeight:700, color:"#1f2733"},
+      subtextStyle:{fontSize:15, color:subColor} },
+    grid:{left:14, right:18, top:70, bottom:46, containLabel:true},
+    legend:{show:true, bottom:6, left:"center", itemWidth:18, itemHeight:3, icon:"rect",
+      textStyle:{fontSize:13, color:"#6b7686"}, data:legend,
       selected:(function(){ var s={}; legend.forEach(function(y){ s[y]=(yv[String(y)]!==false); }); return s; })()},
     xAxis:{type:"value", min:0, max:xl.length-1, interval:1,
-      axisLabel:{fontSize:10,color:"#8a93a3", formatter:function(v){ return ticks[v]||""; }},
+      axisLabel:{fontSize:13,color:"#8a93a3", formatter:function(v){ return ticks[v]||""; }},
       axisTick:{show:false}, axisLine:{lineStyle:{color:"#dde3ec"}}, splitLine:{show:false}},
     yAxis:{type:"value", scale:true,
-      axisLabel:{fontSize:10,color:"#8a93a3", formatter:function(v){ return Math.abs(v)>=10000?(v/10000)+"万":(Math.abs(v)>=1000?(v/1000)+"k":v); }},
+      axisLabel:{fontSize:13,color:"#8a93a3", formatter:function(v){ return Math.abs(v)>=10000?(v/10000)+"万":(Math.abs(v)>=1000?(v/1000)+"k":v); }},
       splitLine:{lineStyle:{color:"#eef1f6"}}},
     series:series
   };
 }
 
-/* 全宽时间序列 option（复刻 renderTsCard/drawLines，无 dataZoom） */
+/* 全宽时间序列 option（复刻 drawLines 无 dataZoom，同样带标题） */
 function expTsOption(Dp, t){
   var series=[], legend=[];
   t.lines.forEach(function(l){
@@ -1802,16 +1814,19 @@ function expTsOption(Dp, t){
   if(t.xlabels && t.xlabels.length===xl.length) xl=t.xlabels;
   var n=xl.length, iv=(n<=13?0:(n<=26?1:Math.ceil(n/12)));
   return {
-    animation:false,
-    grid:{left:8,right:14,top:28,bottom:4,containLabel:true},
-    legend:{show:true, top:0, right:0, itemWidth:14, itemHeight:2, icon:"rect",
-      textStyle:{fontSize:11,color:"#6b7686"}, data:legend},
+    animation:false, backgroundColor:"#ffffff",
+    title:{ text:t.title||"", subtext:"最新 "+(t.lines[0]&&t.lines[0].data.length? t.lines[0].data[t.lines[0].data.length-1][1] : ""),
+      left:12, top:10, textStyle:{fontSize:20, fontWeight:700, color:"#1f2733"},
+      subtextStyle:{fontSize:15, color:"#6b7686"} },
+    grid:{left:14, right:18, top:70, bottom:46, containLabel:true},
+    legend:{show:true, bottom:6, left:"center", itemWidth:18, itemHeight:3, icon:"rect",
+      textStyle:{fontSize:13, color:"#6b7686"}, data:legend},
     xAxis:{type:"value", min:0, max:n-1,
-      axisLabel:{fontSize:10,color:"#8a93a3", interval:iv,
+      axisLabel:{fontSize:13,color:"#8a93a3", interval:iv,
         formatter:function(v){ return (xl[v]===undefined?"":String(xl[v])); }},
       axisTick:{show:false}, axisLine:{lineStyle:{color:"#dde3ec"}}, splitLine:{show:false}},
     yAxis:{type:"value", scale:true,
-      axisLabel:{fontSize:10,color:"#8a93a3"}, splitLine:{lineStyle:{color:"#eef1f6"}}},
+      axisLabel:{fontSize:13,color:"#8a93a3"}, splitLine:{lineStyle:{color:"#eef1f6"}}},
     series:series
   };
 }
