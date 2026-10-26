@@ -1060,14 +1060,15 @@ function drawLines(div, opt){
   var n=opt.xlabels.length;
   var zoom=!!opt.zoom;
   var iv=(opt.xInterval===undefined) ? (n<=13?0:(n<=26?1:Math.ceil(n/12))) : opt.xInterval;
+  var zr=opt.zoomRange||null;   /* dataZoom 默认窗口 [startPct, endPct]（null=全量） */
   var yBase={type:"value", scale:true, name:opt.yName||"", nameTextStyle:{fontSize:10,color:"#8a93a3"},
     axisLabel:{fontSize:10,color:"#8a93a3"}, splitLine:{lineStyle:{color:"#eef1f6"}}};
   c.setOption({
     animation:false,
     grid:{left:8,right:14,top:28,bottom:zoom?40:4,containLabel:true},
     dataZoom: zoom?[
-      {type:"inside"},
-      {type:"slider", height:18, bottom:8, left:8, right:14,
+      {type:"inside", start:zr?zr[0]:0, end:zr?zr[1]:100},
+      {type:"slider", height:18, bottom:8, left:8, right:14, start:zr?zr[0]:0, end:zr?zr[1]:100,
        backgroundColor:"#f1f3f8", borderColor:"#e3e8ef", fillerColor:"rgba(43,124,255,0.12)",
        handleSize:"70%", textStyle:{fontSize:9, color:"#8a93a3"}}
     ]:undefined,
@@ -1107,16 +1108,22 @@ function renderStd(bd, ds, box){
   buildSections(box, ds.layout);
 }
 
-/* __TS__ 键：全宽多曲线时间序列卡（放在所属 label 组内，不单独拎到板块前面） */
+/* __TS__ 键：半宽多曲线时间序列卡（2026-10-26 用户拍板：宽度减半；
+   dataZoom 默认只显示 2026 年，拖动选区可看历史） */
 function renderTsCard(key, rootEl){
   var t=(D.ts||{})[key]; if(!t) return;
-  var grid=addGrid(rootEl,1);
+  var grid=addGrid(rootEl,2);
   var card=mkCard(t.title||key, "", "最新 "+(t.lines[0] && t.lines[0].data.length? t.lines[0].data[t.lines[0].data.length-1][0] : ""));
   grid.appendChild(card.el);
   card.div.style.height="260px";
   var xl=t.lines[0] ? t.lines[0].data.map(function(p){ return p[0]; }) : [];
   if(t.xlabels && t.xlabels.length===xl.length) xl=t.xlabels;
-  drawLines(card.div, {xlabels:xl, dec:0, zoom:true, series:t.lines.map(function(l){
+  /* 默认缩放到 2026 年：找首条线第一个 2026 数据点的位置 → dataZoom 百分比 */
+  var zr=null;
+  var d0=(t.lines[0] && t.lines[0].data)||[];
+  for(var i=0;i<d0.length;i++){ if(String(d0[i][0]).slice(0,4)==="2026") break; }
+  if(i>0 && i<d0.length) zr=[Math.max(0, i/d0.length*100-1), 100];
+  drawLines(card.div, {xlabels:xl, dec:0, zoom:true, zoomRange:zr, series:t.lines.map(function(l){
     return {name:l.name, color:l.color||"#2b7cff", width:1.6, data:l.data.map(function(p){ return p[1]; })};
   })});
 }
