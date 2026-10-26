@@ -1807,7 +1807,7 @@ function expTsOption(Dp, t){
   t.lines.forEach(function(l){
     legend.push(l.name);
     series.push({name:l.name, type:"line", showSymbol:false, connectNulls:true,
-      data:l.data.map(function(p){ return p[1]; }),
+      data:l.data.map(function(p,i){ return [i,(p[1]===null||p[1]===undefined)?null:p[1]]; }),
       lineStyle:{width:1.6, color:l.color||"#2b7cff"}, itemStyle:{color:l.color||"#2b7cff"}, z:5});
   });
   var xl=t.lines[0] ? t.lines[0].data.map(function(p){ return p[0]; }) : [];
@@ -1866,7 +1866,6 @@ function exportLongImage(btn){
         sec.rows.forEach(function(row){
           var normal=(row.charts||[]).filter(function(ch){ return String(ch.key).indexOf("__TS__")!==0; });
           var cols=Math.min(normal.length,5);
-          if(row.charts && row.charts.length>normal.length) cols=Math.max(cols,1);
           if(cols>maxCols) maxCols=cols;
         });
       });
@@ -1880,11 +1879,11 @@ function exportLongImage(btn){
         Hcss+=EXP_SEC_H;
         sec.rows.forEach(function(row){
           if(row.label) Hcss+=EXP_ROW_H;
-          var rowH=TILE_H;
-          (row.charts||[]).forEach(function(ch){
-            if(String(ch.key).indexOf("__TS__")===0) rowH=EXP_TS_H;
-          });
-          Hcss+=rowH+EXP_GAP;
+          /* 同一 label 行内：普通图先排网格，__TS__ 全宽图依次另起一行（同 buildSections 屏上逻辑） */
+          var normal=(row.charts||[]).filter(function(ch){ return String(ch.key).indexOf("__TS__")!==0; });
+          var ts=(row.charts||[]).filter(function(ch){ return String(ch.key).indexOf("__TS__")===0; });
+          if(normal.length) Hcss+=TILE_H+EXP_GAP;
+          ts.forEach(function(){ Hcss+=EXP_TS_H+EXP_GAP; });
         });
       });
     });
@@ -1912,7 +1911,11 @@ function exportLongImage(btn){
       (Dp.xlabels||[]).forEach(function(l,i){ if(String(l).slice(3)==="01") ticks[i]=parseInt(String(l).slice(0,2),10)+"月"; });
       s.Ds.layout.forEach(function(sec){
         sec.rows.forEach(function(row){
+          var __n=[], __t=[];
           (row.charts||[]).forEach(function(ch){
+            (String(ch.key).indexOf("__TS__")===0?__t:__n).push(ch);
+          });
+          __n.concat(__t).forEach(function(ch){
             var isTs=(String(ch.key).indexOf("__TS__")===0);
             var w=isTs?contentW:TILE_W, h=isTs?EXP_TS_H:TILE_H;
             var div=document.createElement("div");
@@ -1920,7 +1923,8 @@ function exportLongImage(btn){
             host.appendChild(div);
             var opt;
             if(isTs){
-              var t=(Dp.ts||{})[String(ch.key).slice(6)];
+              /* ts 的键在 JSON 里带 __TS__ 前缀存储（renderTsCard 亦用全键查询），不能 slice */
+              var t=(Dp.ts||{})[ch.key] || (Dp.ts||{})[String(ch.key).slice(6)];
               if(!t) { div.remove(); return; }
               opt=expTsOption(Dp,t);
             }else{
@@ -1949,15 +1953,20 @@ function exportLongImage(btn){
         curY+=EXP_SEC_H;
         sec.rows.forEach(function(row){
           if(row.label){ textOps.push({x:EXP_MARGIN, y:curY+EXP_ROW_H/2, text:row.label, size:17, color:"#6b7686", bold:false}); curY+=EXP_ROW_H; }
-          var x=EXP_MARGIN, rowH=TILE_H;
+          var x=EXP_MARGIN;
+          var normal=[], ts=[];
           (row.charts||[]).forEach(function(ch){
-            var isTs=(String(ch.key).indexOf("__TS__")===0);
-            var w=isTs?contentW:TILE_W;
-            if(isTs) rowH=EXP_TS_H;
-            positions.push({url:tiles[tileIdx], x:Math.round(x*scale), y:Math.round(curY*scale), w:Math.round(w*scale), h:Math.round(rowH*scale)});
-            tileIdx++; x+=w+EXP_GAP;
+            (String(ch.key).indexOf("__TS__")===0?ts:normal).push(ch);
           });
-          curY+=rowH+EXP_GAP;
+          normal.forEach(function(ch){
+            positions.push({url:tiles[tileIdx], x:Math.round(x*scale), y:Math.round(curY*scale), w:Math.round(TILE_W*scale), h:Math.round(TILE_H*scale)});
+            tileIdx++; x+=TILE_W+EXP_GAP;
+          });
+          if(normal.length) curY+=TILE_H+EXP_GAP;
+          ts.forEach(function(ch){
+            positions.push({url:tiles[tileIdx], x:Math.round(EXP_MARGIN*scale), y:Math.round(curY*scale), w:Math.round(contentW*scale), h:Math.round(EXP_TS_H*scale)});
+            tileIdx++; curY+=EXP_TS_H+EXP_GAP;
+          });
         });
       });
     });
