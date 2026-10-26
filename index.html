@@ -2254,13 +2254,14 @@ function exportLongImage(btn){
         ctx.strokeStyle="#e5e9f0"; ctx.lineWidth=Math.max(1,Math.round(scale));
         ctx.strokeRect(p.x, p.y, p.w, p.h);
         ctx.textBaseline="alphabetic"; ctx.textAlign="left";
-        ctx.fillStyle="#1f2733"; ctx.font="bold "+Math.round(15*scale)+"px 'Microsoft YaHei','PingFang SC',sans-serif";
-        ctx.fillText(p.pe.title, p.x+10*scale, p.y+22*scale);
+        /* 字号对齐 ECharts 图卡（title 20 bold / subtext 15，见 expSeasonOption） */
+        ctx.fillStyle="#1f2733"; ctx.font="bold "+Math.round(20*scale)+"px 'Microsoft YaHei','PingFang SC',sans-serif";
+        ctx.fillText(p.pe.title, p.x+12*scale, p.y+28*scale);
         if(p.pe.sub){
-          ctx.fillStyle="#6b7686"; ctx.font=Math.round(11*scale)+"px 'Microsoft YaHei','PingFang SC',sans-serif";
-          ctx.fillText(p.pe.sub, p.x+10*scale, p.y+40*scale);
+          ctx.fillStyle="#6b7686"; ctx.font=Math.round(15*scale)+"px 'Microsoft YaHei','PingFang SC',sans-serif";
+          ctx.fillText(p.pe.sub, p.x+12*scale, p.y+52*scale);
         }
-        var ax=p.x+6*scale, ay=p.y+(p.pe.sub?50:30)*scale, aw=p.w-12*scale, ah=p.h-ay+p.y-8*scale;
+        var ax=p.x+6*scale, ay=p.y+(p.pe.sub?62:40)*scale, aw=p.w-12*scale, ah=p.h-ay+p.y-8*scale;
         var r=Math.min(aw/im.width, ah/im.height);
         if(r>0) ctx.drawImage(im, ax+(aw-im.width*r)/2, ay+(ah-im.height*r)/2, im.width*r, im.height*r);
       });
