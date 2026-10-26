@@ -2136,7 +2136,7 @@ function exportLongImage(btn){
       host.style.cssText="position:fixed;left:-100000px;top:0;width:0;height:0;overflow:hidden;";
       document.body.appendChild(host); }
 
-    var tiles=[], peMeta=[];
+    var tiles=[], peMeta={};   /* peMeta 按全局 tile 序号存（PE 行前还有普通图，不能按 PE 序号 push） */
     var ovPrev={dec:DEC, unit:UNIT, yV:yearVisible, D:D};
     sheets.forEach(function(s){
       var Dp=s.Ds;
@@ -2154,9 +2154,9 @@ function exportLongImage(btn){
             /* __PE__：PE 日报 PNG，不渲染 ECharts，仅按 tileIdx 占位（positions 阶段单独绘制） */
             if(k.indexOf("__PE__")===0){
               var pm=((window.__SR__.pe||{}).indicators||{})[k.slice(6)];
+              peMeta[tiles.length]={title:(pm&&pm.title)||"", unit:(pm&&pm.unit)||"",
+                sub:(pm&&pm.latest)?("最新 "+pm.latest+(pm.chg?(" · 环比 "+pm.chg):"")):""};
               tiles.push(pm ? ("pe_daily/"+k.slice(6)+".png") : null);
-              peMeta.push({title:(pm&&pm.title)||"", unit:(pm&&pm.unit)||"",
-                sub:(pm&&pm.latest)?("最新 "+pm.latest+(pm.chg?(" · 环比 "+pm.chg):"")):""});
               return;
             }
             var isTs=(k.indexOf("__TS__")===0);
@@ -2168,11 +2168,11 @@ function exportLongImage(btn){
             if(isTs){
               /* ts 的键在 JSON 里带 __TS__ 前缀存储（renderTsCard 亦用全键查询），不能 slice */
               var t=(Dp.ts||{})[ch.key] || (Dp.ts||{})[String(ch.key).slice(6)];
-              if(!t) { div.remove(); return; }
+              if(!t) { tiles.push(null); div.remove(); return; }   /* 占位保 tileIdx 对齐 */
               opt=expTsOption(Dp,t);
             }else{
               var ind=Dp.indicators[ch.key];
-              if(!ind){ div.remove(); return; }
+              if(!ind){ tiles.push(null); div.remove(); return; }  /* 占位保 tileIdx 对齐 */
               opt=expSeasonOption(Dp, ind, ticks, yv);
             }
             var c=echarts.init(div, null, {width:w, height:h});
