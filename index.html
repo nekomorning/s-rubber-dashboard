@@ -434,6 +434,10 @@ table.maint-tbl td{font-size:12px;}
 .toc-panel a.sub{padding-left:24px;font-size:12px;color:#6b7686;line-height:1.85;}
 .toc-panel a.sub:hover{background:#eef3fa;color:#0f4c81;}
 .section-title{scroll-margin-top:96px;}
+.core-shot{background:#fff;border:1px solid #e5e9f0;border-radius:12px;padding:14px;
+  box-shadow:0 2px 10px rgba(31,55,84,.06);}
+.core-shot img{display:block;width:100%;height:auto;border-radius:6px;}
+.core-shot-dt{margin-top:10px;font-size:12px;color:#8a93a3;text-align:right;}
 /* 贸易流三段表：出口国蓝底 / 进口国粉底（2026-10-23 用户拍板） */
 table.data th.band-exp{background:#2e75b6;color:#fff;font-weight:600;}
 table.data th.band-imp{background:#e0799c;color:#fff;font-weight:600;}
@@ -582,8 +586,7 @@ table.ops-tbl td.st-ok{color:#0a9a5c;}
 </div>
 <div class="toc-dock" id="dock-core" style="display:none">
   <div class="toc-panel" id="toc-core"><div class="toc-title">目录 · 核心逻辑</div><a href="#b-lg1" data-pid="lg1">1. 研究框架</a>
-<a href="#b-lg2" data-pid="lg2">2. 丁二烯基本面</a>
-<a href="#b-lg3" data-pid="lg3">3. 顺丁基本面</a></div>
+<a href="#b-lg2" data-pid="lg2">2. 合成胶基本面数据</a></div>
   <div class="toc-tab">目 录</div>
 </div>
 <div class="toc-dock" id="dock-wk" style="display:none">
@@ -609,170 +612,12 @@ table.ops-tbl td.st-ok{color:#0a9a5c;}
 <div class="tabpane" id="pane-core" style="display:none">
   <main class="boards" id="boards-core">
 /*SR_CORE*/<section class="board" id="b-lg1">
-  <div class="board-head"><h2>1. 研究框架<small>合成胶研究框架精简版 · 源底稿《橡胶各国平衡表.xlsx》· 合成胶逻辑 sheet</small></h2></div>
-  <div class="lg-lead">供应：原料是核心变量（快变量），丁二烯开工、进出口、合成胶出口都是结果</div>
-  <div class="lg-lead">需求：下游调节开工去应对供应（慢变量），来自价差需求（天胶-合成、丁二烯区域价差）</div>
-  <div class="lgx">
-    <div class="lgx-c lgx-drive">
-      <div class="lgb"><div class="lgb-main">核心·快变量</div><div class="lgb-tag">原料<em>原油、石脑油</em></div></div>
-      <div class="lgb"><div class="lgb-main">需求：下游调节开工去应对供应（慢变量）</div><div class="lgb-tag">传导<em>价差驱动</em></div></div>
-    </div>
-    <div class="lgx-ar">&#8594;</div>
-    <div class="lgx-c lgx-flow">
-      <div class="lgx-chain"><span class="lgx-node">丁二烯</span></div>
-      <div class="lgb-tag" style="text-align:center">供应取决于原料而非自身利润</div>
-      <div class="lgx-weak"><div class="lg-weak-hd">调节变量</div><div class="lgw w-b">调节·慢变量 / 需求</div></div>
-    </div>
-    <div class="lgx-ar">&#8594;</div>
-    <div class="lgx-pair">
-      <div class="lgp-hd"></div><div class="lgp-hd">需求侧 · 当前状态</div>
-      <div class="lgs">轮胎需求</div><div class="lgt"><div class="lgt-l">内需-9%，出口+40%，支撑表需高位</div></div>
-      <div class="lgs">其他需求</div><div class="lgt"><div class="lgt-l">ABS、SBS较差</div></div>
-      <div class="lgs">丁二烯出口</div><div class="lgt"><div class="lgt-l">价差需求，当前内外价差高，出口窗口关闭</div></div>
-    </div>
-  </div>
-  <div class="section-title">脆弱点 / 异常点　·　核心路标</div>
-  <div class="lgx" style="margin-top:6px">
-    <div class="lgx-c lgx-flow" style="flex:1 1 45%">
-      <div class="lg-weak-hd">脆弱点 / 异常点</div>
-      <div class="lgw w-a">· 海峡影响贸易流</div>
-      <div class="lgw w-a">· 欧洲水位问题</div>
-      <div class="lgw w-a">· 原料轻质化问题</div>
-      <div class="lgw w-a">· 合成胶出口需求支撑</div>
-    </div>
-    <div class="lgx-c lgx-flow" style="flex:1 1 45%">
-      <div class="lg-weak-hd">核心路标（跟踪指标）</div>
-      <div class="lgw w-b">· nap价格价差</div>
-      <div class="lgw w-b">· 贸易流</div>
-      <div class="lgw w-b">· BR-丁二烯</div>
-      <div class="lgw w-b">· 贸易流</div>
-      <div class="lgw w-b">· 顺丁出口利润</div>
-      <div class="lgw w-b">· BR-NR价差</div>
-      <div class="lgw w-b">· 丁二烯内外价差</div>
-    </div>
-  </div>
+  <div class="board-head"><h2>1. 研究框架<small>源底稿《橡胶各国平衡表.xlsx》· 合成胶逻辑 sheet</small></h2></div>
+  <div class="core-shot"><img src="core_shots/logic_framework.png?v=202610271429" alt="1. 研究框架"><div class="core-shot-dt">底稿截图 · 2026-10-27 14:29</div></div>
 </section>
 <section class="board" id="b-lg2">
-  <div class="board-head"><h2>2. 丁二烯基本面<small>1–9 月累计 · 源底稿合成胶逻辑 sheet · 数值未做任何口径调整</small></h2></div>
-  <div class="xnote">同比行：<b class="up">红=增加</b>　<b class="down">绿=减少</b>；开工为百分比，其余为万吨。灰色「—」为底稿空缺。</div>
-  <div class="tbl-scroll"><table class="data lg-tbl"><thead><tr><th class="yr-col">期间</th>
-<th>产能</th>
-<th>开工</th>
-<th>产量</th>
-<th>进口</th>
-<th>出口</th>
-<th>净进口</th>
-<th>总供应</th>
-<th>表需</th>
-<th>合成需求</th>
-<th>非合成</th>
-<th>库存</th>
-<th>库存变化</th>
-</tr></thead><tbody>
-<tr class=""><td class="yr-col">25.1-9</td>
-<td class="num ">535.33</td>
-<td class="num ">75.0%</td>
-<td class="num ">401.47</td>
-<td class="num ">39.37</td>
-<td class="num ">2.26</td>
-<td class="num ">37.11</td>
-<td class="num ">438.58</td>
-<td class="num ">437.99</td>
-<td class="num ">204.30</td>
-<td class="num ">233.69</td>
-<td class="num ">5.72</td>
-<td class="num ">0.58</td>
-</tr>
-<tr class=""><td class="yr-col">26.1-9</td>
-<td class="num ">596.43</td>
-<td class="num ">70.1%</td>
-<td class="num ">418.14</td>
-<td class="num ">19.81</td>
-<td class="num ">14.36</td>
-<td class="num ">5.45</td>
-<td class="num ">423.59</td>
-<td class="num ">426.89</td>
-<td class="num ">203.09</td>
-<td class="num ">223.80</td>
-<td class="num ">4.29</td>
-<td class="num ">-3.30</td>
-</tr>
-<tr class="row-chg"><td class="yr-col">同比</td>
-<td class="num up">61.10<div class="tyoy">+11.4%</div></td>
-<td class="num ">-4.9%</td>
-<td class="num up">16.67<div class="tyoy">+4.2%</div></td>
-<td class="num down">-19.56<div class="tyoy">-49.7%</div></td>
-<td class="num up">12.10<div class="tyoy">+536.0%</div></td>
-<td class="num down">-31.66<div class="tyoy">-85.3%</div></td>
-<td class="num down">-14.99<div class="tyoy">-3.4%</div></td>
-<td class="num down">-11.10<div class="tyoy">-2.5%</div></td>
-<td class="num down">-1.21<div class="tyoy">-0.6%</div></td>
-<td class="num down">-9.89<div class="tyoy">-4.2%</div></td>
-<td class="num down">-1.43<div class="tyoy">-24.9%</div></td>
-<td>—</td>
-</tr>
-</tbody></table></div>
-</section>
-<section class="board" id="b-lg3">
-  <div class="board-head"><h2>3. 顺丁基本面<small>1–9 月累计 · 源底稿合成胶逻辑 sheet · 数值未做任何口径调整</small></h2></div>
-  <div class="xnote">同比行：<b class="up">红=增加</b>　<b class="down">绿=减少</b>；开工为百分比，其余为万吨。灰色「—」为底稿空缺。</div>
-  <div class="tbl-scroll"><table class="data lg-tbl"><thead><tr><th class="yr-col">期间</th>
-<th>产能</th>
-<th>开工</th>
-<th>产量</th>
-<th>进口</th>
-<th>出口</th>
-<th>净出口</th>
-<th>总供应</th>
-<th>表需</th>
-<th>半钢</th>
-<th>全钢</th>
-<th>库存</th>
-<th>库存变化</th>
-</tr></thead><tbody>
-<tr class=""><td class="yr-col">25.1-9</td>
-<td class="num ">167.99</td>
-<td class="num ">68.7%</td>
-<td class="num ">115.34</td>
-<td class="num ">20.00</td>
-<td class="num ">23.82</td>
-<td class="num ">3.82</td>
-<td class="num ">111.53</td>
-<td class="num ">112.10</td>
-<td class="num ">77.38</td>
-<td class="num ">11.65</td>
-<td class="num ">3.50</td>
-<td class="num ">-0.57</td>
-</tr>
-<tr class=""><td class="yr-col">26.1-9</td>
-<td class="num ">175.93</td>
-<td class="num ">66.1%</td>
-<td class="num ">116.36</td>
-<td class="num ">16.84</td>
-<td class="num ">33.76</td>
-<td class="num ">16.92</td>
-<td class="num ">99.45</td>
-<td class="num ">102.60</td>
-<td class="num ">74.93</td>
-<td class="num ">11.89</td>
-<td class="num ">2.45</td>
-<td class="num ">-1.35</td>
-</tr>
-<tr class="row-chg"><td class="yr-col">同比</td>
-<td class="num up">7.94<div class="tyoy">+4.7%</div></td>
-<td class="num ">-2.5%</td>
-<td class="num up">1.02<div class="tyoy">+0.9%</div></td>
-<td class="num down">-3.17<div class="tyoy">-15.8%</div></td>
-<td class="num up">9.93<div class="tyoy">+41.7%</div></td>
-<td class="num up">13.10<div class="tyoy">-343.0%</div></td>
-<td class="num down">-12.08<div class="tyoy">-10.8%</div></td>
-<td class="num down">-9.49<div class="tyoy">-8.5%</div></td>
-<td class="num down">-2.45<div class="tyoy">-3.2%</div></td>
-<td class="num up">0.24<div class="tyoy">+2.1%</div></td>
-<td class="num down">-1.05<div class="tyoy">-30.0%</div></td>
-<td>—</td>
-</tr>
-</tbody></table></div>
+  <div class="board-head"><h2>2. 合成胶基本面数据<small>1–9 月累计 · 源底稿合成胶逻辑 sheet · 数值未做任何口径调整</small></h2></div>
+  <div class="core-shot"><img src="core_shots/logic_tables.png?v=202610271429" alt="2. 合成胶基本面数据"><div class="core-shot-dt">底稿截图 · 2026-10-27 14:29</div></div>
 </section>/*SR_CORE_END*/
   </main>
 </div>
