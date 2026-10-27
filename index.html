@@ -430,6 +430,10 @@ table.data td.hl{background:#eef3fa;}
 table.maint-tbl{min-width:900px;}
 table.maint-tbl td{font-size:12px;}
 .xnote{margin-top:10px;}
+/* 目录二级条目（2026-10-27：高频数据 section 标题进目录） */
+.toc-panel a.sub{padding-left:24px;font-size:12px;color:#6b7686;line-height:1.85;}
+.toc-panel a.sub:hover{background:#eef3fa;color:#0f4c81;}
+.section-title{scroll-margin-top:96px;}
 /* 贸易流三段表：出口国蓝底 / 进口国粉底（2026-10-23 用户拍板） */
 table.data th.band-exp{background:#2e75b6;color:#fff;font-weight:600;}
 table.data th.band-imp{background:#e0799c;color:#fff;font-weight:600;}
@@ -945,6 +949,7 @@ function subsetDs(src, keys){
 }
 function renderBoard(bd){
   var mk = document.getElementById("b-"+bd.pid); if(!mk) return;
+  window.__CURPID=bd.pid;   /* buildSections 用它给 section 标题生成唯一锚点 id */
 
   /* HTML 型板块（周报附录 / 表格）：不需要 ECharts */
   if(bd.kind==="html"){
@@ -1133,8 +1138,9 @@ function renderTsCard(key, rootEl){
 function buildSections(rootEl, layoutOverride){
   var ticks={};
   (D.xlabels||[]).forEach(function(l,i){ if(String(l).slice(3)==="01") ticks[i]=parseInt(String(l).slice(0,2),10)+"月"; });
+  var curPid=window.__CURPID||"x";
   (layoutOverride||D.layout||[]).forEach(function(sec){
-    if(sec.section) addSecTitle(rootEl, sec.section);
+    if(sec.section){ var st=addSecTitle(rootEl, sec.section); st.id="sec-"+curPid+"-"+sec.section; }
     sec.rows.forEach(function(row){
       if(row.label){ var l=document.createElement("div"); l.className="row-label"; l.textContent=row.label; rootEl.appendChild(l); }
       var tsCharts=[], peCharts=[], normal=[];
@@ -1973,10 +1979,35 @@ function buildShell(tab){
     a.href="#b-"+bd.pid; a.dataset.pid=bd.pid;
     a.textContent=bd.n+". "+bd.label;
     toc.appendChild(a);
+    /* 2026-10-27 用户要求：高频数据二级标题（section）进左侧目录 */
+    if(tab==="hf" && (bd.pid==="p1"||bd.pid==="p2")){
+      var ds0=window.__SR__[bd.pid]||{};
+      var secs=(bd.pid==="p2")?(ds0.indicatorLayout||ds0.layout||[]):(ds0.layout||[]);
+      secs.forEach(function(sec,si){
+        if(!sec.section) return;
+        var a2=document.createElement("a");
+        a2.className="sub"; a2.textContent=sec.section;
+        var sid="sec-"+bd.pid+"-"+sec.section;
+        a2.addEventListener("click", function(ev){
+          ev.preventDefault();
+          var t=document.getElementById(sid);
+          if(t){ t.scrollIntoView({behavior:"smooth"}); return; }
+          /* 懒加载板块未渲染：先滚到板块触发渲染，再补滚到小节 */
+          var be=document.getElementById("b-"+bd.pid);
+          if(be) be.scrollIntoView({behavior:"smooth"});
+          setTimeout(function(){
+            var t2=document.getElementById(sid);
+            if(t2) t2.scrollIntoView({behavior:"smooth"});
+          }, 1200);
+        });
+        toc.appendChild(a2);
+      });
+    }
   });
 }
 function syncToc(t){
-  var links=Array.prototype.slice.call(document.querySelectorAll("#toc-"+t+" a"));
+  var links=Array.prototype.slice.call(document.querySelectorAll("#toc-"+t+" a"))
+             .filter(function(a){ return a.dataset.pid; });   /* 二级 sub 链接不参与高亮 */
   var pids=links.map(function(a){ return a.dataset.pid; });
   if(!pids.length) pids=links.map(function(a){ return a.dataset.pid; });
   var ticking=false;
