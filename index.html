@@ -1138,7 +1138,7 @@ function renderPsCard(ch, grid){
       axisLabel:{fontSize:10,color:"#8a93a3", interval:0},
       axisTick:{show:false}, axisLine:{lineStyle:{color:"#dde3ec"}}, splitLine:{show:false}},
     yAxis:{type:"value", scale:true,
-      axisLabel:{fontSize:10,color:"#8a93a3", formatter:function(v){ return Math.abs(v)>=10000?(v/10000)+"万":(Math.abs(v)>=1000?(v/1000)+"k":v); }},
+      axisLabel:{fontSize:10,color:"#8a93a3", formatter:function(v){ return Math.round(v); }},
       splitLine:{lineStyle:{color:"#eef1f6"}}},
     series:series
   });
@@ -2127,7 +2127,7 @@ function expPsOption(Dp, ps){
       axisLabel:{fontSize:13,color:"#8a93a3", interval:0},
       axisTick:{show:false}, axisLine:{lineStyle:{color:"#dde3ec"}}, splitLine:{show:false}},
     yAxis:{type:"value", scale:true,
-      axisLabel:{fontSize:13,color:"#8a93a3", formatter:function(v){ return Math.abs(v)>=10000?(v/10000)+"万":(Math.abs(v)>=1000?(v/1000)+"k":v); }},
+      axisLabel:{fontSize:13,color:"#8a93a3", formatter:function(v){ return Math.round(v); }},
       splitLine:{lineStyle:{color:"#eef1f6"}}},
     series:series
   };
