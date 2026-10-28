@@ -1339,7 +1339,7 @@ function renderBalC(bd, ds, box, ctx){
     addSecTitle(box, "年度增量与增速（vs 上年）");
     addNote(box, "增量 = 当年年度值 − 上年年度值；增速 = 增量 ÷ |上年值|。仅流量类指标（口径同累计同比小节）。");
     function annVal(li,idx){ var row=amap[yrs[li]]; return row?row[idx]:null; }
-    [["年度增量",function(v){ return v; }, false],
+    [["年度增量",function(a,c){ return (a!==null&&c!==null)?(c-a):null; }, false],
      ["年度增速",function(a,c){ return (a!==null&&a!==0&&c!==null)?(c-a)/Math.abs(a)*100:null; }, true]
     ].forEach(function(cfg){
       var title=cfg[0], fn=cfg[1], isPct=cfg[2];
@@ -1347,7 +1347,7 @@ function renderBalC(bd, ds, box, ctx){
       base.forEach(function(b){ dh+="<th>"+esc(b.name)+"</th>"; });
       dh+="</tr></thead><tbody>";
       for(var li=1; li<yrs.length; li++){
-        dh+="<tr><td class='yr-col'>"+esc(yrs[li])+" vs "+esc(yrs[li-1])+"</td>";
+        dh+="<tr><td class='yr-col'>"+esc(yrs[li])+"</td>";
         base.forEach(function(b){
           var a=annVal(li-1,b.idx), c=annVal(li,b.idx);
           var v=fn(a,c);
