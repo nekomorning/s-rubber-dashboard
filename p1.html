@@ -491,7 +491,7 @@ function makePsCard(ch,grid,row){
       axisTick:{show:false}, axisLine:{lineStyle:{color:"#dde3ec"}}, splitLine:{show:false}},
     yAxis:{type:"value", scale:true,
       axisLabel:{fontSize:10,color:"#8a93a3",
-        formatter:function(v){ return Math.abs(v)>=10000?(v/10000)+"万":(Math.abs(v)>=1000?(v/1000)+"k":v); }},
+        formatter:function(v){ return Math.round(v); }},
       splitLine:{lineStyle:{color:"#eef1f6"}}},
     series:series
   });
