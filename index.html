@@ -934,7 +934,7 @@ function drawLines(div, opt){
        handleSize:"70%", textStyle:{fontSize:9, color:"#8a93a3"}}
     ]:undefined,
     legend:{show:true, top:0, right:0, itemWidth:14, itemHeight:2, icon:"rect", type:"scroll",
-      textStyle:{fontSize:11,color:"#6b7686"}, data:legend},
+      textStyle:{fontSize:11,color:"#6b7686"}, data:legend, selected:opt.selected},
     tooltip:{trigger:"axis", confine:true, formatter:function(ps){
       if(!ps.length) return "";
       var s=String(opt.xlabels[ps[0].value[0]]===undefined?"":opt.xlabels[ps[0].value[0]]);
@@ -1383,6 +1383,7 @@ function renderBalC(bd, ds, box, ctx){
   var MAXC = (ct.indicators.length>16)?16:ct.indicators.length;
   addNote(box, "共 "+ct.indicators.length+" 个指标；默认展示前 "+MAXC+" 个指标的月度季节图，完整列见年度表与月度数据表。");
   var g=addGrid(box,4);
+  var HIDE_YEARS=["2017","2018","2019","2020"];   /* 平衡表季节图默认隐藏这几年（用户要求 2026-10-28）；seasonYears 为字符串 */
   ct.seasonal.slice(0,MAXC).forEach(function(s){
     var card=mkCard(s.name, "", "");
     g.appendChild(card.el);
@@ -1393,8 +1394,10 @@ function renderBalC(bd, ds, box, ctx){
       if(!hasData) return;
       ser.push({name:String(y), color:yearColor(y), width:1.6, data:arr});
     });
+    var sel={};
+    ct.seasonYears.forEach(function(y){ sel[String(y)]=(HIDE_YEARS.indexOf(y)<0); });
     drawLines(card.div, {xlabels:["1月","2月","3月","4月","5月","6月","7月","8月","9月","10月","11月","12月"],
-      dec:1, xInterval:0, series:ser});
+      dec:1, xInterval:0, series:ser, selected:sel});
   });
 }
 
