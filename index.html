@@ -1134,9 +1134,8 @@ function renderPsCard(ch, grid){
         });
         return s;
       }},
-    xAxis:{type:"category", data:ps.labels,
-      axisLabel:{fontSize:10,color:"#8a93a3", interval:0,
-        formatter:function(v){ return v.length>5?v.slice(0,5):v; }},
+    xAxis:{type:"category", data:ps.labels, boundaryGap:true,
+      axisLabel:{fontSize:10,color:"#8a93a3", interval:0},
       axisTick:{show:false}, axisLine:{lineStyle:{color:"#dde3ec"}}, splitLine:{show:false}},
     yAxis:{type:"value", scale:true,
       axisLabel:{fontSize:10,color:"#8a93a3", formatter:function(v){ return Math.abs(v)>=10000?(v/10000)+"万":(Math.abs(v)>=1000?(v/1000)+"k":v); }},
@@ -2101,6 +2100,39 @@ function expTsOption(Dp, t){
   };
 }
 
+/* 价格结构 option（__PS__，2026-10-28 导出补图）：分类轴（各价格点位）× 时点线（上一月/上一周/上一日/最新） */
+function expPsOption(Dp, ps){
+  var colors={"最新":["#1f2733",2.4],"上一日":["#d92626",1.6],"上一周":["#F59A23",1.4],"上一月":["#1E6FFF",1.4]};
+  var series=[], legend=[];
+  (ps.rows||[]).forEach(function(r){
+    var col=colors[r.name]||["#8a93a3",1.4];
+    legend.push(r.name);
+    series.push({name:r.name, type:"line", showSymbol:true, symbolSize:6, connectNulls:true,
+      data:(r.vals||[]).map(function(v){ return (v===null||v===undefined)?null:v; }),
+      lineStyle:{width:col[1], color:col[0]}, itemStyle:{color:col[0]}, z:r.name==="最新"?10:5});
+  });
+  return {
+    animation:false, backgroundColor:"#ffffff",
+    title:{ text:"价格结构", subtext:"各时点价格点位对比（元/吨）",
+      left:12, top:8, textStyle:{fontSize:20, fontWeight:700, color:"#1f2733"},
+      subtextStyle:{fontSize:15, color:"#6b7686"} },
+    grid:{left:14, right:18, top:66, bottom:34, containLabel:true},
+    legend:{show:true, top:10, right:12, itemWidth:18, itemHeight:3, icon:"rect",
+      textStyle:{fontSize:14, color:"#6b7686"}, data:legend},
+    tooltip:{trigger:"axis", confine:true,
+      formatter:function(items){ if(!items.length) return ""; var s=esc(items[0].axisValue||"");
+        items.forEach(function(p){ if(p.value===null||p.value===undefined) return;
+          s+="<br>"+p.marker+p.seriesName+"： <b>"+fmt(p.value,0)+"</b>"; }); return s; }},
+    xAxis:{type:"category", data:(ps.labels||[]), boundaryGap:true,
+      axisLabel:{fontSize:13,color:"#8a93a3", interval:0},
+      axisTick:{show:false}, axisLine:{lineStyle:{color:"#dde3ec"}}, splitLine:{show:false}},
+    yAxis:{type:"value", scale:true,
+      axisLabel:{fontSize:13,color:"#8a93a3", formatter:function(v){ return Math.abs(v)>=10000?(v/10000)+"万":(Math.abs(v)>=1000?(v/1000)+"k":v); }},
+      splitLine:{lineStyle:{color:"#eef1f6"}}},
+    series:series
+  };
+}
+
 /* 板块未渲染（懒加载）时的年份可见性兜底：默认最近 4 年可见 */
 function expYV(ds){
   var yv={}, ys=(ds&&ds.years)?ds.years.slice():[];
@@ -2190,6 +2222,7 @@ function exportLongImage(btn){
             }
             var isTs=(k.indexOf("__TS__")===0);
             var isNap=(k.indexOf("__NAP__")===0);
+            var isPs=(k.indexOf("__PS__")===0);
             var w=TILE_W, h=TILE_H;
             var div=document.createElement("div");
             div.style.width=w+"px"; div.style.height=h+"px";
@@ -2204,6 +2237,11 @@ function exportLongImage(btn){
               opt=expSeasonOption({xlabels:nd.xlabels, dec:1},
                 {title:nd.title, unit:nd.unit||"万吨", dec:1, stat:nd.stat,
                  series:nd.series, _pairXY:true}, ticksN, yv);
+            }else if(isPs){
+              /* 价格结构（__PS__）：分类轴 × 时点线，不在 indicators 内，单独取 ps */
+              var psD=(Dp.ps||{});
+              if(!(psD.rows&&psD.rows.length)){ tiles.push(null); div.remove(); return; }
+              opt=expPsOption(Dp, psD);
             }else if(isTs){
               /* ts 的键在 JSON 里带 __TS__ 前缀存储（renderTsCard 亦用全键查询），不能 slice */
               var t=(Dp.ts||{})[ch.key] || (Dp.ts||{})[String(ch.key).slice(6)];
