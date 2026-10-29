@@ -1,7 +1,7 @@
 {
  "source": "PE日报日度季节性图",
  "sourceUrl": "https://chem-daily-portal.app.workbuddy.host/",
- "fetchedAt": "2026-10-28",
+ "fetchedAt": "2026-10-29",
  "count": 10,
  "indicators": {
   "pe_00": {
@@ -9,22 +9,22 @@
    "title": "石脑油现货 · 美元/吨",
    "section": "1. 原料和上游",
    "unit": "美元/吨",
-   "latest": "1,059",
-   "chg": "+13.00",
-   "date": "10/27",
+   "latest": "1,046",
+   "chg": "-13.25",
+   "date": "10/28",
    "file": "pe_daily/pe_00.png",
-   "bytes": 193384
+   "bytes": 193428
   },
   "pe_01": {
    "key": "pe_01",
    "title": "石脑油M1-M3 · 美元/吨",
    "section": "1. 原料和上游",
    "unit": "美元/吨",
-   "latest": "76.23",
-   "chg": "-4.40",
-   "date": "10/28",
+   "latest": "79.09",
+   "chg": "+5.13",
+   "date": "10/29",
    "file": "pe_daily/pe_01.png",
-   "bytes": 141840
+   "bytes": 141914
   },
   "pe_02": {
    "key": "pe_02",
@@ -35,29 +35,29 @@
    "chg": "",
    "date": "",
    "file": "pe_daily/pe_02.png",
-   "bytes": 89375
+   "bytes": 79537
   },
   "pe_03": {
    "key": "pe_03",
    "title": "布伦特主力 · 美元/桶",
    "section": "1. 原料和上游",
    "unit": "美元/桶",
-   "latest": "116.0",
-   "chg": "+0.14",
-   "date": "10/28",
+   "latest": "114.4",
+   "chg": "-1.61",
+   "date": "10/29",
    "file": "pe_daily/pe_03.png",
-   "bytes": 217805
+   "bytes": 217888
   },
   "pe_04": {
    "key": "pe_04",
    "title": "布伦特M1-M3 · 美元/桶",
    "section": "1. 原料和上游",
    "unit": "美元/桶",
-   "latest": "7.58",
-   "chg": "-0.92",
-   "date": "10/28",
+   "latest": "7.40",
+   "chg": "+0.41",
+   "date": "10/29",
    "file": "pe_daily/pe_04.png",
-   "bytes": 164246
+   "bytes": 164390
   },
   "pe_05": {
    "key": "pe_05",
@@ -68,18 +68,18 @@
    "chg": "",
    "date": "",
    "file": "pe_daily/pe_05.png",
-   "bytes": 81853
+   "bytes": 81757
   },
   "pe_06": {
    "key": "pe_06",
    "title": "石脑油现货Crk · 美元/吨",
    "section": "2. 裂解价差",
    "unit": "美元/吨",
-   "latest": "224.8",
-   "chg": "+6.66",
-   "date": "10/27",
+   "latest": "210.6",
+   "chg": "-14.26",
+   "date": "10/28",
    "file": "pe_daily/pe_06.png",
-   "bytes": 187611
+   "bytes": 187671
   },
   "pe_07": {
    "key": "pe_07",
@@ -90,29 +90,29 @@
    "chg": "",
    "date": "",
    "file": "pe_daily/pe_07.png",
-   "bytes": 87499
+   "bytes": 82966
   },
   "pe_08": {
    "key": "pe_08",
    "title": "乙烯东北亚 · 美元/吨",
    "section": "3. 乙烯",
    "unit": "美元/吨",
-   "latest": "1,201",
+   "latest": "1,211",
    "chg": "+0.00",
-   "date": "10/28",
+   "date": "10/29",
    "file": "pe_daily/pe_08.png",
-   "bytes": 114805
+   "bytes": 114917
   },
   "pe_09": {
    "key": "pe_09",
    "title": "乙烯-石脑油价差 · 美元/吨",
    "section": "3. 乙烯",
    "unit": "美元/吨",
-   "latest": "141.8",
-   "chg": "-3.00",
-   "date": "10/27",
+   "latest": "165.0",
+   "chg": "+23.25",
+   "date": "10/28",
    "file": "pe_daily/pe_09.png",
-   "bytes": 200339
+   "bytes": 200432
   }
  }
 }
