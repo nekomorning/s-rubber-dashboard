@@ -633,7 +633,8 @@ table.ops-tbl td.news-sum a:hover{text-decoration:underline;}
 <a href="#b-jg6" data-pid="jg6">迁移概率</a>
 <a href="#b-jg7" data-pid="jg7">年度平衡表</a>
 <a href="#b-jg8" data-pid="jg8">路标清单</a>
-<a href="#b-jg9" data-pid="jg9">风险与口径</a></div>
+<a href="#b-jg9" data-pid="jg9">风险与口径</a>
+<a href="#b-jg10" data-pid="jg10">口径修正记录 v2.2</a></div>
   <div class="toc-tab">目 录</div>
 </div>
 <div class="toc-dock" id="dock-wk" style="display:none">
@@ -680,7 +681,7 @@ table.ops-tbl td.news-sum a:hover{text-decoration:underline;}
 .jg-img img{max-width:100%;height:auto;border:1px solid #e5e9f0;border-radius:10px;background:#fff}
 .jg-cap{font-size:11.5px;color:#8a93a3;margin-top:5px}
 table.jg{width:100%;border-collapse:collapse;font-size:12.5px;margin:8px 0}
-table.jg th,table.jg td{border:1px solid #e5e9f0;padding:6px 9px;vertical-align:top;text-align:left}
+table.jg th,table.jg td{border:1px solid #e5e9f0;padding:6px 9px;vertical-align:top;text-align:left;white-space:normal;word-break:break-word}
 table.jg th{background:#f0f4f9;color:#0b2a4a;font-weight:700}
 table.jg td.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
 table.jg tr.hi td{background:#f7faff}
@@ -689,33 +690,35 @@ table.jg tr.hi td{background:#f7faff}
 
 </style>
 <section class="board" id="b-jg1">
-  <div class="board-head"><h2>合成胶核心逻辑 · 判格机<small>双变量四象限 · 构建时复算</small></h2></div>
+  <div class="board-head"><h2>合成胶核心逻辑 · 判格机<small>双变量四象限 · 构建时复算 · v2.2 指标口径修正</small></h2></div>
   <div class="jg-hero">
-    <div class="lead"><b>一句话结论：</b>当前处于 <span class="jg-pill b">B 格 · 利润挤压 / 负反馈</span>——丁二烯港口库存可用 <b>1.66 天</b>（偏紧临界），顺丁表需 4 周均同比 <b class="dn">-12.6%</b>（弱）；顺丁利润 <b class="dn">-747 元/吨</b>，开工却在提负，负反馈尚未真正兑现。</div>
+    <div class="lead"><b>一句话结论：</b>当前处于 <span class="jg-pill b">B 格 · 利润挤压 / 负反馈</span>——供给侧（X）：石脑油裂解乙烯开工 4 周均 <b>79.70%</b>（2026 年均 78.80%，5 年最低），石脑油进口年化同比 <b class="dn">-31.8%</b>，原料端同步收缩 → <b>丁二烯供应偏紧</b>；需求侧（Y）：顺丁表需 4 周均同比 <b class="dn">-12.6%</b>（弱），但顺丁-泰混价差自 -2,350 修复至 -1,480 元/吨、顺丁出口占产量升至 31.7%，替代与出口两项需求信号同向改善；顺丁-丁二烯价差 <b>1,710 元/吨</b>（历史 22.9 分位），加工利润已被压至低位。</div>
     <div style="margin:6px 0 2px">
-      <span class="jg-pill">X ＝ 丁二烯供应松紧（港口库存可用天数）</span>
-      <span class="jg-pill">Y ＝ 合成胶需求强度（顺丁表需同比）</span>
-      <span class="jg-pill b">定价权：海外主导（韩国检修＋欧洲发运缺口→中国出口补缺口）</span>
+      <span class="jg-pill">X ＝ 丁二烯供应松紧（乙烯裂解开工率 · 副产品源头）</span>
+      <span class="jg-pill">Y ＝ 合成胶需求强度（表需同比 + 泰混替代 + 出口占比）</span>
+      <span class="jg-pill b">利润 ＝ 顺丁-丁二烯价差（BR-BD）</span>
+      <span class="jg-pill">定价权：海外主导（周期项）</span>
     </div>
     <div class="jg-kpi">
-      <div><div class="lab">X · 港口库存</div><div class="val">25,300 吨</div><div class="det">可用 1.66 天 · 周环比 <span class="up">+2,360</span></div></div>
-      <div><div class="lab">X · 周度供应盈余</div><div class="val">-175 吨/周</div><div class="det">4 周均（产量−表需）</div></div>
-      <div><div class="lab">Y · 顺丁表需</div><div class="val">27,520 吨</div><div class="det">4 周均同比 <span class="dn">-12.6%</span></div></div>
-      <div><div class="lab">Y · 半钢开工</div><div class="val">64.54%</div><div class="det">13 周均同比 <span class="dn">-10.8%</span></div></div>
-      <div><div class="lab">顺丁利润</div><div class="val" style="color:#0a9a5c">-747 元/吨</div><div class="det">历史低位</div></div>
+      <div><div class="lab">X · 乙烯裂解开工</div><div class="val">79.70%</div><div class="det">4 周均 · 2026 年均 78.80%（5 年最低）</div></div>
+      <div><div class="lab">X · 石脑油进口</div><div class="val">1,127 万吨</div><div class="det">年化 · 同比 <span class="dn">-31.8%</span></div></div>
+      <div><div class="lab">Y · 顺丁表需同比</div><div class="val" style="color:#0a9a5c">-12.6%</div><div class="det">4 周均 · 弱档 ≤ −5%</div></div>
+      <div><div class="lab">Y · 顺丁-泰混价差</div><div class="val" style="color:#0a9a5c">-1,480 元/吨</div><div class="det">周环比 <span class="up">+870</span> · 泰混仍便宜</div></div>
+      <div><div class="lab">Y · 顺丁出口占产量</div><div class="val">31.7%</div><div class="det">2026 年 1-9 月 · 2025 年 21.8%</div></div>
+      <div><div class="lab">顺丁-丁二烯价差</div><div class="val" style="color:#0a9a5c">1,710 元/吨</div><div class="det">历史 22.9 分位 · 周环比 -470</div></div>
     </div>
-    <div class="lead" style="font-size:13px;color:#6b7686">数据截面：p2 截至 2026-10-30；利润截至 2026-11-02。本区块由构建脚本从底层数据复算，非人工维护。</div>
+    <div class="lead" style="font-size:13px;color:#6b7686">数据截面：p2 截至 2026-10-30；价差截至 2026-11-02；石脑油进口截至 2026-W44。本区块由构建脚本从底层数据复算，非人工维护。<b>v2.2 口径修正</b>：利润由「顺丁利润」改「顺丁-丁二烯价差」；X 轴由「港口库存可用天数」改「乙烯裂解开工率」（副产品源头，不受出口需求干扰）；Y 轴增列泰混替代与出口占比。</div>
   </div>
 </section>
 <section class="board" id="b-jg2">
   <div class="board-head"><h2>定价权定位（判格机第 0 层）</h2></div>
   <div class="jg-card">
-    <p style="margin:4px 0">26.11.2 钉钉「BD-BR 近期变化讨论」明确：<b>当前 BD / BR 是被海外定价的，不是国内基本面主导</b>。上涨链条为「韩国检修高位 + 欧洲发运减少 → 韩国丁二烯缺口 → 中国出口补韩国 → 丁二烯领涨 → BR 成本驱动跟涨」。因此 X 轴（国内库存可用天数）当前是<b>结果而非原因</b>，必须先判「定价权归属」再进四象限，否则会把「被海外缺口抽紧的库存」误读成「国内主动去库」。</p>
+    <p style="margin:4px 0">26.11.2 钉钉「BD-BR 近期变化讨论」明确：<b>当前 BD / BR 是被海外定价的，不是国内基本面主导</b>。上涨链条为「韩国检修高位 + 欧洲发运减少 → 韩国丁二烯缺口 → 中国出口补韩国 → 丁二烯领涨 → BR 成本驱动跟涨」。因此国内<b>库存与流量都是结果而非原因</b>，必须先判「定价权归属」再进四象限，否则会把「被海外缺口抽紧的库存」误读成「国内主动去库」。v2.2 起 X 轴改用<b>乙烯裂解开工率</b>——它是丁二烯供给的唯一源头（副产品），既不受出口需求抽走库存的干扰，也不像库存天数那样样本偏小。</p>
     <table class="jg">
       <tr><th style="width:110px">维度</th><th>领先信号（海外）</th><th>对照信号（国内）</th><th>当前判定</th></tr>
-      <tr class="hi"><td><b>主导方</b></td><td>韩国检修高位 + 欧洲发运减少 → 韩国丁二烯缺口 → 中国出口补韩国</td><td>港口库存可用天数、周度供应盈余、顺丁表需同比</td><td><b>海外主导</b>（韩国缺口领涨，中国出口把库存拉低）</td></tr>
-      <tr><td>价格传导</td><td>丁二烯领涨 → BR 成本驱动跟涨（BR-丁二烯价差仍 2000+，但收缩）</td><td>BR 现货跟涨、基差波动</td><td>成本驱动为主，BR 利润被压缩（-747 元/吨）</td></tr>
-      <tr><td>退出信号</td><td>韩国检修回归（已从中国买够 ~1.8 万吨）+ 欧洲船货到港（莱茵河水位缓解）</td><td>净进口恢复、库存回升 ≥ 2.40 天</td><td>尚未触发；期现商称「上涨已定价到位、BR 多头与 BR-NR 价差已平」</td></tr>
+      <tr class="hi"><td><b>主导方</b></td><td>韩国检修高位 + 欧洲发运减少 → 韩国丁二烯缺口 → 中国出口补韩国</td><td>乙烯裂解开工率、石脑油进口量、周度供应盈余、顺丁表需同比</td><td><b>海外主导</b>（韩国缺口领涨，中国出口把库存拉低）</td></tr>
+      <tr><td>价格传导</td><td>丁二烯领涨 → BR 成本驱动跟涨</td><td>BR 现货跟涨、基差波动</td><td>成本驱动为主，BR-丁二烯价差压缩至 1,710 元/吨（历史 22.9 分位）</td></tr>
+      <tr><td>退出信号</td><td>韩国检修回归（已从中国买够 ~1.8 万吨）+ 欧洲船货到港（莱茵河水位缓解）</td><td>石脑油进口量回升 + 裂解开工率回升至 ≥ 82.0%（原料与产出双修复）</td><td>尚未触发；期现商称「上涨已定价到位、BR 多头与 BR-NR 价差已平」</td></tr>
     </table>
     <h4 class="jg-h3">定价权领先信号（路标）</h4>
     <table class="jg">
@@ -742,39 +745,42 @@ table.jg tr.hi td{background:#f7faff}
       <tr><td><b>韩国 / 东南亚 / 欧盟：丁二烯产能退出</b></td><td>韩国 184→139（2027）、欧盟 280→159（2028）均收缩；韩国丁二烯净进口 2026 跳至 28（2025 仅 8）</td><td>海外供给收缩 → 缺口周期性外溢，是中国出口补缺口的对手盘</td></tr>
       <tr><td><b>合成胶：中国净出口、海外净进口</b></td><td>中国合成胶净进口 2025=6 → 2026=−29（净出口）；东南亚净进口 2026 增至 74、欧盟少量净出口</td><td>中国从「净进口方」走向「净出口方」，强化定价话语权</td></tr>
     </table>
-    <div class="jg-warn"><b>结构项 vs 周期项——两者不矛盾：</b>钉钉「海外主导定价」是<b>周期项</b>（韩国检修 + 欧洲发运缺口 → 中国出口补缺口 → 丁二烯领涨）；本图是<b>结构项</b>（中国产能扩张 + 净进口→净出口，是「中国终将主导定价」的终局）。当前海外缺口恰好叠加在中国结构性净出口苗头之上，所以 B 格的「紧」被放大；一旦海外缺口退去（韩国检修回归、欧洲船货到），中国的<b>结构性过剩</b>会让 B→D（原料转松）比单纯周期判断更陡。</div>
+    <div class="jg-warn"><b>结构项 vs 周期项——两者不矛盾：</b>钉钉「海外主导定价」是<b>周期项</b>（韩国检修 + 欧洲发运缺口 → 中国出口补缺口 → 丁二烯领涨）；本图是<b>结构项</b>（中国产能扩张 + 净进口→净出口，是「中国终将主导定价」的终局）。v2.2 的供应三读数把两者量化在同一张表上：<b>丁二烯周产量 4 周均 109,268 吨（历史 93.3 分位，产出端仍宽松）</b>，但<b>裂解开工率 4 周均 79.70%（2026 年均 78.80%，5 年最低）</b>且<b>石脑油进口年化同比 -31.8%</b>——意味着支撑产量的<b>旧装置正在降负、新装置正在爬坡</b>。周期项（原料与开工收缩）当前主导短期格位；结构项（新产能爬坡 + 净出口化）是中期把 B→D 拉陡的那只手。</div>
   </div>
 </section>
 <section class="board" id="b-jg4">
   <div class="board-head"><h2>双变量状态图（四象限）</h2></div>
   <div class="jg-card">
-    <p style="margin:4px 0"><b>阈值（固定线，不用历史分位）：</b>X 紧档 ≤ 1.70 天 / 松档 ≥ 2.40 天；Y 弱档 ≤ −5% / 强档 ≥ +8%。中间带按顺延上期格位处理。</p>
-<svg viewBox="0 0 680 470" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="合成胶双变量四象限"><rect x="0" y="0" width="680" height="470" fill="#ffffff"/><rect x="88.000000" y="70.000000" width="119.142857" height="94.200000" fill="#fbeceb"/><rect x="485.142857" y="70.000000" width="158.857143" height="94.200000" fill="#eaf6ef"/><rect x="88.000000" y="164.200000" width="119.142857" height="219.800000" fill="#fdf6e7"/><rect x="485.142857" y="164.200000" width="158.857143" height="219.800000" fill="#eef2f9"/><rect x="207.142857" y="70.000000" width="278.000000" height="314.000000" fill="#8fa3bd" opacity="0.07"/><rect x="88.000000" y="164.200000" width="556.000000" height="102.050000" fill="#8fa3bd" opacity="0.07"/><line x1="207.142857" y1="70.000000" x2="207.142857" y2="384.000000" stroke="#8fa3bd" stroke-width="1.2" stroke-dasharray="5 4"/><line x1="485.142857" y1="70.000000" x2="485.142857" y2="384.000000" stroke="#8fa3bd" stroke-width="1.2" stroke-dasharray="5 4"/><line x1="88.000000" y1="164.200000" x2="644.000000" y2="164.200000" stroke="#8fa3bd" stroke-width="1.2" stroke-dasharray="5 4"/><line x1="88.000000" y1="266.250000" x2="644.000000" y2="266.250000" stroke="#8fa3bd" stroke-width="1.2" stroke-dasharray="5 4"/><rect x="88.000000" y="70.000000" width="556.000000" height="314.000000" fill="none" stroke="#c9d5e4" stroke-width="1.2"/><text x="207.142857" y="62.000000" font-size="10.5" fill="#6b7686" text-anchor="middle">1.70</text><text x="485.142857" y="62.000000" font-size="10.5" fill="#6b7686" text-anchor="middle">2.40</text><text x="88.000000" y="62.000000" font-size="10.5" fill="#8a93a3" text-anchor="start">← 紧</text><text x="644.000000" y="62.000000" font-size="10.5" fill="#8a93a3" text-anchor="end">松 →</text><text x="82.000000" y="168.200000" font-size="10.5" fill="#6b7686" text-anchor="end">+8%</text><text x="82.000000" y="270.250000" font-size="10.5" fill="#6b7686" text-anchor="end">−5%</text><text x="98.000000" y="92.000000" font-size="13" font-weight="700" fill="#8c2f3d">A · 紧缺上行</text><text x="98.000000" y="110.000000" font-size="11.5" fill="#8c2f3d">成本推动，跟涨扩张</text><text x="495.142857" y="92.000000" font-size="13" font-weight="700" fill="#1f6b41">C · 健康去库</text><text x="495.142857" y="110.000000" font-size="11.5" fill="#1f6b41">原料松＋需求强，修复</text><text x="98.000000" y="186.200000" font-size="13" font-weight="700" fill="#8a5a00">B · 利润挤压 / 负反馈</text><text x="98.000000" y="204.200000" font-size="11.5" fill="#8a5a00">原料紧＋需求弱，亏损</text><text x="495.142857" y="186.200000" font-size="13" font-weight="700" fill="#2f4a6b">D · 过剩下跌</text><text x="495.142857" y="204.200000" font-size="11.5" fill="#2f4a6b">原料松＋需求弱，坍塌</text><path d="M191.502846 227.988711 L191.502846 170.200000" stroke="#d92626" stroke-width="1.6" stroke-dasharray="6 4" fill="none"/><path d="M191.502846 170.200000 l-4.5 9 l9 0 z" fill="#d92626"/><text x="199.502846" y="199.094355" font-size="11" fill="#d92626">B→A 需求转强</text><path d="M191.502846 227.988711 L479.142857 227.988711" stroke="#2f4a6b" stroke-width="1.6" stroke-dasharray="6 4" fill="none"/><path d="M479.142857 227.988711 l-9 -4.5 l0 9 z" fill="#2f4a6b"/><text x="199.502846" y="219.988711" font-size="11" fill="#2f4a6b">B→D 原料转松</text><circle cx="191.502846" cy="227.988711" r="7" fill="#d92626" stroke="#ffffff" stroke-width="2.2"/><text x="203.502846" y="245.988711" font-size="12" font-weight="700" fill="#d92626">当前位置</text><text x="203.502846" y="261.988711" font-size="11" fill="#6b7686">1.66 天 ／ -12.6%</text><line x1="88.000000" y1="384.000000" x2="644.000000" y2="384.000000" stroke="#c9d5e4"/><text x="167.428571" y="400.000000" font-size="11" fill="#8a93a3" text-anchor="middle">1.6</text><text x="326.285714" y="400.000000" font-size="11" fill="#8a93a3" text-anchor="middle">2.0</text><text x="485.142857" y="400.000000" font-size="11" fill="#8a93a3" text-anchor="middle">2.4</text><text x="366.000000" y="424.000000" font-size="12.5" font-weight="700" fill="#0f4c81" text-anchor="middle">X · 丁二烯供应松紧（港口库存可用天数）</text><line x1="88.000000" y1="70.000000" x2="88.000000" y2="384.000000" stroke="#c9d5e4"/><text x="82.000000" y="74.000000" font-size="11" fill="#8a93a3" text-anchor="end">+20%</text><text x="82.000000" y="227.000000" font-size="11" fill="#8a93a3" text-anchor="end">0</text><text x="82.000000" y="388.000000" font-size="11" fill="#8a93a3" text-anchor="end">−20%</text><text x="48.000000" y="227.000000" font-size="12.5" font-weight="700" fill="#0f4c81" transform="rotate(-90 48.000000 227.000000)" text-anchor="middle">Y · 合成胶需求强度（顺丁表需 4 周均同比）</text></svg>
-    <div class="jg-cap">虚线 = 建议跟踪的两条主要迁移路径；当前落在 B 格（利润挤压 / 负反馈）。</div>
+    <p style="margin:4px 0"><b>阈值（固定线，不用历史分位）：</b>X 紧档 ≤ 80.0% / 松档 ≥ 82.0%（依据 2022–2025 裂解开工年度均值 2022 81.06% / 2023 81.30% / 2024 82.96% / 2025 82.01% / 2026 78.80%）；Y 弱档 ≤ -5% / 强档 ≥ +8%。中间带按顺延上期格位处理。</p>
+<svg viewBox="0 0 680 470" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="合成胶双变量四象限"><rect x="0" y="0" width="680" height="470" fill="#ffffff"/><rect x="88.000000" y="70.000000" width="231.666667" height="94.200000" fill="#fbeceb"/><rect x="412.333333" y="70.000000" width="231.666667" height="94.200000" fill="#eaf6ef"/><rect x="88.000000" y="164.200000" width="231.666667" height="219.800000" fill="#fdf6e7"/><rect x="412.333333" y="164.200000" width="231.666667" height="219.800000" fill="#eef2f9"/><rect x="319.666667" y="70.000000" width="92.666667" height="314.000000" fill="#8fa3bd" opacity="0.07"/><rect x="88.000000" y="164.200000" width="556.000000" height="102.050000" fill="#8fa3bd" opacity="0.07"/><line x1="319.666667" y1="70.000000" x2="319.666667" y2="384.000000" stroke="#8fa3bd" stroke-width="1.2" stroke-dasharray="5 4"/><line x1="412.333333" y1="70.000000" x2="412.333333" y2="384.000000" stroke="#8fa3bd" stroke-width="1.2" stroke-dasharray="5 4"/><line x1="88.000000" y1="164.200000" x2="644.000000" y2="164.200000" stroke="#8fa3bd" stroke-width="1.2" stroke-dasharray="5 4"/><line x1="88.000000" y1="266.250000" x2="644.000000" y2="266.250000" stroke="#8fa3bd" stroke-width="1.2" stroke-dasharray="5 4"/><rect x="88.000000" y="70.000000" width="556.000000" height="314.000000" fill="none" stroke="#c9d5e4" stroke-width="1.2"/><text x="319.666667" y="62.000000" font-size="10.5" fill="#6b7686" text-anchor="middle">80.0%</text><text x="412.333333" y="62.000000" font-size="10.5" fill="#6b7686" text-anchor="middle">82.0%</text><text x="88.000000" y="62.000000" font-size="10.5" fill="#8a93a3" text-anchor="start">← 紧</text><text x="644.000000" y="62.000000" font-size="10.5" fill="#8a93a3" text-anchor="end">松 →</text><text x="82.000000" y="168.200000" font-size="10.5" fill="#6b7686" text-anchor="end">+8%</text><text x="82.000000" y="270.250000" font-size="10.5" fill="#6b7686" text-anchor="end">−5%</text><text x="98.000000" y="92.000000" font-size="13" font-weight="700" fill="#8c2f3d">A · 紧缺上行</text><text x="98.000000" y="110.000000" font-size="11.5" fill="#8c2f3d">成本推动，跟涨扩张</text><text x="422.333333" y="92.000000" font-size="13" font-weight="700" fill="#1f6b41">C · 健康去库</text><text x="422.333333" y="110.000000" font-size="11.5" fill="#1f6b41">原料松＋需求强，修复</text><text x="98.000000" y="186.200000" font-size="13" font-weight="700" fill="#8a5a00">B · 利润挤压 / 负反馈</text><text x="98.000000" y="204.200000" font-size="11.5" fill="#8a5a00">原料紧＋需求弱，亏损</text><text x="422.333333" y="186.200000" font-size="13" font-weight="700" fill="#2f4a6b">D · 过剩下跌</text><text x="422.333333" y="204.200000" font-size="11.5" fill="#2f4a6b">原料松＋需求弱，坍塌</text><path d="M305.720136 227.988711 L305.720136 170.200000" stroke="#d92626" stroke-width="1.6" stroke-dasharray="6 4" fill="none"/><path d="M305.720136 170.200000 l-4.5 9 l9 0 z" fill="#d92626"/><text x="313.720136" y="199.094355" font-size="11" fill="#d92626">B→A 需求转强</text><path d="M305.720136 227.988711 L406.333333 227.988711" stroke="#2f4a6b" stroke-width="1.6" stroke-dasharray="6 4" fill="none"/><path d="M406.333333 227.988711 l-9 -4.5 l0 9 z" fill="#2f4a6b"/><text x="313.720136" y="219.988711" font-size="11" fill="#2f4a6b">B→D 原料转松</text><circle cx="305.720136" cy="227.988711" r="7" fill="#d92626" stroke="#ffffff" stroke-width="2.2"/><text x="317.720136" y="245.988711" font-size="12" font-weight="700" fill="#d92626">当前位置</text><text x="317.720136" y="261.988711" font-size="11" fill="#6b7686">79.70% ／ -12.6%</text><line x1="88.000000" y1="384.000000" x2="644.000000" y2="384.000000" stroke="#c9d5e4"/><text x="134.333333" y="400.000000" font-size="11" fill="#8a93a3" text-anchor="middle">76</text><text x="227.000000" y="400.000000" font-size="11" fill="#8a93a3" text-anchor="middle">78</text><text x="319.666667" y="400.000000" font-size="11" fill="#8a93a3" text-anchor="middle">80</text><text x="412.333333" y="400.000000" font-size="11" fill="#8a93a3" text-anchor="middle">82</text><text x="505.000000" y="400.000000" font-size="11" fill="#8a93a3" text-anchor="middle">84</text><text x="597.666667" y="400.000000" font-size="11" fill="#8a93a3" text-anchor="middle">86</text><text x="366.000000" y="424.000000" font-size="12.5" font-weight="700" fill="#0f4c81" text-anchor="middle">X · 丁二烯供应松紧（石脑油裂解乙烯开工率 4 周均）</text><line x1="88.000000" y1="70.000000" x2="88.000000" y2="384.000000" stroke="#c9d5e4"/><text x="82.000000" y="74.000000" font-size="11" fill="#8a93a3" text-anchor="end">+20%</text><text x="82.000000" y="227.000000" font-size="11" fill="#8a93a3" text-anchor="end">0</text><text x="82.000000" y="388.000000" font-size="11" fill="#8a93a3" text-anchor="end">−20%</text><text x="48.000000" y="227.000000" font-size="12.5" font-weight="700" fill="#0f4c81" transform="rotate(-90 48.000000 227.000000)" text-anchor="middle">Y · 合成胶需求强度（顺丁表需 4 周均同比）</text></svg>
+    <div class="jg-cap">虚线 = 建议跟踪的两条主要迁移路径；当前落在 B 格（利润挤压 / 负反馈），X 判 紧、Y 判 弱。</div>
   </div>
 </section>
 <section class="board" id="b-jg5">
-  <div class="board-head"><h2>两轴当前读数</h2></div>
+  <div class="board-head"><h2>两轴当前读数<small>v2.2：X 轴三读数 · Y 轴四读数</small></h2></div>
   <div class="jg-card">
     <table class="jg">
-      <tr><th style="width:110px">轴</th><th>关键读数（构建时复算）</th><th style="width:170px">刻度位置 / 转档阈值</th></tr>
-      <tr><td><b>X · 丁二烯供应</b></td><td>港口库存 <b>25,300 吨</b>（周环比 +2,360、同比 −20.9%）、可用 <b>1.66 天</b>；周度供应盈余 4 周均 <b>-175 吨/周</b>；开工 <b>67.19%</b>、周产量 <b>109,007 吨</b></td><td><b>偏紧 · 临界</b><br>1.66 天 ＜ 1.70 天<br>右移阈值：库存回 ≥ 2.40 天或净进口恢复</td></tr>
-      <tr><td><b>Y · 合成胶需求</b></td><td>顺丁表需 <b>27,520 吨</b>（周环比 +4.9%，4 周均同比 <b class="dn">-12.6%</b>）；顺丁开工 <b>69.02%</b>（周 +5.89 pct，亏损下仍在提负）；半钢开工 <b>64.54%</b>（13 周均同比 -10.8%）、半钢库存天数 <b>36.95 天</b></td><td><b>弱</b><br>-12.6% ＜ −5%<br>上移阈值：≤ −5% 转中性、≥ +8% 转强</td></tr>
-      <tr class="hi"><td>合成</td><td colspan="2"><b>当前落点 B 格（海外定价主导型）：原料偏紧 × 需求走弱 ＝ 利润挤压 / 负反馈</b>（顺丁亏损 -747 元/吨，开工却在提负，负反馈尚未真正兑现）。B 格的「紧」源于<b>海外缺口抽紧国内库存</b>（中国出口补韩国），不是国内主动去库；顺丁产业库存 10 月触底（约 5 万吨）、11-12 月累库预期 1-2 万吨，是 B→D 关键观察窗口。</td></tr>
+      <tr><th style="width:112px">轴</th><th>关键读数（构建时复算）</th><th style="width:180px">刻度位置 / 转档阈值</th></tr>
+      <tr class="hi"><td><b>X · 丁二烯供应</b><br><span style="font-weight:400;color:#6b7686">主标尺＋确认项</span></td><td>① <b>乙烯裂解开工 4 周均 79.70%</b>（周环比 +0.87 pct；2026 年均 78.80%，为 2022–2025 以来最低）；② <b>石脑油进口年化 1,127 万吨</b>（同比 <span class="dn">-31.8%</span>；近 13 周均 17.59 vs 去年同期 35.19 万吨/周）；③ <b>丁二烯周产量 4 周均 109,268 吨</b>（历史 93.3 分位，产出端仍宽松）；④ 乙烯裂解利润 -177 元/吨（11.1 分位，亏损驱动降负）</td><td><b>紧 · ≤ 80.0%</b><br>当前 79.70% ＜ 80.0%<br>右移阈值：开工回升 ≥ 82.0%<br>且石脑油进口同步回升</td></tr>
+      <tr><td><b>Y · 合成胶需求</b><br><span style="font-weight:400;color:#6b7686">主标尺＋确认项</span></td><td>① <b>顺丁表需 4 周均同比 <span class="dn">-12.6%</span></b>（4 周均 27,520 吨）；② 半钢开工 64.54%（13 周均同比 <span class="dn">-10.8%</span>）；③ <b>顺丁-泰混价差 -1,480 元/吨</b>（周环比 <span class="up">+870</span>，自 -2,350 修复；仍深度为负＝泰混更便宜）；④ <b>顺丁出口占产量 31.7%</b>（2025 年 21.8% → 2026 年 31.7%，1-9 月折年口径；出口同期同比 41.7%）</td><td><b>弱 · ≤ -5%</b><br>当前 -12.6% ＜ -5%<br>上移阈值：≤ -5% 转中性<br>≥ +8% 转强</td></tr>
+      <tr class="hi"><td>合成</td><td colspan="2"><b>当前落点 B 格：供应偏紧 × 需求偏弱 ＝ 利润挤压 / 负反馈</b>。「紧」来自<b>副产品源头收缩</b>（裂解开工 5 年最低 + 石脑油进口 −31.8%），不再用库存天数背书；「弱」来自顺丁表需同比 -12.6%，但<b>泰混替代收窄（价差 -2,350 → -1,480）与出口占比抬升（21.8% → 31.7%）</b>两项确认项同向改善，Y 轴存在向中性迁移的条件。利润端：顺丁-丁二烯价差 <b>1,710 元/吨</b>（历史 22.9 分位），加工利润已被压至低位，负反馈压力大于利润改善动能。</td></tr>
+      <tr><td><b>辅助观察</b><br><span style="font-weight:400;color:#8a93a3">v1 标尺，已降级</span></td><td>港口库存 <b>25,300 吨</b>（周环比 +2,360、同比 −20.9%）、可用 <b>1.66 天</b>；周度供应盈余 4 周均 <b>-175 吨/周</b>；合计库存（折丁二烯）<b>119,563 吨</b>；丁二烯开工 67.19%</td><td>不再作轴：<b>样本偏小，且混入出口需求</b>——出口抽走库存同样压低可用天数，无法区分「国内供应紧」与「海外缺口抽紧」</td></tr>
     </table>
+    <div class="jg-ok"><b>档位规则：</b>主标尺定档（X＝裂解开工率 4 周均，≤80.0% 紧 / ≥82.0% 松；Y＝顺丁表需 4 周均同比，≤-5% 弱 / ≥+8% 强）；主标尺落在中间带时才由确认项定档；确认项方向一致时允许跨一档修正，但须在下方路标清单逐条列明。当前 X、Y 均在明确档内，无需修正。</div>
   </div>
 </section>
 <section class="board" id="b-jg6">
-  <div class="board-head"><h2>迁移路径与概率</h2></div>
+  <div class="board-head"><h2>迁移路径与概率<small>按 v2.2 新轴口径重估</small></h2></div>
   <div class="jg-card">
     <table class="jg">
       <tr><th style="width:80px">路径</th><th style="width:60px">概率</th><th>触发条件</th><th style="width:110px">方向</th><th style="width:170px">策略含义</th></tr>
-      <tr><td>留守 B</td><td class="num"><b>35%</b></td><td>海外缺口未退（韩国检修未回归、欧洲船货未到）、顺丁亏损持续但开工不降、BR-NR 仍高位僵持</td><td>僵持 / 高波动</td><td>区间操作，盯下游负反馈与 BR-NR 回归何时兑现</td></tr>
-      <tr class="hi"><td>B → D</td><td class="num"><b>38%</b></td><td>定价权退出：韩国买够（~1.8wt）+ 欧洲船货到港 → 丁二烯回落；叠加顺丁 11-12 月累库 1-2 万吨、净进口恢复（库存回 ≥ 2.40 天）</td><td>下跌</td><td>反手空 BR，做缩加工利润</td></tr>
-      <tr><td>B → A</td><td class="num">20%</td><td>轮胎出口/天胶替代带动顺丁表需同比回 ≥ −5%，且原料仍紧（海外缺口未退）</td><td>上涨</td><td>单边多，顺丁-BR 正套</td></tr>
-      <tr><td>B → C</td><td class="num">7%</td><td>需求转强＋原料同时转松（双改善，需进口显著回补）</td><td>温和上涨</td><td>做多利润（多 BR / 空 BD）</td></tr>
+      <tr><td>留守 B</td><td class="num"><b>30%</b></td><td>裂解开工与石脑油进口维持低位（供应仍紧），顺丁表需同比未回到 −5% 以内，泰混价差修复未传导到表需</td><td>僵持 / 高波动</td><td>区间操作，盯 BR-丁二烯价差与顺丁开工负反馈</td></tr>
+      <tr class="hi"><td>B → A</td><td class="num"><b>35%</b></td><td>需求转强：顺丁-泰混价差自 -1,480 继续收窄至 0 附近（配方回补顺丁），叠加顺丁出口占产量自 31.7% 继续上行；供给端维持紧（开工 ≤ 80.0%）</td><td>上涨</td><td>单边多，顺丁-BR 正套</td></tr>
+      <tr><td>B → D</td><td class="num">22%</td><td>供应转松：石脑油进口回升 + 裂解开工率回升至 ≥ 82.0%（原料与产出双修复）；顺丁 11-12 月累库 1-2 万吨兑现</td><td>下跌</td><td>反手空 BR，做缩加工利润</td></tr>
+      <tr><td>B → C</td><td class="num">13%</td><td>需求转强＋原料同时转松（双改善，需石脑油进口显著回补且开工回到 2025 中枢）</td><td>温和上涨</td><td>做多利润（多 BR / 空 BD）</td></tr>
     </table>
-    <div class="jg-ok">概率结合 26.11.2 讨论调整：钉钉指出「上涨已定价到位、BR 多头和 BR-NR 价差已平」「顺丁库存 10 月触底、11-12 月累库预期」，故下调留守 B（45%→35%）、上调 B→D（30%→38%）。绝对数值待拍板；若欧洲船货到港更快，可进一步上移 B→D。</div>
+    <div class="jg-ok"><b>v2.2 重估依据：</b>X 轴改用乙烯裂解开工率后，B→D 的门槛从「库存回 ≥ 2.40 天」上移到「<b>石脑油进口回升 + 开工率 ≥ 82.0%</b>」——当前石脑油进口年化同比 −31.8%、开工 5 年最低，短期难以满足，故 <b>B→D 由 38% 下调至 22%</b>；同时 Y 轴新增的两项确认项（泰混价差自 -2,350 修复至 -1,480、出口占产量 21.8% → 31.7%）同向指向需求改善，<b>B→A 由 20% 上调至 35%</b>、留守 B 由 35% 下调至 30%。</div>
+    <div class="jg-warn"><b>两处待拍板：</b>① 绝对概率仍含主观权重，且 v1 版本的 35/38/20/7 是基于钉钉「上涨已定价到位、BR-NR 价差已平」的讨论口径，与新轴口径不同源，建议按季度复盘校准；② <b>结构项的中期压力未计入短期概率</b>——中国丁二烯产能 538→885 万吨、2027 转净出口，叠加丁二烯周产量已处历史 93.3 分位，新产能爬坡一旦兑现会直接压低 X 轴，这是 D 格的中期支撑而非当期理由。</div>
   </div>
 </section>
 <section class="board" id="b-jg7">
@@ -793,29 +799,31 @@ table.jg tr.hi td{background:#f7faff}
   </div>
 </section>
 <section class="board" id="b-jg8">
-  <div class="board-head"><h2>路标清单（判格依据）</h2></div>
+  <div class="board-head"><h2>路标清单（判格依据）<small>v2.2 轴口径</small></h2></div>
   <div class="jg-card">
-    <h4 class="jg-h3">轴 1 · 丁二烯供应（5 条）</h4>
-    <table class="jg"><tr><th>路标</th><th style="width:130px">当前</th><th>阈值 / 状态</th></tr>
-      <tr><td>港口库存可用天数</td><td class="num">1.66 天</td><td>≤1.70 紧 / ≥2.40 松</td></tr>
-      <tr><td>周度供应盈余（4 周均）</td><td class="num">-175 吨/周</td><td>转负＝趋紧</td></tr>
-      <tr><td>丁二烯开工</td><td class="num">67.19%</td><td>周 +1740.00 pct</td></tr>
-      <tr><td>合计库存（折丁二烯）</td><td class="num">119,563 吨</td><td>港口+厂库+贸易商</td></tr>
-      <tr class="hi"><td>韩国缺口 / 中国对韩出口</td><td class="num">缺口高位</td><td>钉钉：韩国减产−16%、中国对韩净出口 → 退出信号</td></tr>
+    <h4 class="jg-h3">轴 1 · 丁二烯供应（6 条，主标尺＝裂解开工率）</h4>
+    <table class="jg"><tr><th>路标</th><th style="width:150px">当前</th><th>阈值 / 状态</th></tr>
+      <tr class="hi"><td>石脑油裂解乙烯开工率 4 周均</td><td class="num">79.70%</td><td>≤ 80.0% 紧 / ≥ 82.0% 松；2026 年均 78.80% 为 5 年最低</td></tr>
+      <tr><td>石脑油进口量（年化）</td><td class="num">1,127 万吨</td><td>同比 -31.8%；回到 2025 中枢 1,652 万吨 = 原料端修复</td></tr>
+      <tr><td>丁二烯周产量 4 周均</td><td class="num">109,268 吨</td><td>历史 93.3 分位 —— 产出端仍宽松（新装置爬坡），与开工率背离</td></tr>
+      <tr><td>乙烯裂解利润</td><td class="num">-177 元/吨</td><td>历史 11.1 分位；亏损驱动降负，<b>回正 = 开工回升的前瞻信号</b></td></tr>
+      <tr><td>周度供应盈余 4 周均</td><td class="num">-175 吨/周</td><td>产量−表需；转负＝趋紧</td></tr>
+      <tr><td>辅助观察：港口库存 / 合计库存</td><td class="num">25,300 / 119,563 吨</td><td>可用 1.66 天（已非主标尺）；出口抽库同样压低天数</td></tr>
     </table>
-    <h4 class="jg-h3">轴 2 · 合成胶需求（5 条）</h4>
-    <table class="jg"><tr><th>路标</th><th style="width:130px">当前</th><th>阈值 / 状态</th></tr>
-      <tr><td>顺丁表需 4 周均同比</td><td class="num">-12.6%</td><td>≤−5% 弱 / ≥+8% 强</td></tr>
-      <tr><td>顺丁开工</td><td class="num">69.02%</td><td>亏损下仍提负 +5.89 pct</td></tr>
-      <tr><td>顺丁利润</td><td class="num">-747 元/吨</td><td>历史低位，负反馈未兑现</td></tr>
-      <tr><td>半钢开工 13 周均同比</td><td class="num">-10.8%</td><td>含节假日断崖，统一用 13 周均</td></tr>
-      <tr><td>半钢库存天数</td><td class="num">36.95 天</td><td>同比 −17.6%</td></tr>
+    <h4 class="jg-h3">轴 2 · 合成胶需求（6 条，主标尺＝表需同比）</h4>
+    <table class="jg"><tr><th>路标</th><th style="width:150px">当前</th><th>阈值 / 状态</th></tr>
+      <tr class="hi"><td>顺丁表需 4 周均同比</td><td class="num">-12.6%</td><td>≤-5% 弱 / ≥+8% 强</td></tr>
+      <tr class="hi"><td>顺丁-泰混现货价差（配方替代）</td><td class="num">-1,480 元/吨</td><td>周环比 +870（自 -2,350 修复）；<b>收窄至 0 附近 = 轮胎厂回补顺丁</b></td></tr>
+      <tr class="hi"><td>顺丁出口占产量比</td><td class="num">31.7%</td><td>2021 9.6% → 2025 21.8% → 2026 31.7%（折年口径）；出口同期同比 41.7%（同为 1-9 月）</td></tr>
+      <tr><td>半钢开工 13 周均同比</td><td class="num">-10.8%</td><td>含节假日断崖，统一用 13 周均；开工 64.54%</td></tr>
+      <tr><td>顺丁开工</td><td class="num">69.02%</td><td>周 +5.89 pct —— 加工利润低位仍在提负</td></tr>
+      <tr><td>顺丁-丁二烯价差（利润）</td><td class="num">1,710 元/吨</td><td>历史 22.9 分位；52 周均 1,706</td></tr>
     </table>
     <h4 class="jg-h3">结果验证（3 条）</h4>
     <table class="jg"><tr><th>验证项</th><th>当前</th><th>若反向＝状态存疑</th></tr>
       <tr><td>BR 现货 / 基差</td><td>成本驱动跟涨</td><td>丁二烯涨而 BR 不跟 → 需求证伪</td></tr>
       <tr><td>BR-NR 价差</td><td>高位（跨品种主线）</td><td>走强后关注 NR 机会</td></tr>
-      <tr><td>港口库存方向</td><td>偏紧（海外抽紧）</td><td>累库快于预期 → B→D 加速</td></tr>
+      <tr><td>库存方向（辅助）</td><td>港口库存 25,300 吨，周环比 +2,360</td><td>累库快于预期 → B→D 加速</td></tr>
     </table>
   </div>
 </section>
@@ -823,7 +831,7 @@ table.jg tr.hi td{background:#f7faff}
   <div class="board-head"><h2>风险与口径不确定</h2></div>
   <div class="jg-card">
     <table class="jg">
-      <tr><th style="width:30px">#</th><th style="width:170px">现象</th><th>处理</th></tr>
+      <tr><th style="width:30px">#</th><th style="width:180px">现象</th><th>处理</th></tr>
       <tr><td>1</td><td>分位与同比反向</td><td>顺丁表需处历史高位分位但同比为负；阈值一律用同比＋固定线，不用分位</td></tr>
       <tr><td>2</td><td>两个需求口径打架</td><td>丁二烯表需同比与四大下游折需求同比方向不一；页面以「表需」为主口径，冲突处标注</td></tr>
       <tr><td>3</td><td>节假日断崖污染同比</td><td>半钢开工 4 周均同比受国庆干扰；统一用 13 周均同比</td></tr>
@@ -832,9 +840,26 @@ table.jg tr.hi td{background:#f7faff}
       <tr><td>6</td><td>进口数据跳变</td><td>净进口年度值波动大；标「待核」，不进判格主读数</td></tr>
       <tr><td>7</td><td>价差当轴用</td><td>BR-丁二烯价差等是结果变量，只作验证不作轴</td></tr>
       <tr class="hi"><td>8</td><td>海外定价背离库存</td><td>库存偏紧是韩国缺口抽紧的结果；判格前先判定价权（4B 节）</td></tr>
-      <tr class="hi"><td>9</td><td>BR-NR 跨品种信号</td><td>既是结果也是方向指引，独立主线并联动天然胶看板</td></tr>
-      <tr class="hi"><td>10</td><td>顺丁库存拐点</td><td>10 月触底、11-12 月累库预期，作为 B→D 触发路标</td></tr>
+      <tr><td>9</td><td>BR-NR 跨品种信号</td><td>既是结果也是方向指引，独立主线并联动天然胶看板</td></tr>
+      <tr><td>10</td><td>顺丁库存拐点</td><td>10 月触底、11-12 月累库预期，作为 B→D 触发路标</td></tr>
+      <tr class="hi"><td>11</td><td>港口库存天数被降级</td><td>样本偏小、且混入出口需求（出口抽库同样压低可用天数）；v2.2 起只作辅助观察，不再做 X 轴</td></tr>
+      <tr class="hi"><td>12</td><td>副产品定价逻辑</td><td>丁二烯是裂解副产品，自身利润不决定开工；开工由乙烯裂解利润与石脑油原料决定，X 轴改用裂解开工率</td></tr>
+      <tr class="hi"><td>13</td><td>开工率与产量背离</td><td>开工 5 年最低但周产量处历史 92.6% 分位（新装置爬坡）；两读数矛盾时以开工率定短期格位、以产量分位标注中期过剩风险</td></tr>
+      <tr><td>14</td><td>泰混替代是双向的</td><td>顺丁-泰混价差收窄可能来自泰混涨价而非顺丁跌价；需拆因后再判替代拉力，页面仅用方向不做归因</td></tr>
+      <tr><td>15</td><td>出口占比口径不完全对齐</td><td>顺丁出口为 Trademap HS400220 月度值，产量为周度年化；跨口径相除仅作趋势参考，不做精确弹性测算</td></tr>
     </table>
+  </div>
+</section>
+<section class="board" id="b-jg10">
+  <div class="board-head"><h2>指标口径修正记录（v2.2）<small>2026-11-03 用户三条指示的落地与影响</small></h2></div>
+  <div class="jg-card">
+    <table class="jg">
+      <tr><th style="width:26px">#</th><th style="width:190px">修正项</th><th style="width:230px">原口径 → 新口径</th><th>理由与影响</th></tr>
+      <tr class="hi"><td>1</td><td><b>利润指标</b></td><td>顺丁利润（全成本）→ <b>顺丁-丁二烯价差</b></td><td>原料端已在 X 轴单独判定（裂解开工与石脑油进口），利润再用全成本口径会与 X 轴重复计一次原料。改用 BR-BD 价差后：当前 <b>1,710 元/吨</b>（历史 22.9 分位、52 周均 1,706），加工利润已压至低位；全成本顺丁利润 -747 元/吨降级为参考。</td></tr>
+      <tr class="hi"><td>2</td><td><b>X 轴标尺</b></td><td>港口库存可用天数 → <b>石脑油裂解乙烯开工率</b>（＋丁二烯周产量、石脑油进口量两项确认项）</td><td>丁二烯是裂解副产品，自身利润不决定开工，供应由乙烯裂解开工、产量、石脑油进口量决定；库存天数样本偏小且混入出口需求，无法区分「国内供应紧」与「海外缺口抽紧」。影响：X 档位仍判<b>紧</b>，但驱动解释从「库存被出口抽走」改为「<b>原料与产出双收缩</b>」；阈值线随之改为 ≤80.0% / ≥82.0%。</td></tr>
+      <tr class="hi"><td>3</td><td><b>Y 轴确认项</b></td><td>仅表需同比 + 半钢开工 → 增列 <b>顺丁-泰混价差</b>（配方替代）、<b>顺丁出口占产量比</b>（出口需求）</td><td>轮胎亏损背景下配方在顺丁与泰混间按价切换，存在替代关系；出口占产量从 2021 年 9.6% 抬升至 2026 年 31.7%，出口已是需求的重要组成。影响：Y 主档位仍判<b>弱</b>（表需同比 -12.6%），但两项确认项同向改善，迁移概率因此把 B→A 由 20% 上调至 35%、留守 B 下调至 30%。</td></tr>
+    </table>
+    <div class="jg-warn"><b>本次修正未改变最终判格：</b>仍为 <span class="jg-pill b">B 格 · 利润挤压 / 负反馈</span>。但「紧」的<b>证据链</b>已整体更换（旧：库存可用 1.66 天；新：裂解开工 79.70% ＋ 石脑油进口同比 -31.8%），因此 B→D 的触发条件也随之从「库存回 ≥ 2.40 天」上移为「<b>石脑油进口回升 + 开工率 ≥ 82.0%</b>」。</div>
   </div>
 </section>/*SR_CORE_END*/
   </main>
