@@ -1332,7 +1332,7 @@ function makeCard(ch, ticks, grid){
   var ind=D.indicators[ch.key]; if(!ind) return;
   var st=ind.stat||{};
   var card=document.createElement("div"); card.className="card";
-  var noPct = (st.noPct===true) || /月差/.test(ind.title||"");
+  var noPct = (st.noPct===true) || /[%％]/.test(String(ind.unit||"")) || /月差/.test(ind.title||"");
   var chgTxt = arrow(st.chg)+" "+(st.chg>0?"+":"")+fmt(st.chg, ind.dec)+
       (noPct?"":("（"+(st.pct==null?"—":(st.pct>0?"+":"")+Number(st.pct).toFixed(2)+"%")+"）"));
   card.innerHTML =
@@ -2554,7 +2554,7 @@ function expSeasonOption(Dp, ind, ticks, yv){
   var valTxt=fmt(st.latest, ind.dec)+" "+(ind.unit||"");
   var chgTxt="";
   if(st.chg!==null && st.chg!==undefined){
-    var noPct=(st.noPct===true)||/月差/.test(ind.title||"");
+    var noPct=(st.noPct===true)||/[%％]/.test(String(ind.unit||""))||/月差/.test(ind.title||"");
     chgTxt=arrow(st.chg)+" "+(st.chg>0?"+":"")+fmt(st.chg,ind.dec)
       +(noPct?"":("（"+(st.pct==null?"—":(st.pct>0?"+":"")+Number(st.pct).toFixed(2)+"%")+"）"));
   }
