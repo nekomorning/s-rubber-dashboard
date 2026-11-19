@@ -1270,15 +1270,21 @@ function renderTsCard(key, rootEl, gridParam, hOverride){
   var card=mkCard(t.title||key, "", "最新 "+(t.lines[0] && t.lines[0].data.length? t.lines[0].data[t.lines[0].data.length-1][0] : ""));
   grid.appendChild(card.el);
   card.div.style.height=(hOverride||260)+"px";
-  var xl=t.lines[0] ? t.lines[0].data.map(function(p){ return p[0]; }) : [];
-  if(t.xlabels && t.xlabels.length===xl.length) xl=t.xlabels;
-  /* 默认缩放到 2026 年：找首条线第一个 2026 数据点的位置 → dataZoom 百分比 */
-  var zr=null;
-  var d0=(t.lines[0] && t.lines[0].data)||[];
-  for(var i=0;i<d0.length;i++){ if(String(d0[i][0]).slice(0,4)==="2026") break; }
-  if(i>0 && i<d0.length) zr=[Math.max(0, i/d0.length*100-1), 100];
+  /* 多线日期对齐（2026-11-19 修）：各线交易日不齐、点数不同（如东南亚 1518 vs CIF 1505），
+     旧版用首线日期作 x 轴、其余线按索引硬贴 → 东南亚末端错贴 10 月值，出现假上涨。
+     改为取所有线的日期并集作统一轴，各线按日期映射，缺失填 null（drawLines 已 connectNulls）。 */
+  var dateSet={}, xl=[];
+  (t.lines||[]).forEach(function(l){ (l.data||[]).forEach(function(p){ if(!dateSet[p[0]]){ dateSet[p[0]]=1; xl.push(p[0]); } }); });
+  xl.sort();
+  var idx={}; xl.forEach(function(d,i){ idx[d]=i; });
+  /* 默认缩放到 2026 年：找轴上第一个 2026 日期的位置 → dataZoom 百分比 */
+  var zr=null, zi=0;
+  for(var j=0;j<xl.length;j++){ if(String(xl[j]).slice(0,4)==="2026"){ zi=j; break; } }
+  if(zi>0 && zi<xl.length) zr=[Math.max(0, zi/xl.length*100-1), 100];
   drawLines(card.div, {xlabels:xl, dec:0, zoom:true, zoomRange:zr, series:t.lines.map(function(l){
-    return {name:l.name, color:l.color||"#2b7cff", width:1.6, data:l.data.map(function(p){ return p[1]; })};
+    var arr=new Array(xl.length).fill(null);
+    (l.data||[]).forEach(function(p){ var k=idx[p[0]]; if(k!==undefined) arr[k]=p[1]; });
+    return {name:l.name, color:l.color||"#2b7cff", width:1.6, data:arr};
   })});
 }
 
