@@ -1277,10 +1277,17 @@ function renderTsCard(key, rootEl, gridParam, hOverride){
   (t.lines||[]).forEach(function(l){ (l.data||[]).forEach(function(p){ if(!dateSet[p[0]]){ dateSet[p[0]]=1; xl.push(p[0]); } }); });
   xl.sort();
   var idx={}; xl.forEach(function(d,i){ idx[d]=i; });
-  /* 默认缩放到 2026 年：找轴上第一个 2026 日期的位置 → dataZoom 百分比 */
+  /* 默认缩放起点（2026-11-19 用户拍板）：丁二烯国际价格图从 2026-06-01 起，其余 TS 图仍从 2026 年首日。
+     轴为日期升序字符串（YYYY-MM-DD），字典序即时间序，取第一个 >= 起始日的数据点。 */
+  var isBdIntl=(key==="__TS__丁二烯国际价格");
+  var startDate=isBdIntl ? "2026-06-01" : "2026-01-01";
   var zr=null, zi=0;
-  for(var j=0;j<xl.length;j++){ if(String(xl[j]).slice(0,4)==="2026"){ zi=j; break; } }
-  if(zi>0 && zi<xl.length) zr=[Math.max(0, zi/xl.length*100-1), 100];
+  for(var j=0;j<xl.length;j++){ if(String(xl[j])>=startDate){ zi=j; break; } }
+  if(zi>0 && zi<xl.length){
+    /* value 轴 min=0/max=n-1：起点百分比用 zi/(n-1) 才精确落在目标日；
+       原 -1% 余量会让丁二烯国际价格提前到 5 月，故该图单独走精确式 */
+    zr = isBdIntl ? [zi/(xl.length-1)*100, 100] : [Math.max(0, zi/xl.length*100-1), 100];
+  }
   drawLines(card.div, {xlabels:xl, dec:0, zoom:true, zoomRange:zr, series:t.lines.map(function(l){
     var arr=new Array(xl.length).fill(null);
     (l.data||[]).forEach(function(p){ var k=idx[p[0]]; if(k!==undefined) arr[k]=p[1]; });
@@ -2594,9 +2601,10 @@ function expTsOption(Dp, t){
   var series=[], legend=[];
   var xl0=t.lines[0] ? t.lines[0].data.map(function(p){ return p[0]; }) : [];
   if(t.xlabels && t.xlabels.length===xl0.length) xl0=t.xlabels;
-  /* 同屏显 dataZoom 行为：从 2026 年第一个数据点起截取（无 2026 数据则回退全历史） */
+  /* 同屏显 dataZoom 行为（2026-11-19）：丁二烯国际价格从 2026-06-01 起，其余从 2026 年首日起（无则回退全历史） */
+  var startCut=(t.title==="丁二烯国际价格") ? "2026-06-01" : "2026-01-01";
   var s0=-1;
-  for(var i=0;i<xl0.length;i++){ if(String(xl0[i]).slice(0,4)==="2026"){ s0=i; break; } }
+  for(var i=0;i<xl0.length;i++){ if(String(xl0[i])>=startCut){ s0=i; break; } }
   if(s0<0) s0=0;
   var xl=xl0.slice(s0), n=xl.length, iv=(n<=13?0:(n<=26?1:Math.ceil(n/12)));
   t.lines.forEach(function(l){
