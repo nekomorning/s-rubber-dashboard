@@ -1901,8 +1901,10 @@ function renderTradeC(bd, ds, box, ctx){
   (pr.season||[]).forEach(function(sp){
     var s=S[sp.key]; if(!s) return;
     var netName=(sp.role==="exp")?"净出口":"净进口";
-    [["进口季节图","Imp"],["出口季节图","Exp"],[netName+"季节图","NET"]].forEach(function(cfg){
-      var card=mkCard(sp.cn+" · "+cfg[0], metaFor(s,cfg[1],sp.role), "");
+    /* 2026-11-20 用户要求：卡片标题改为「主体+品种+方向」，如「中国丁二烯净进口」 */
+    var pn=pr.label||"";
+    [["进口","Imp"],["出口","Exp"],[netName,"NET"]].forEach(function(cfg){
+      var card=mkCard(sp.cn+pn+cfg[0], metaFor(s,cfg[1],sp.role), "");
       g.appendChild(card.el);
       var by={};
       s.months.forEach(function(m,i){
