@@ -1,7 +1,7 @@
 {
  "source": "PE日报日度季节性图",
  "sourceUrl": "https://chem-daily-portal.app.workbuddy.host/",
- "fetchedAt": "2026-11-25",
+ "fetchedAt": "2026-11-26",
  "count": 10,
  "indicators": {
   "pe_00": {
